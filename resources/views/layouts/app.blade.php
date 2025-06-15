@@ -1,430 +1,265 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') - strack.my.id</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- CSS Libraries -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
-    <!-- Custom Styles -->
+    <title>@yield('title', 'STRACK')</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <style>
+        :root {
+            --lilac-primary: #8B5CF6;
+            --lilac-secondary: #A78BFA;
+            --lilac-light: #DDD6FE;
+            --lilac-dark: #7C3AED;
+            --lilac-soft: #F3F0FF;
+            --lilac-bg: #FAF8FF;
+            --white: #FFFFFF;
+            --gray-light: #F8FAFC;
+            --gray-medium: #64748B;
+            --gray-dark: #334155;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--lilac-bg) 0%, var(--lilac-soft) 50%, var(--lilac-light) 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--gray-dark);
+            min-height: 100vh;
         }
 
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .navbar {
+            background: rgba(139, 92, 246, 0.95);
+            border-bottom: 1px solid var(--lilac-secondary);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 30px rgba(139, 92, 246, 0.2);
         }
 
-        .glass-effect {
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--white) !important;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            padding: 0.75rem 1rem !important;
+            border-radius: 12px;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--white) !important;
+            transform: translateY(-1px);
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(139, 92, 246, 0.1);
         }
 
-        .card-shadow {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(139, 92, 246, 0.25);
+            border-color: var(--lilac-secondary);
         }
 
-        .sidebar-active {
-            transform: translateX(0);
+        .card-body {
+            padding: 2rem;
         }
 
-        .sidebar-inactive {
-            transform: translateX(-100%);
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
         }
 
-        /* Progress bars */
-        .progress-bar {
-            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-            transition: width 0.3s ease;
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
         }
 
-        /* Animations */
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-in-out;
+        .stat-label {
+            color: var(--gray-medium);
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .stat-icon {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            opacity: 0.9;
         }
 
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-dark) 100%);
+            border: none;
+            border-radius: 15px;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
         }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, var(--lilac-dark) 0%, var(--lilac-primary) 100%);
         }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 10px;
+        .list-group-item {
+            border: none;
+            border-radius: 15px !important;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, var(--lilac-soft) 0%, rgba(255, 255, 255, 0.9) 100%);
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(139, 92, 246, 0.1);
         }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+        .list-group-item:hover {
+            background: linear-gradient(135deg, var(--lilac-light) 0%, rgba(255, 255, 255, 0.95) 100%);
+            transform: translateX(5px);
+            border-color: var(--lilac-secondary);
         }
 
-        /* Status colors */
-        .status-waiting { @apply bg-yellow-100 text-yellow-800; }
-        .status-progress { @apply bg-blue-100 text-blue-800; }
-        .status-finished { @apply bg-green-100 text-green-800; }
-        .status-cancelled { @apply bg-red-100 text-red-800; }
+        .badge {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
 
-        /* Mobile optimizations */
+        .badge-lilac {
+            background: linear-gradient(135deg, var(--lilac-secondary) 0%, var(--lilac-primary) 100%);
+            color: var(--white);
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #D97706 100%);
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #DC2626 100%);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-lilac {
+            color: var(--lilac-primary);
+        }
+
+        .text-lilac-secondary {
+            color: var(--lilac-secondary);
+        }
+
         @media (max-width: 768px) {
-            .mobile-padding { padding: 1rem; }
-            .mobile-text { font-size: 0.875rem; }
-            .mobile-card { margin-bottom: 1rem; }
+            .navbar-nav {
+                background: rgba(139, 92, 246, 0.95);
+                border-radius: 15px;
+                margin-top: 1rem;
+                padding: 0.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
         }
     </style>
-
-    @stack('styles')
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Mobile Menu Button -->
-    <div class="md:hidden fixed top-4 left-4 z-50">
-        <button id="mobile-menu-btn" class="bg-white p-2 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <i class="fas fa-bars w-6 h-6 text-gray-600"></i>
-        </button>
-    </div>
 
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 gradient-bg text-white z-40 transition-transform duration-300 sidebar-inactive md:sidebar-active custom-scrollbar overflow-y-auto">
-        <div class="p-6">
-            <!-- Logo -->
-            <div class="flex items-center space-x-3 mb-8">
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-briefcase text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold">strack.my.id</h1>
-                    <p class="text-white/70 text-sm">Freelance Tracker</p>
-                </div>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="space-y-2">
-                <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 {{ request()->routeIs('dashboard') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-chart-line w-5"></i>
-                    <span class="font-medium">Dashboard</span>
-                </a>
-
-                <a href="{{ route('projects.create') }}" class="flex items-center space-x-3 {{ request()->routeIs('projects.create') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-plus w-5"></i>
-                    <span>Proyek Baru</span>
-                </a>
-
-                <a href="{{ route('projects.index') }}" class="flex items-center space-x-3 {{ request()->routeIs('projects.*') && !request()->routeIs('projects.create') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-list w-5"></i>
-                    <span>Daftar Proyek</span>
-                </a>
-
-                <a href="{{ route('clients.index') }}" class="flex items-center space-x-3 {{ request()->routeIs('clients.*') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-users w-5"></i>
-                    <span>Klien</span>
-                </a>
-
-                <a href="{{ route('payments.index') }}" class="flex items-center space-x-3 {{ request()->routeIs('payments.*') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-wallet w-5"></i>
-                    <span>Keuangan</span>
-                </a>
-
-                <a href="{{ route('savings.index') }}" class="flex items-center space-x-3 {{ request()->routeIs('savings.*') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-piggy-bank w-5"></i>
-                    <span>Tabungan 10%</span>
-                </a>
-
-                <a href="{{ route('testimonials.index') }}" class="flex items-center space-x-3 {{ request()->routeIs('testimonials.*') ? 'bg-white/20' : 'hover:bg-white/10' }} px-4 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-star w-5"></i>
-                    <span>Testimoni</span>
-                </a>
-            </nav>
-
-            <!-- Stats Summary -->
-            <div class="mt-8 p-4 bg-white/10 rounded-lg">
-                <h3 class="text-sm font-medium text-white/70 mb-2">Quick Stats</h3>
-                <div class="space-y-1 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-white/60">Proyek Aktif</span>
-                        <span class="font-medium" id="sidebar-active-projects">-</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-white/60">Total Piutang</span>
-                        <span class="font-medium" id="sidebar-total-remaining">-</span>
-                    </div>
-                </div>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-kanban me-2"></i>STRACK
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-house me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-plus-circle me-1"></i>Proyek Baru</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-list-task me-1"></i>Daftar Proyek</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-people me-1"></i>Klien</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-currency-dollar me-1"></i>Keuangan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-piggy-bank me-1"></i>Tabungan 10%</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-star me-1"></i>Testimoni</a>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <!-- Main Content -->
-    <div class="md:ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-4 sticky top-0 z-30">
-            <div class="flex items-center justify-between">
-                <div class="md:ml-0 ml-12">
-                    <h2 class="text-2xl font-bold text-gray-800">@yield('page-title', 'Dashboard')</h2>
-                    <p class="text-gray-600 text-sm">@yield('page-description', 'Kelola proyek freelance Anda')</p>
-                </div>
+    <main class="container my-4">
+        @yield('content')
+    </main>
 
-                <div class="flex items-center space-x-4">
-                    <!-- Current Date -->
-                    <div class="hidden md:flex items-center bg-gray-100 rounded-lg px-3 py-2">
-                        <i class="fas fa-calendar text-gray-500 mr-2"></i>
-                        <span class="text-sm text-gray-600" id="current-date"></span>
-                    </div>
-
-                    <!-- Online Status -->
-                    <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                        Online
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="p-4 md:p-6">
-            @yield('content')
-        </main>
-    </div>
-
-    <!-- Mobile Overlay -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-75 z-50 hidden">
-        <div class="flex items-center justify-center h-full">
-            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
-        </div>
-    </div>
-
-    <!-- Success Toast -->
-    <div id="success-toast" class="fixed top-4 right-4 z-50 hidden">
-        <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-            <i class="fas fa-check-circle mr-2"></i>
-            <span id="success-message">Berhasil!</span>
-        </div>
-    </div>
-
-    <!-- Error Toast -->
-    <div id="error-toast" class="fixed top-4 right-4 z-50 hidden">
-        <div class="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-            <i class="fas fa-exclamation-circle mr-2"></i>
-            <span id="error-message">Terjadi kesalahan!</span>
-        </div>
-    </div>
-
-    <!-- JavaScript Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.0/cdn.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-
-    <!-- Base JavaScript -->
-    <script>
-        // CSRF Token setup for AJAX
-        window.Laravel = {
-            csrfToken: '{{ csrf_token() }}'
-        };
-
-        // Set CSRF token for all AJAX requests
-        if (window.fetch) {
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options = {}) {
-                options.headers = options.headers || {};
-                options.headers['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
-                options.headers['X-Requested-With'] = 'XMLHttpRequest';
-                return originalFetch(url, options);
-            };
-        }
-
-        // Currency formatter
-        function formatCurrency(amount) {
-            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
-        }
-
-        // Date formatter
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('id-ID', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
-
-        // Show loading
-        function showLoading() {
-            document.getElementById('loading-overlay').classList.remove('hidden');
-        }
-
-        // Hide loading
-        function hideLoading() {
-            document.getElementById('loading-overlay').classList.add('hidden');
-        }
-
-        // Show success toast
-        function showSuccess(message) {
-            const toast = document.getElementById('success-toast');
-            const messageEl = document.getElementById('success-message');
-            messageEl.textContent = message;
-            toast.classList.remove('hidden');
-
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
-        }
-
-        // Show error toast
-        function showError(message) {
-            const toast = document.getElementById('error-toast');
-            const messageEl = document.getElementById('error-message');
-            messageEl.textContent = message;
-            toast.classList.remove('hidden');
-
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 5000);
-        }
-
-        // API helper function
-        async function apiRequest(url, options = {}) {
-            showLoading();
-            try {
-                const response = await fetch(url, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': window.Laravel.csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    ...options
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Terjadi kesalahan');
-                }
-
-                return data;
-            } catch (error) {
-                showError(error.message);
-                throw error;
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Mobile menu functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const sidebar = document.getElementById('sidebar');
-            const mobileOverlay = document.getElementById('mobile-overlay');
-
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', function() {
-                    sidebar.classList.toggle('sidebar-active');
-                    sidebar.classList.toggle('sidebar-inactive');
-                    mobileOverlay.classList.toggle('hidden');
-                });
-            }
-
-            if (mobileOverlay) {
-                mobileOverlay.addEventListener('click', function() {
-                    sidebar.classList.add('sidebar-inactive');
-                    sidebar.classList.remove('sidebar-active');
-                    mobileOverlay.classList.add('hidden');
-                });
-            }
-
-            // Set current date
-            const currentDateEl = document.getElementById('current-date');
-            if (currentDateEl) {
-                currentDateEl.textContent = new Date().toLocaleDateString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            }
-
-            // Load sidebar stats
-            loadSidebarStats();
-        });
-
-        // Load sidebar quick stats
-        async function loadSidebarStats() {
-            try {
-                const stats = await apiRequest('/api/stats');
-
-                const activeProjectsEl = document.getElementById('sidebar-active-projects');
-                const totalRemainingEl = document.getElementById('sidebar-total-remaining');
-
-                if (activeProjectsEl) {
-                    activeProjectsEl.textContent = stats.projects.active;
-                }
-
-                if (totalRemainingEl) {
-                    totalRemainingEl.textContent = formatCurrency(stats.financial.total_remaining);
-                }
-            } catch (error) {
-                console.error('Error loading sidebar stats:', error);
-            }
-        }
-
-        // Auto refresh sidebar stats every 5 minutes
-        setInterval(loadSidebarStats, 300000);
-
-        // Form validation helper
-        function validateForm(formId) {
-            const form = document.getElementById(formId);
-            const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
-            let isValid = true;
-
-            inputs.forEach(input => {
-                if (!input.value.trim()) {
-                    input.classList.add('border-red-500');
-                    isValid = false;
-                } else {
-                    input.classList.remove('border-red-500');
-                }
-            });
-
-            return isValid;
-        }
-
-        // Confirm delete helper
-        function confirmDelete(message = 'Apakah Anda yakin ingin menghapus data ini?') {
-            return confirm(message);
-        }
-
-        // Auto-hide alerts
-        document.addEventListener('DOMContentLoaded', function() {
-            const alerts = document.querySelectorAll('.alert-auto-hide');
-            alerts.forEach(alert => {
-                setTimeout(() => {
-                    alert.style.transition = 'opacity 0.5s ease';
-                    alert.style.opacity = '0';
-                    setTimeout(() => {
-                        alert.remove();
-                    }, 500);
-                }, 5000);
-            });
-        });
-    </script>
-
-    @stack('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

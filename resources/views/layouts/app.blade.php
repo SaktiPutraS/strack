@@ -59,6 +59,12 @@
             transform: translateY(-1px);
         }
 
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: var(--white) !important;
+            font-weight: 600;
+        }
+
         .card {
             border: none;
             border-radius: 20px;
@@ -195,6 +201,14 @@
             color: var(--lilac-secondary);
         }
 
+        .bg-lilac {
+            background-color: var(--lilac-primary);
+        }
+
+        .bg-lilac-soft {
+            background-color: var(--lilac-soft);
+        }
+
         @media (max-width: 768px) {
             .navbar-nav {
                 background: rgba(139, 92, 246, 0.95);
@@ -221,7 +235,7 @@
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="#">
+            <a class="navbar-brand" href="{{ route('dashboard') }}">
                 <i class="bi bi-kanban me-2"></i>STRACK
             </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -230,25 +244,40 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-house me-1"></i>Dashboard</a>
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                            <i class="bi bi-house me-1"></i>Dashboard
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-plus-circle me-1"></i>Proyek Baru</a>
+                        <a class="nav-link {{ request()->routeIs('projects.create') ? 'active' : '' }}" href="{{ route('projects.create') }}">
+                            <i class="bi bi-plus-circle me-1"></i>Proyek Baru
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-list-task me-1"></i>Daftar Proyek</a>
+                        <a class="nav-link {{ request()->routeIs('projects.*') && !request()->routeIs('projects.create') ? 'active' : '' }}"
+                            href="{{ route('projects.index') }}">
+                            <i class="bi bi-list-task me-1"></i>Daftar Proyek
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-people me-1"></i>Klien</a>
+                        <a class="nav-link {{ request()->routeIs('clients.*') ? 'active' : '' }}" href="{{ route('clients.index') }}">
+                            <i class="bi bi-people me-1"></i>Klien
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-currency-dollar me-1"></i>Keuangan</a>
+                        <a class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}" href="{{ route('payments.index') }}">
+                            <i class="bi bi-credit-card me-1"></i>Pembayaran
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-piggy-bank me-1"></i>Tabungan 10%</a>
+                        <a class="nav-link {{ request()->routeIs('savings.*') ? 'active' : '' }}" href="{{ route('savings.index') }}">
+                            <i class="bi bi-piggy-bank me-1"></i>Tabungan 10%
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-star me-1"></i>Testimoni</a>
+                        <a class="nav-link {{ request()->routeIs('testimonials.*') ? 'active' : '' }}" href="{{ route('testimonials.index') }}">
+                            <i class="bi bi-star me-1"></i>Testimoni
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -260,6 +289,48 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{-- Global JavaScript Functions --}}
+    <script>
+        // Format currency for Indonesian Rupiah
+        function formatCurrency(amount) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+        }
+
+        // Show loading indicator
+        function showLoading() {
+            // You can implement a loading spinner here
+            console.log('Loading...');
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            console.log('Loading complete');
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            alert('✅ ' + message);
+        }
+
+        // Show error message
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+
+        // CSRF Token for AJAX requests
+        window.Laravel = {
+            csrfToken: '{{ csrf_token() }}'
+        };
+
+        // Set default CSRF token for all AJAX requests
+        if (window.axios) {
+            window.axios.defaults.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
+        }
+    </script>
+
+    {{-- Page specific scripts --}}
+    @stack('scripts')
 </body>
 
 </html>

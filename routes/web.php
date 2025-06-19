@@ -66,17 +66,3 @@ Route::prefix('api')->group(function () {
     // Testimonial APIs
     Route::get('/testimonials/published', [TestimonialController::class, 'getPublished'])->name('api.testimonials.published');
 });
-
-// Export Routes
-Route::prefix('export')->group(function () {
-    Route::get('/projects', [ProjectController::class, 'export'])->name('projects.export');
-    Route::get('/payments', [PaymentController::class, 'export'])->name('payments.export');
-    Route::get('/clients', [ClientController::class, 'export'])->name('clients.export');
-    Route::get('/financial-report', [DashboardController::class, 'exportFinancialReport'])->name('export.financial-report');
-});
-
-// Import Routes
-Route::prefix('import')->group(function () {
-    Route::post('/projects', [ProjectController::class, 'import'])->name('projects.import');
-    Route::post('/clients', [ClientController::class, 'import'])->name('clients.import');
-});

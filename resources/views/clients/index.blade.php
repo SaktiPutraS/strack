@@ -46,88 +46,61 @@
                     </h5>
 
                     @if (isset($clients) && $clients->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach ($clients as $client)
-                                <div class="list-group-item">
-                                    <div class="d-flex align-items-start">
-                                        <div class="bg-lilac text-white rounded-circle d-flex align-items-center justify-content-center me-3"
-                                            style="width: 50px; height: 50px;">
-                                            <i class="bi bi-person-fill"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="mb-0 text-lilac">{{ $client->name }}</h6>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{{ $client->whatsapp_link }}" target="_blank" class="btn btn-sm btn-success">
-                                                        <i class="bi bi-whatsapp"></i>
-                                                    </a>
-                                                    <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('clients.edit', $client) }}" class="btn btn-sm btn-outline-secondary">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                </div>
-                                            </div>
-
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-md-4">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-telephone text-muted me-2"></i>
-                                                        <small class="text-muted">{{ $client->phone }}</small>
-                                                    </div>
-                                                </div>
-                                                @if ($client->email)
-                                                    <div class="col-md-4">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-envelope text-muted me-2"></i>
-                                                            <small class="text-muted">{{ $client->email }}</small>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                                @if ($client->address)
-                                                    <div class="col-md-4">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-geo-alt text-muted me-2"></i>
-                                                            <small class="text-muted">{{ Str::limit($client->address, 30) }}</small>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            </div>
-
-                                            <div class="row g-2">
-                                                <div class="col-md-3">
-                                                    <small class="text-muted">Total Proyek:</small>
-                                                    <div class="fw-bold text-lilac">{{ $client->projects->count() ?? 0 }}</div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <small class="text-muted">Nilai Total:</small>
-                                                    <div class="fw-bold text-success">Rp
-                                                        {{ number_format($client->total_project_value ?? 0, 0, ',', '.') }}</div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <small class="text-muted">Sudah Dibayar:</small>
-                                                    <div class="fw-bold text-primary">Rp {{ number_format($client->total_paid ?? 0, 0, ',', '.') }}</div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <small class="text-muted">Testimoni:</small>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Klien</th>
+                                        <th>Kontak</th>
+                                        <th>Total Proyek</th>
+                                        <th>Nilai Total</th>
+                                        <th>Sudah Dibayar</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($clients as $client)
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
                                                     <div>
+                                                        <strong class="text-lilac">{{ $client->name }}</strong>
                                                         @if ($client->has_testimonial)
-                                                            <span class="badge badge-success">
-                                                                <i class="bi bi-star-fill"></i> Ada
-                                                            </span>
-                                                        @else
-                                                            <span class="badge bg-secondary">
-                                                                <i class="bi bi-star"></i> Belum
+                                                            <span class="badge badge-success ms-2">
+                                                                <i class="bi bi-star-fill"></i>
                                                             </span>
                                                         @endif
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+                                            </td>
+                                            <td>
+                                                <div>{{ $client->phone }}</div>
+                                                @if ($client->email)
+                                                    <small class="text-muted">{{ $client->email }}</small>
+                                                @endif
+                                            </td>
+                                            <td>{{ $client->projects->count() ?? 0 }}</td>
+                                            <td>Rp {{ number_format($client->total_project_value ?? 0, 0, ',', '.') }}</td>
+                                            <td>Rp {{ number_format($client->total_paid ?? 0, 0, ',', '.') }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{{ $client->whatsapp_link }}" target="_blank" class="btn btn-sm btn-success"
+                                                        title="WhatsApp">
+                                                        <i class="bi bi-whatsapp"></i>
+                                                    </a>
+                                                    <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-outline-primary" title="Lihat">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('clients.edit', $client) }}" class="btn btn-sm btn-outline-secondary"
+                                                        title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
 
                         <!-- Pagination -->
@@ -138,7 +111,7 @@
                         @endif
                     @else
                         <div class="text-center py-5">
-                            <i class="bi bi-person-x text-lilac-secondary" style="font-size: 3rem;"></i>
+                            <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
                             <p class="text-muted mt-3">Tidak ada klien ditemukan</p>
                             <a href="{{ route('clients.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-circle me-2"></i>Tambah Klien Pertama

@@ -12,35 +12,22 @@
             --lilac-primary: #8B5CF6;
             --lilac-secondary: #A78BFA;
             --lilac-light: #DDD6FE;
-            --lilac-dark: #7C3AED;
             --lilac-soft: #F3F0FF;
-            --lilac-bg: #FAF8FF;
-            --white: #FFFFFF;
-            --gray-light: #F8FAFC;
-            --gray-medium: #64748B;
-            --gray-dark: #334155;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
         }
 
         body {
-            background: linear-gradient(135deg, var(--lilac-bg) 0%, var(--lilac-soft) 50%, var(--lilac-light) 100%);
+            background-color: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: var(--gray-dark);
-            min-height: 100vh;
         }
 
         .navbar {
-            background: rgba(139, 92, 246, 0.95);
+            background-color: var(--lilac-primary);
             border-bottom: 1px solid var(--lilac-secondary);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 4px 30px rgba(139, 92, 246, 0.2);
         }
 
         .navbar-brand {
             font-weight: 700;
-            color: var(--white) !important;
+            color: white !important;
             font-size: 1.5rem;
         }
 
@@ -48,42 +35,26 @@
             color: rgba(255, 255, 255, 0.9) !important;
             font-weight: 500;
             padding: 0.75rem 1rem !important;
-            border-radius: 12px;
+            border-radius: 8px;
             margin: 0 0.25rem;
-            transition: all 0.3s ease;
         }
 
         .nav-link:hover {
             background-color: rgba(255, 255, 255, 0.2);
-            color: var(--white) !important;
-            transform: translateY(-1px);
+            color: white !important;
         }
 
         .nav-link.active {
             background-color: rgba(255, 255, 255, 0.3);
-            color: var(--white) !important;
+            color: white !important;
             font-weight: 600;
         }
 
         .card {
             border: none;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(139, 92, 246, 0.1);
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(139, 92, 246, 0.25);
-            border-color: var(--lilac-secondary);
-        }
-
-        .card-body {
-            padding: 2rem;
         }
 
         .stat-card {
@@ -94,111 +65,78 @@
         .stat-value {
             font-size: 1.75rem;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-dark) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--lilac-primary);
             margin-bottom: 0.5rem;
         }
 
         .stat-label {
-            color: var(--gray-medium);
+            color: #6c757d;
             font-size: 0.9rem;
             font-weight: 500;
         }
 
         .stat-icon {
             font-size: 2rem;
-            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--lilac-primary);
             margin-bottom: 1rem;
-            opacity: 0.9;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-dark) 100%);
-            border: none;
-            border-radius: 15px;
+            background-color: var(--lilac-primary);
+            border-color: var(--lilac-primary);
+            border-radius: 8px;
             font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            transition: all 0.3s ease;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
-            background: linear-gradient(135deg, var(--lilac-dark) 0%, var(--lilac-primary) 100%);
+            background-color: var(--lilac-secondary);
+            border-color: var(--lilac-secondary);
         }
 
         .list-group-item {
             border: none;
-            border-radius: 15px !important;
-            margin-bottom: 0.75rem;
-            background: linear-gradient(135deg, var(--lilac-soft) 0%, rgba(255, 255, 255, 0.9) 100%);
-            padding: 1.25rem;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(139, 92, 246, 0.1);
-        }
-
-        .list-group-item:hover {
-            background: linear-gradient(135deg, var(--lilac-light) 0%, rgba(255, 255, 255, 0.95) 100%);
-            transform: translateX(5px);
-            border-color: var(--lilac-secondary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background-color: var(--lilac-soft);
+            padding: 1rem;
         }
 
         .badge {
-            border-radius: 25px;
+            border-radius: 20px;
             font-weight: 600;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 0.75rem;
             font-size: 0.75rem;
         }
 
         .badge-lilac {
-            background: linear-gradient(135deg, var(--lilac-secondary) 0%, var(--lilac-primary) 100%);
-            color: var(--white);
+            background-color: var(--lilac-primary);
+            color: white;
         }
 
         .badge-success {
-            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            background-color: #10b981;
         }
 
         .badge-warning {
-            background: linear-gradient(135deg, var(--warning) 0%, #D97706 100%);
+            background-color: #f59e0b;
         }
 
         .badge-danger {
-            background: linear-gradient(135deg, var(--danger) 0%, #DC2626 100%);
+            background-color: #ef4444;
         }
 
         .section-title {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-dark) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--lilac-primary);
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .section-title i {
-            font-size: 1.25rem;
-            background: linear-gradient(135deg, var(--lilac-primary) 0%, var(--lilac-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
         .text-lilac {
             color: var(--lilac-primary);
-        }
-
-        .text-lilac-secondary {
-            color: var(--lilac-secondary);
         }
 
         .bg-lilac {
@@ -210,22 +148,11 @@
         }
 
         @media (max-width: 768px) {
-            .navbar-nav {
-                background: rgba(139, 92, 246, 0.95);
-                border-radius: 15px;
-                margin-top: 1rem;
-                padding: 0.5rem;
-            }
-
             .stat-value {
                 font-size: 1.5rem;
             }
 
             .card-body {
-                padding: 1.5rem;
-            }
-
-            .stat-card {
                 padding: 1rem;
             }
         }
@@ -248,15 +175,10 @@
                             <i class="bi bi-house me-1"></i>Dashboard
                         </a>
                     </li>
+                    <!-- Merged Proyek Menu -->
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('projects.create') ? 'active' : '' }}" href="{{ route('projects.create') }}">
-                            <i class="bi bi-plus-circle me-1"></i>Proyek Baru
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('projects.*') && !request()->routeIs('projects.create') ? 'active' : '' }}"
-                            href="{{ route('projects.index') }}">
-                            <i class="bi bi-list-task me-1"></i>Daftar Proyek
+                        <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}">
+                            <i class="bi bi-list-task me-1"></i>Proyek
                         </a>
                     </li>
                     <li class="nav-item">
@@ -274,9 +196,10 @@
                             <i class="bi bi-piggy-bank me-1"></i>Tabungan 10%
                         </a>
                     </li>
+                    <!-- Simplified Testimoni Menu -->
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('testimonials.*') ? 'active' : '' }}" href="{{ route('testimonials.index') }}">
-                            <i class="bi bi-star me-1"></i>Testimoni
+                            <i class="bi bi-check-square me-1"></i>Testimoni
                         </a>
                     </li>
                 </ul>
@@ -290,46 +213,26 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- Global JavaScript Functions --}}
     <script>
-        // Format currency for Indonesian Rupiah
+        // Simple utility functions
         function formatCurrency(amount) {
             return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
         }
 
-        // Show loading indicator
-        function showLoading() {
-            // You can implement a loading spinner here
-            console.log('Loading...');
-        }
-
-        // Hide loading indicator
-        function hideLoading() {
-            console.log('Loading complete');
-        }
-
-        // Show success message
         function showSuccess(message) {
             alert('✅ ' + message);
         }
 
-        // Show error message
         function showError(message) {
             alert('❌ ' + message);
         }
 
-        // CSRF Token for AJAX requests
+        // CSRF Token for AJAX
         window.Laravel = {
             csrfToken: '{{ csrf_token() }}'
         };
-
-        // Set default CSRF token for all AJAX requests
-        if (window.axios) {
-            window.axios.defaults.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
-        }
     </script>
 
-    {{-- Page specific scripts --}}
     @stack('scripts')
 </body>
 

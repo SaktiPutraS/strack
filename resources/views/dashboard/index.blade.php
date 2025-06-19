@@ -50,44 +50,99 @@
         </div>
     </div>
 
-    <!-- Project List -->
+    <!-- Project Status Overview -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ $stats['projects']['waiting'] }}</h3>
+                    <p class="mb-0 text-muted">Menunggu</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ $stats['projects']['progress'] }}</h3>
+                    <p class="mb-0 text-muted">Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ $stats['projects']['finished'] }}</h3>
+                    <p class="mb-0 text-muted">Selesai</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-danger">{{ $stats['projects']['cancelled'] }}</h3>
+                    <p class="mb-0 text-muted">Dibatalkan</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Deadlines -->
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
                     <h5 class="section-title">
-                        <i class="bi bi-calendar-event"></i>Proyek Terdekat
+                        <i class="bi bi-calendar-event"></i>Proyek Dengan Deadline Terdekat
                     </h5>
+
                     @if ($upcomingDeadlines->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach ($upcomingDeadlines as $project)
-                                <div class="list-group-item">
-                                    <div class="d-flex align-items-start">
-                                        <i class="bi bi-folder2-open text-lilac me-3 mt-1" style="font-size: 1.25rem;"></i>
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-2 text-lilac">{{ $project->title }}</h6>
-                                            <div class="mb-2">
-                                                <span class="badge badge-lilac">
-                                                    <i class="bi bi-clock me-1"></i>{{ \Carbon\Carbon::parse($project->deadline)->diffForHumans() }}
-                                                </span>
-                                            </div>
-                                            <div class="d-flex align-items-center mb-1">
-                                                <i class="bi bi-person text-muted me-2"></i>
-                                                <p class="mb-0 text-muted">{{ $project->client->name }}</p>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-calendar3 text-muted me-2"></i>
-                                                <small class="text-muted">Deadline:
-                                                    {{ \Carbon\Carbon::parse($project->deadline)->format('d M Y') }}</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Proyek</th>
+                                        <th>Klien</th>
+                                        <th>Deadline</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($upcomingDeadlines as $project)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $project->title }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ $project->type }}</small>
+                                            </td>
+                                            <td>{{ $project->client->name }}</td>
+                                            <td>
+                                                {{ \Carbon\Carbon::parse($project->deadline)->format('d M Y') }}
+                                                <br>
+                                                <small class="text-muted">
+                                                    {{ \Carbon\Carbon::parse($project->deadline)->diffForHumans() }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @if ($project->status == 'WAITING')
+                                                    <span class="badge bg-warning">MENUNGGU</span>
+                                                @elseif($project->status == 'PROGRESS')
+                                                    <span class="badge bg-primary">PROGRESS</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('projects.show', $project) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     @else
-                        <div class="text-center py-5">
-                            <i class="bi bi-calendar-x text-lilac-secondary" style="font-size: 3rem;"></i>
+                        <div class="text-center py-4">
+                            <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
                             <p class="text-muted mt-3">Tidak ada proyek dengan deadline mendatang</p>
                         </div>
                     @endif

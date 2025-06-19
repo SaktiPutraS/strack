@@ -34,7 +34,6 @@
                                 <div class="d-flex gap-2">
                                     <select name="client_id" id="client_id" class="form-select @error('client_id') is-invalid @enderror" required>
                                         <option value="">Pilih Klien</option>
-                                        {{-- Data klien akan diambil dari controller --}}
                                         @if (isset($clients))
                                             @foreach ($clients as $client)
                                                 <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
@@ -58,17 +57,21 @@
                                     <i class="bi bi-tag text-lilac me-2"></i>
                                     Tipe Proyek <span class="text-danger">*</span>
                                 </label>
-                                <select name="type" id="type" class="form-select @error('type') is-invalid @enderror" required>
-                                    <option value="">Pilih Tipe</option>
-                                    <option value="HTML/PHP" {{ old('type') == 'HTML/PHP' ? 'selected' : '' }}>HTML/PHP</option>
-                                    <option value="LARAVEL" {{ old('type') == 'LARAVEL' ? 'selected' : '' }}>LARAVEL</option>
-                                    <option value="WORDPRESS" {{ old('type') == 'WORDPRESS' ? 'selected' : '' }}>WORDPRESS</option>
-                                    <option value="REACT" {{ old('type') == 'REACT' ? 'selected' : '' }}>REACT</option>
-                                    <option value="VUE" {{ old('type') == 'VUE' ? 'selected' : '' }}>VUE</option>
-                                    <option value="FLUTTER" {{ old('type') == 'FLUTTER' ? 'selected' : '' }}>FLUTTER</option>
-                                    <option value="MOBILE" {{ old('type') == 'MOBILE' ? 'selected' : '' }}>MOBILE</option>
-                                    <option value="OTHER" {{ old('type') == 'OTHER' ? 'selected' : '' }}>OTHER</option>
-                                </select>
+                                <div class="d-flex gap-2">
+                                    <select name="type" id="type" class="form-select @error('type') is-invalid @enderror" required>
+                                        <option value="">Pilih Tipe</option>
+                                        @if (isset($projectTypes))
+                                            @foreach ($projectTypes as $projectType)
+                                                <option value="{{ $projectType->name }}" {{ old('type') == $projectType->name ? 'selected' : '' }}>
+                                                    {{ $projectType->formatted_name }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <button type="button" class="btn btn-success" onclick="openNewProjectTypeModal()">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
                                 @error('type')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -138,7 +141,6 @@
                                 @error('total_value')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Masukkan nilai tanpa titik atau koma</div>
                             </div>
 
                             <!-- DP Amount -->
@@ -211,9 +213,6 @@
                     </a>
 
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-warning" onclick="resetForm()">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Reset
-                        </button>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle me-2"></i>Simpan Proyek
                         </button>
@@ -250,7 +249,33 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Klien</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Project Type Modal -->
+    <div class="modal fade" id="newProjectTypeModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-tag-fill me-2"></i>Tambah Tipe Proyek
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="newProjectTypeForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Tipe Proyek *</label>
+                            <input type="text" id="newProjectTypeName" class="form-control" placeholder="Contoh: Next.js, Angular" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -260,79 +285,139 @@
 
 @push('scripts')
     <script>
+        // Financial calculations
+        function updateFinancialSummary() {
+            const totalValue = parseFloat(document.getElementById('total_value').value) || 0;
+            const dpAmount = parseFloat(document.getElementById('dp_amount').value) || 0;
+            const remaining = totalValue - dpAmount;
+
+            document.getElementById('summary-total').textContent = formatCurrency(totalValue);
+            document.getElementById('summary-dp').textContent = formatCurrency(dpAmount);
+            document.getElementById('summary-remaining').textContent = formatCurrency(remaining);
+        }
+
+        // Client Modal
+        function openNewClientModal() {
+            new bootstrap.Modal(document.getElementById('newClientModal')).show();
+        }
+
+        function closeClientModal() {
+            bootstrap.Modal.getInstance(document.getElementById('newClientModal'))?.hide();
+        }
+
+        // Project Type Modal
+        function openNewProjectTypeModal() {
+            new bootstrap.Modal(document.getElementById('newProjectTypeModal')).show();
+        }
+
+        function closeProjectTypeModal() {
+            bootstrap.Modal.getInstance(document.getElementById('newProjectTypeModal'))?.hide();
+        }
+
+        // Client form submission
+        document.getElementById('newClientForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('newClientName').value.trim(),
+                phone: document.getElementById('newClientPhone').value.trim(),
+                email: document.getElementById('newClientEmail').value.trim(),
+                address: ''
+            };
+
+            if (!formData.name || !formData.phone) {
+                alert('Nama dan nomor telepon wajib diisi!');
+                return;
+            }
+
+            fetch('{{ route('api.clients.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.client) {
+                        const clientSelect = document.getElementById('client_id');
+                        const newOption = new Option(
+                            `${data.client.name} - ${data.client.phone}`,
+                            data.client.id, true, true
+                        );
+                        clientSelect.add(newOption);
+                        closeClientModal();
+                        this.reset();
+                        alert('Klien berhasil ditambahkan!');
+                    } else {
+                        alert('Gagal menyimpan klien');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menyimpan klien');
+                });
+        });
+
+        // Project Type form submission
+        document.getElementById('newProjectTypeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const typeName = document.getElementById('newProjectTypeName').value.trim();
+            if (!typeName) {
+                alert('Nama tipe proyek wajib diisi!');
+                return;
+            }
+
+            const technicalName = typeName.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_');
+            const displayName = typeName.replace(/\b\w/g, l => l.toUpperCase());
+
+            const formData = {
+                name: technicalName,
+                display_name: displayName,
+                description: `Proyek menggunakan teknologi ${displayName}`
+            };
+
+            fetch('{{ route('api.project-types.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.project_type) {
+                        const typeSelect = document.getElementById('type');
+                        const newOption = new Option(
+                            data.project_type.display_name,
+                            data.project_type.name, true, true
+                        );
+                        typeSelect.add(newOption);
+                        closeProjectTypeModal();
+                        this.reset();
+                        alert('Tipe proyek berhasil ditambahkan!');
+                    } else {
+                        alert('Gagal menyimpan tipe proyek');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menyimpan tipe proyek');
+                });
+        });
+
+        // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            // Financial calculations
-            function updateFinancialSummary() {
-                const totalValue = parseFloat(document.getElementById('total_value').value) || 0;
-                const dpAmount = parseFloat(document.getElementById('dp_amount').value) || 0;
-                const remaining = totalValue - dpAmount;
-
-                document.getElementById('summary-total').textContent = formatCurrency(totalValue);
-                document.getElementById('summary-dp').textContent = formatCurrency(dpAmount);
-                document.getElementById('summary-remaining').textContent = formatCurrency(remaining);
-
-                // Update DP percentage
-                const dpPercentage = totalValue > 0 ? ((dpAmount / totalValue) * 100).toFixed(1) : 0;
-                document.getElementById('dp-percentage').textContent = dpPercentage + '%';
-            }
-
-            // Reset form
-            function resetForm() {
-                if (confirm('Apakah Anda yakin ingin mereset form?')) {
-                    document.getElementById('project-form').reset();
-                    updateFinancialSummary();
-                }
-            }
-            window.resetForm = resetForm;
-
-            // New client modal functions
-            function openNewClientModal() {
-                const modal = new bootstrap.Modal(document.getElementById('newClientModal'));
-                modal.show();
-            }
-            window.openNewClientModal = openNewClientModal;
-
-            function closeNewClientModal() {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('newClientModal'));
-                if (modal) {
-                    modal.hide();
-                }
-                document.getElementById('newClientForm').reset();
-            }
-
-            // Handle new client form submission
-            document.getElementById('newClientForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                const formData = {
-                    name: document.getElementById('newClientName').value,
-                    phone: document.getElementById('newClientPhone').value,
-                    email: document.getElementById('newClientEmail').value,
-                };
-
-                // Simulasi penambahan klien baru
-                // Dalam implementasi nyata, ini akan melakukan AJAX call ke server
-                const clientSelect = document.getElementById('client_id');
-                const newOption = new Option(
-                    `${formData.name} - ${formData.phone}`,
-                    'new_' + Date.now(), // ID sementara
-                    true,
-                    true
-                );
-                clientSelect.add(newOption);
-
-                closeNewClientModal();
-                showSuccess('Klien baru berhasil ditambahkan!');
-            });
-
-            // Event listeners
             document.getElementById('total_value').addEventListener('input', updateFinancialSummary);
             document.getElementById('dp_amount').addEventListener('input', updateFinancialSummary);
-
-            // Initial calculation
             updateFinancialSummary();
 
-            // Set minimum deadline to tomorrow
+            // Set minimum deadline
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('deadline').min = tomorrow.toISOString().split('T')[0];
@@ -344,88 +429,20 @@
 
                 if (dpAmount > totalValue) {
                     e.preventDefault();
-                    showError('Jumlah DP tidak boleh melebihi nilai total proyek!');
+                    alert('Jumlah DP tidak boleh melebihi nilai total proyek!');
                     return false;
                 }
 
                 if (totalValue < 100000) {
                     e.preventDefault();
-                    showError('Nilai proyek minimal Rp 100.000');
+                    alert('Nilai proyek minimal Rp 100.000');
                     return false;
-                }
-
-                // Show loading while submitting
-                showLoading();
-            });
-
-            // Phone number formatting
-            const phoneInput = document.getElementById('newClientPhone');
-            if (phoneInput) {
-                phoneInput.addEventListener('input', function(e) {
-                    let value = e.target.value.replace(/\D/g, '');
-                    if (value.startsWith('0')) {
-                        // Keep Indonesian format
-                    } else if (value.startsWith('62')) {
-                        // Convert to Indonesian format
-                        value = '0' + value.substring(2);
-                    }
-                    e.target.value = value;
-                });
-            }
-
-            // Auto-suggest common project values based on type
-            const commonProjectValues = {
-                'HTML/PHP': [500000, 1000000, 1500000, 2000000],
-                'LARAVEL': [1500000, 2500000, 3500000, 5000000],
-                'WORDPRESS': [800000, 1200000, 2000000, 3000000],
-                'REACT': [2000000, 3000000, 4500000, 6000000],
-                'VUE': [1800000, 2800000, 4000000, 5500000],
-                'FLUTTER': [3000000, 5000000, 7500000, 10000000],
-                'MOBILE': [2500000, 4000000, 6000000, 8000000],
-                'OTHER': [500000, 1000000, 2000000, 3000000]
-            };
-
-            // Show suggested prices based on project type
-            document.getElementById('type').addEventListener('change', function() {
-                const selectedType = this.value;
-                if (selectedType && commonProjectValues[selectedType]) {
-                    const suggestions = commonProjectValues[selectedType];
-
-                    // Remove existing suggestion buttons
-                    const existingSuggestions = document.querySelector('#price-suggestions');
-                    if (existingSuggestions) {
-                        existingSuggestions.remove();
-                    }
-
-                    // Add price suggestion buttons
-                    const suggestionsDiv = document.createElement('div');
-                    suggestionsDiv.id = 'price-suggestions';
-                    suggestionsDiv.className = 'mt-2';
-
-                    const label = document.createElement('small');
-                    label.className = 'text-muted d-block mb-2';
-                    label.textContent = 'Saran harga untuk ' + selectedType + ':';
-                    suggestionsDiv.appendChild(label);
-
-                    const buttonGroup = document.createElement('div');
-                    buttonGroup.className = 'd-flex gap-2 flex-wrap';
-
-                    suggestions.forEach(price => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'btn btn-sm btn-outline-primary';
-                        btn.textContent = formatCurrency(price);
-                        btn.onclick = () => {
-                            document.getElementById('total_value').value = price;
-                            updateFinancialSummary();
-                        };
-                        buttonGroup.appendChild(btn);
-                    });
-
-                    suggestionsDiv.appendChild(buttonGroup);
-                    document.getElementById('total_value').parentNode.appendChild(suggestionsDiv);
                 }
             });
         });
+
+        // Make functions global
+        window.openNewClientModal = openNewClientModal;
+        window.openNewProjectTypeModal = openNewProjectTypeModal;
     </script>
 @endpush

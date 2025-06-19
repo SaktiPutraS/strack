@@ -7,6 +7,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SavingController;
 use App\Http\Controllers\TestimonialController;
+use App\Http\Controllers\ProjectTypeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,12 +19,15 @@ use Illuminate\Support\Facades\Route;
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-// Projects
+// Projects (Combined menu)
 Route::resource('projects', ProjectController::class);
 Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
 
 // Clients
 Route::resource('clients', ClientController::class);
+
+// Project Types
+Route::resource('project-types', ProjectTypeController::class)->except(['show', 'edit', 'update', 'destroy']);
 
 // Payments
 Route::resource('payments', PaymentController::class);
@@ -34,35 +38,32 @@ Route::resource('savings', SavingController::class);
 Route::patch('savings/{saving}/verify', [SavingController::class, 'verify'])->name('savings.verify');
 Route::post('savings/bulk-verify', [SavingController::class, 'bulkVerify'])->name('savings.bulk-verify');
 
-// Testimonials
-Route::resource('testimonials', TestimonialController::class);
-Route::patch('testimonials/{testimonial}/publish', [TestimonialController::class, 'togglePublish'])->name('testimonials.publish');
+// Testimonials (Simplified - just for marking projects)
+Route::resource('testimonials', TestimonialController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
 // API Routes for AJAX requests
 Route::prefix('api')->group(function () {
     // Dashboard APIs
     Route::get('/stats', [DashboardController::class, 'getStats'])->name('api.stats');
-    Route::get('/financial-chart', [DashboardController::class, 'getFinancialChart'])->name('api.financial-chart');
-    Route::get('/overdue-projects', [DashboardController::class, 'getOverdueProjects'])->name('api.overdue-projects');
-    Route::get('/quick-actions', [DashboardController::class, 'getQuickActions'])->name('api.quick-actions');
 
     // Project APIs
     Route::get('/projects/active', [ProjectController::class, 'getActiveProjects'])->name('api.projects.active');
     Route::get('/projects/deadlines', [ProjectController::class, 'getUpcomingDeadlines'])->name('api.projects.deadlines');
-    Route::get('/projects/{project}/payments', [ProjectController::class, 'getProjectPayments'])->name('api.projects.payments');
 
     // Client APIs
+    Route::post('/clients', [ClientController::class, 'store'])->name('api.clients.store');
     Route::get('/clients/search', [ClientController::class, 'search'])->name('api.clients.search');
-    Route::get('/clients/{client}/projects', [ClientController::class, 'getClientProjects'])->name('api.clients.projects');
+
+    // Project Type APIs
+    Route::post('/project-types', [ProjectTypeController::class, 'store'])->name('api.project-types.store');
+    Route::get('/project-types/active', [ProjectTypeController::class, 'getActive'])->name('api.project-types.active');
 
     // Payment APIs
     Route::get('/payments/recent', [PaymentController::class, 'getRecentPayments'])->name('api.payments.recent');
-    Route::get('/payments/monthly', [PaymentController::class, 'getMonthlyPayments'])->name('api.payments.monthly');
 
     // Saving APIs
     Route::get('/savings/balance-check', [SavingController::class, 'checkBalance'])->name('api.savings.balance-check');
-    Route::get('/savings/summary', [SavingController::class, 'getSummary'])->name('api.savings.summary');
 
-    // Testimonial APIs
-    Route::get('/testimonials/published', [TestimonialController::class, 'getPublished'])->name('api.testimonials.published');
+    // Testimonial APIs (Simplified)
+    Route::get('/testimonials/projects-needing', [TestimonialController::class, 'getProjectsNeedingTestimonials'])->name('api.testimonials.projects-needing');
 });

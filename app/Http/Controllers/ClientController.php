@@ -32,7 +32,7 @@ class ClientController extends Controller
         return view('clients.create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -43,14 +43,23 @@ class ClientController extends Controller
 
         $client = Client::create($validated);
 
+        // ✅ Handle AJAX/JSON requests
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Klien berhasil ditambahkan!',
-                'client' => $client
-            ]);
+                'client' => [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'phone' => $client->phone,
+                    'email' => $client->email,
+                    'whatsapp_link' => $client->whatsapp_link,
+                    'created_at' => $client->created_at->format('Y-m-d H:i:s'),
+                ]
+            ], 201); // 201 Created status
         }
 
+        // ✅ Handle regular form submissions
         return redirect()->route('clients.index')
             ->with('success', 'Klien berhasil ditambahkan!');
     }

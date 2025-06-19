@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\ProjectType;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -65,7 +66,36 @@ class ProjectController extends Controller
     public function create(): View
     {
         $clients = Client::orderBy('name')->get();
-        $projectTypes = ['HTML/PHP', 'LARAVEL', 'WORDPRESS', 'REACT', 'VUE', 'FLUTTER', 'MOBILE', 'OTHER'];
+
+        // Load project types from database instead of hardcoded array
+        $projectTypes = ProjectType::active()->ordered()->get();
+
+        // Fallback to default types if none exist in database
+        if ($projectTypes->isEmpty()) {
+            $defaultTypes = [
+                ['name' => 'HTML/PHP', 'display_name' => 'HTML/PHP'],
+                ['name' => 'LARAVEL', 'display_name' => 'Laravel Framework'],
+                ['name' => 'WORDPRESS', 'display_name' => 'WordPress'],
+                ['name' => 'REACT', 'display_name' => 'React.js'],
+                ['name' => 'VUE', 'display_name' => 'Vue.js'],
+                ['name' => 'FLUTTER', 'display_name' => 'Flutter'],
+                ['name' => 'MOBILE', 'display_name' => 'Mobile App'],
+                ['name' => 'OTHER', 'display_name' => 'Other'],
+            ];
+
+            // Create default types if database is empty
+            foreach ($defaultTypes as $index => $typeData) {
+                ProjectType::create([
+                    'name' => $typeData['name'],
+                    'display_name' => $typeData['display_name'],
+                    'sort_order' => ($index + 1) * 10,
+                    'is_active' => true,
+                ]);
+            }
+
+            // Reload project types
+            $projectTypes = ProjectType::active()->ordered()->get();
+        }
 
         return view('projects.create', compact('clients', 'projectTypes'));
     }

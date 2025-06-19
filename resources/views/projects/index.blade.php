@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Daftar Proyek')
+@section('title', 'Proyek')
 
 @section('content')
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="section-title">
-                    <i class="bi bi-list-task"></i>Daftar Proyek
+                    <i class="bi bi-list-task"></i>Proyek
                 </h1>
                 <a href="{{ route('projects.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-2"></i>Proyek Baru
@@ -15,41 +15,37 @@
         </div>
     </div>
 
-    <!-- Filter Cards -->
+    <!-- Quick Stats -->
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-clock stat-icon"></i>
-                    <div class="stat-value">{{ $projects->where('status', 'WAITING')->count() }}</div>
-                    <div class="stat-label">Menunggu</div>
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ $projects->where('status', 'WAITING')->count() }}</h3>
+                    <p class="mb-0 text-muted">Menunggu</p>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-play-circle stat-icon"></i>
-                    <div class="stat-value">{{ $projects->where('status', 'PROGRESS')->count() }}</div>
-                    <div class="stat-label">Dalam Progress</div>
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ $projects->where('status', 'PROGRESS')->count() }}</h3>
+                    <p class="mb-0 text-muted">Progress</p>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-check-circle stat-icon"></i>
-                    <div class="stat-value">{{ $projects->where('status', 'FINISHED')->count() }}</div>
-                    <div class="stat-label">Selesai</div>
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ $projects->where('status', 'FINISHED')->count() }}</h3>
+                    <p class="mb-0 text-muted">Selesai</p>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-x-circle stat-icon"></i>
-                    <div class="stat-value">{{ $projects->where('status', 'CANCELLED')->count() }}</div>
-                    <div class="stat-label">Dibatalkan</div>
+                <div class="card-body text-center">
+                    <h3 class="text-muted">{{ $projects->where('has_testimonial', true)->count() }}</h3>
+                    <p class="mb-0 text-muted">Ada Testimoni</p>
                 </div>
             </div>
         </div>
@@ -75,14 +71,10 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <select name="type" class="form-select">
-                                <option value="">Semua Tipe</option>
-                                @if (isset($projectTypes))
-                                    @foreach ($projectTypes as $type)
-                                        <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>{{ $type }}
-                                        </option>
-                                    @endforeach
-                                @endif
+                            <select name="has_testimonial" class="form-select">
+                                <option value="">Semua Testimoni</option>
+                                <option value="1" {{ request('has_testimonial') == '1' ? 'selected' : '' }}>Ada Testimoni</option>
+                                <option value="0" {{ request('has_testimonial') == '0' ? 'selected' : '' }}>Belum Testimoni</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -91,7 +83,8 @@
                                 @if (isset($clients))
                                     @foreach ($clients as $client)
                                         <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                            {{ $client->name }}</option>
+                                            {{ $client->name }}
+                                        </option>
                                     @endforeach
                                 @endif
                             </select>
@@ -113,99 +106,97 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="section-title">
-                        <i class="bi bi-folder2-open"></i>Proyek ({{ $projects->total() ?? $projects->count() }} total)
+                        <i class="bi bi-folder2-open"></i>Daftar Proyek ({{ $projects->total() ?? $projects->count() }} total)
                     </h5>
 
                     @if ($projects->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach ($projects as $project)
-                                <div class="list-group-item">
-                                    <div class="d-flex align-items-start">
-                                        <i class="bi bi-folder2-open text-lilac me-3 mt-1" style="font-size: 1.5rem;"></i>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="mb-0 text-lilac">{{ $project->title }}</h6>
-                                                <div class="d-flex gap-2">
-                                                    @if ($project->status == 'WAITING')
-                                                        <span class="badge badge-warning">MENUNGGU</span>
-                                                    @elseif($project->status == 'PROGRESS')
-                                                        <span class="badge" style="background: var(--lilac-primary); color: white;">PROGRESS</span>
-                                                    @elseif($project->status == 'FINISHED')
-                                                        <span class="badge badge-success">SELESAI</span>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Proyek</th>
+                                        <th>Klien</th>
+                                        <th>Tipe</th>
+                                        <th>Nilai</th>
+                                        <th>Progress</th>
+                                        <th>Deadline</th>
+                                        <th>Status</th>
+                                        <th>Testimoni</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($projects as $project)
+                                        <tr>
+                                            <td>
+                                                <strong class="text-lilac">{{ $project->title }}</strong>
+                                            </td>
+                                            <td>{{ $project->client->name }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ $project->type }}</span>
+                                            </td>
+                                            <td>{{ $project->formatted_total_value }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress me-2" style="width: 60px; height: 6px;">
+                                                        <div class="progress-bar bg-lilac" style="width: {{ $project->progress_percentage }}%"></div>
+                                                    </div>
+                                                    <small>{{ $project->progress_percentage }}%</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {{ $project->deadline->format('d M Y') }}
+                                                @if ($project->is_overdue)
+                                                    <br><small class="text-danger">Terlambat</small>
+                                                @elseif($project->is_deadline_near)
+                                                    <br><small class="text-warning">Deadline Dekat</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($project->status == 'WAITING')
+                                                    <span class="badge bg-warning">MENUNGGU</span>
+                                                @elseif($project->status == 'PROGRESS')
+                                                    <span class="badge bg-primary">PROGRESS</span>
+                                                @elseif($project->status == 'FINISHED')
+                                                    <span class="badge bg-success">SELESAI</span>
+                                                @else
+                                                    <span class="badge bg-danger">DIBATALKAN</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($project->has_testimonial)
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle"></i> Ada
+                                                    </span>
+                                                @else
+                                                    @if ($project->status == 'FINISHED')
+                                                        <a href="{{ route('testimonials.create', ['project' => $project->id]) }}"
+                                                            class="badge bg-warning text-decoration-none">
+                                                            <i class="bi bi-plus"></i> Buat
+                                                        </a>
                                                     @else
-                                                        <span class="badge badge-danger">DIBATALKAN</span>
-                                                    @endif
-                                                    <span class="badge bg-secondary">{{ $project->type }}</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="row g-2 mb-3">
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-person text-muted me-2"></i>
-                                                        <small class="text-muted">{{ $project->client->name }}</small>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-calendar3 text-muted me-2"></i>
-                                                        <small class="text-muted">{{ $project->deadline->format('d M Y') }}</small>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-currency-dollar text-muted me-2"></i>
-                                                        <small class="text-muted">{{ $project->formatted_total_value }}</small>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-graph-up text-muted me-2"></i>
-                                                        <small class="text-muted">{{ $project->progress_percentage }}% lunas</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Progress Bar -->
-                                            <div class="progress mb-2" style="height: 8px;">
-                                                <div class="progress-bar"
-                                                    style="width: {{ $project->progress_percentage }}%; background: var(--lilac-primary);"
-                                                    role="progressbar" aria-valuenow="{{ $project->progress_percentage }}" aria-valuemin="0"
-                                                    aria-valuemax="100"></div>
-                                            </div>
-
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex gap-2">
-                                                    @if ($project->is_overdue)
-                                                        <span class="badge badge-danger">
-                                                            <i class="bi bi-exclamation-triangle me-1"></i>Terlambat
-                                                        </span>
-                                                    @elseif($project->is_deadline_near)
-                                                        <span class="badge badge-warning">
-                                                            <i class="bi bi-clock me-1"></i>Deadline Dekat
+                                                        <span class="badge bg-secondary">
+                                                            <i class="bi bi-minus"></i> N/A
                                                         </span>
                                                     @endif
-
-                                                    @if ($project->has_testimonial)
-                                                        <span class="badge badge-success">
-                                                            <i class="bi bi-star me-1"></i>Ada Testimoni
-                                                        </span>
-                                                    @endif
-                                                </div>
-
+                                                @endif
+                                            </td>
+                                            <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('projects.show', $project) }}" class="btn btn-sm btn-outline-primary">
+                                                    <a href="{{ route('projects.show', $project) }}" class="btn btn-sm btn-outline-primary"
+                                                        title="Lihat">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm btn-outline-secondary">
+                                                    <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm btn-outline-secondary"
+                                                        title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
 
                         <!-- Pagination -->
@@ -216,7 +207,7 @@
                         @endif
                     @else
                         <div class="text-center py-5">
-                            <i class="bi bi-folder-x text-lilac-secondary" style="font-size: 3rem;"></i>
+                            <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
                             <p class="text-muted mt-3">Tidak ada proyek ditemukan</p>
                             <a href="{{ route('projects.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-circle me-2"></i>Buat Proyek Pertama

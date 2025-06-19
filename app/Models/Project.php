@@ -221,4 +221,30 @@ class Project extends Model
             }
         });
     }
+
+    // Add this relationship method
+    public function projectType(): BelongsTo
+    {
+        return $this->belongsTo(ProjectType::class, 'type', 'name');
+    }
+
+    // Add this accessor for type info
+    public function getTypeInfoAttribute(): ?ProjectType
+    {
+        return ProjectType::where('name', $this->type)->first();
+    }
+
+    // Add this accessor for type color
+    public function getTypeColorAttribute(): string
+    {
+        $typeInfo = $this->type_info;
+        return $typeInfo ? $typeInfo->color : '#6c757d';
+    }
+
+    // Add this accessor for type icon
+    public function getTypeIconAttribute(): string
+    {
+        $typeInfo = $this->type_info;
+        return $typeInfo ? $typeInfo->icon : 'bi-folder';
+    }
 }

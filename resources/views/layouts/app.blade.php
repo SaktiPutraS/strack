@@ -196,12 +196,6 @@
                             <i class="bi bi-piggy-bank me-1"></i>Tabungan 10%
                         </a>
                     </li>
-                    <!-- Simplified Testimoni Menu -->
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('testimonials.*') ? 'active' : '' }}" href="{{ route('testimonials.index') }}">
-                            <i class="bi bi-check-square me-1"></i>Testimoni
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>

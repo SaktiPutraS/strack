@@ -55,14 +55,6 @@ class Project extends Model
     }
 
     /**
-     * Relationship: Project has one testimonial
-     */
-    public function testimonial(): HasOne
-    {
-        return $this->hasOne(Testimonial::class);
-    }
-
-    /**
      * Get remaining amount (computed attribute)
      */
     public function getRemainingAmountAttribute(): float

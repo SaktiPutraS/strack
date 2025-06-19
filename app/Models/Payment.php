@@ -1,5 +1,5 @@
 <?php
-// app/Models/Payment.php
+// app/Models/Payment.php - Updated boot method
 
 namespace App\Models;
 
@@ -118,14 +118,14 @@ class Payment extends Model
     {
         parent::boot();
 
-        // Create saving record when payment is created
+        // Create PENDING saving record when payment is created
         static::created(function ($payment) {
             Saving::create([
                 'payment_id' => $payment->id,
                 'amount' => $payment->saving_amount,
-                'bank_balance' => 0, // Will be updated manually
                 'transaction_date' => $payment->payment_date,
-                'notes' => "Auto generated from payment: {$payment->project->title}"
+                'status' => 'PENDING', // Not transferred yet
+                'notes' => "10% tabungan dari pembayaran: {$payment->project->title}"
             ]);
         });
 
@@ -138,6 +138,10 @@ class Payment extends Model
 
         // Update project's paid_amount when payment is deleted
         static::deleted(function ($payment) {
+            // Delete associated saving record
+            $payment->savingRecord?->delete();
+
+            // Update project paid amount
             $project = $payment->project;
             $project->paid_amount = $project->payments()->sum('amount');
             $project->saveQuietly();

@@ -237,40 +237,37 @@
                 </div>
             </div>
 
-            <!-- Testimonial -->
-            @if ($project->testimonial)
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="section-title">
-                            <i class="bi bi-star"></i>Testimoni
-                        </h6>
 
-                        <div class="mb-2">
-                            @for ($i = 1; $i <= 5; $i++)
-                                <i class="bi bi-star{{ $i <= $project->testimonial->rating ? '-fill' : '' }} text-warning"></i>
-                            @endfor
-                            <small class="text-muted ms-2">{{ $project->testimonial->rating }}/5</small>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="section-title">
+                        <i class="bi bi-star"></i>Status Testimoni
+                    </h6>
+
+                    @if ($project->has_testimonial)
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Proyek ini sudah ada testimoni
                         </div>
-
-                        <blockquote class="blockquote">
-                            <p class="mb-0 small">"{{ $project->testimonial->content }}"</p>
-                            <footer class="blockquote-footer mt-2">
-                                <cite title="Source Title">{{ $project->client->name }}</cite>
-                            </footer>
-                        </blockquote>
-
-                        @if ($project->testimonial->is_published)
-                            <span class="badge badge-success">
-                                <i class="bi bi-check-circle me-1"></i>Dipublikasikan
-                            </span>
-                        @else
-                            <span class="badge badge-warning">
-                                <i class="bi bi-clock me-1"></i>Draft
-                            </span>
+                        @if ($project->status === 'FINISHED')
+                            <button class="btn btn-outline-warning btn-sm" onclick="toggleTestimonial({{ $project->id }})">
+                                <i class="bi bi-x-circle me-1"></i>Tandai Belum Ada
+                            </button>
                         @endif
-                    </div>
+                    @else
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Proyek ini belum ada testimoni
+                        </div>
+                        @if ($project->status === 'FINISHED')
+                            <button class="btn btn-success btn-sm" onclick="toggleTestimonial({{ $project->id }})">
+                                <i class="bi bi-check-circle me-1"></i>Tandai Sudah Ada
+                            </button>
+                        @endif
+                    @endif
                 </div>
-            @endif
+            </div>
+
         </div>
     </div>
 @endsection

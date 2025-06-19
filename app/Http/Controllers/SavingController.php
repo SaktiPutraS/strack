@@ -1,8 +1,10 @@
 <?php
+// app/Http/Controllers/SavingController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Saving;
+use App\Models\BankBalance;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +17,7 @@ class SavingController extends Controller
     {
         $query = Saving::with(['payment.project.client']);
 
+        // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('transaction_date', '>=', $request->date_from);
         }
@@ -23,8 +26,9 @@ class SavingController extends Controller
             $query->whereDate('transaction_date', '<=', $request->date_to);
         }
 
-        if ($request->filled('is_verified')) {
-            $query->where('is_verified', $request->is_verified);
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         $sortBy = $request->get('sort', 'transaction_date');
@@ -33,7 +37,10 @@ class SavingController extends Controller
 
         $savings = $query->paginate(15)->withQueryString();
 
+        // Calculate statistics
         $totalSavings = Saving::getTotalSavings();
+        $pendingSavings = Saving::getPendingSavings();
+        $transferredSavings = Saving::getTransferredSavings();
         $currentBankBalance = Saving::getCurrentBankBalance();
         $isBalanced = Saving::isSavingsBalanced();
         $difference = Saving::getSavingsDifference();
@@ -45,35 +52,13 @@ class SavingController extends Controller
         return view('savings.index', compact(
             'savings',
             'totalSavings',
+            'pendingSavings',
+            'transferredSavings',
             'currentBankBalance',
             'isBalanced',
             'difference',
             'monthlySavings'
         ));
-    }
-
-    public function create(): View
-    {
-        return view('savings.create');
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'payment_id' => 'required|exists:payments,id',
-            'amount' => 'required|numeric|min:0',
-            'bank_balance' => 'required|numeric|min:0',
-            'transaction_date' => 'required|date',
-            'notes' => 'nullable|string',
-            'is_verified' => 'boolean',
-        ]);
-
-        $validated['is_verified'] = $request->has('is_verified');
-
-        Saving::create($validated);
-
-        return redirect()->route('savings.index')
-            ->with('success', 'Data tabungan berhasil ditambahkan!');
     }
 
     public function show(Saving $saving): View
@@ -91,13 +76,9 @@ class SavingController extends Controller
     {
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
-            'bank_balance' => 'required|numeric|min:0',
             'transaction_date' => 'required|date',
             'notes' => 'nullable|string',
-            'is_verified' => 'boolean',
         ]);
-
-        $validated['is_verified'] = $request->has('is_verified');
 
         $saving->update($validated);
 
@@ -113,109 +94,177 @@ class SavingController extends Controller
             ->with('success', 'Data tabungan berhasil dihapus!');
     }
 
-    public function verify(Saving $saving): JsonResponse
+    /**
+     * Get pending savings for transfer selection
+     */
+    public function getPendingSavings(): JsonResponse
     {
-        $saving->update(['is_verified' => true]);
+        $pendingSavings = Saving::with(['payment.project.client'])
+            ->where('status', 'PENDING')
+            ->orderBy('transaction_date', 'asc')
+            ->get()
+            ->map(function ($saving) {
+                return [
+                    'id' => $saving->id,
+                    'amount' => $saving->amount,
+                    'formatted_amount' => $saving->formatted_amount,
+                    'transaction_date' => $saving->transaction_date->format('d M Y'),
+                    'project_title' => $saving->payment->project->title,
+                    'client_name' => $saving->payment->project->client->name,
+                    'payment_type' => $saving->payment->payment_type,
+                ];
+            });
+
+        $totalPending = $pendingSavings->sum('amount');
 
         return response()->json([
-            'success' => true,
-            'message' => 'Tabungan berhasil diverifikasi!',
-            'saving' => $saving->load(['payment.project.client'])
+            'pending_savings' => $pendingSavings,
+            'total_pending' => $totalPending,
+            'formatted_total_pending' => 'Rp ' . number_format($totalPending, 0, ',', '.'),
+            'count' => $pendingSavings->count()
         ]);
     }
 
-    public function bulkVerify(): JsonResponse
+    /**
+     * Transfer selected savings to bank
+     */
+    public function transferToBank(Request $request): JsonResponse
     {
-        $unverifiedSavings = Saving::where('is_verified', false)->get();
-        $count = $unverifiedSavings->count();
+        $validated = $request->validate([
+            'saving_ids' => 'required|array|min:1',
+            'saving_ids.*' => 'exists:savings,id',
+            'transfer_date' => 'required|date|before_or_equal:today',
+            'transfer_method' => 'required|string|max:255',
+            'transfer_reference' => 'nullable|string|max:255',
+            'notes' => 'nullable|string'
+        ]);
 
-        Saving::where('is_verified', false)->update(['is_verified' => true]);
+        // Get selected savings
+        $selectedSavings = Saving::whereIn('id', $validated['saving_ids'])
+            ->where('status', 'PENDING')
+            ->get();
+
+        if ($selectedSavings->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada tabungan pending yang dipilih'
+            ], 400);
+        }
+
+        $totalAmount = $selectedSavings->sum('amount');
+
+        // Update savings status to TRANSFERRED
+        Saving::whereIn('id', $validated['saving_ids'])->update([
+            'status' => 'TRANSFERRED',
+            'transfer_date' => $validated['transfer_date'],
+            'transfer_method' => $validated['transfer_method'],
+            'transfer_reference' => $validated['transfer_reference'],
+            'notes' => ($validated['notes'] ?? '') . " (Batch transfer)",
+        ]);
+
+        // Update or create bank balance record
+        $currentBalance = BankBalance::getLatestBalance($validated['transfer_method']);
+        $newBalance = $currentBalance + $totalAmount;
+
+        BankBalance::recordBalance(
+            $newBalance,
+            $validated['transfer_method'],
+            "Transfer batch {$selectedSavings->count()} tabungan - Total: Rp " . number_format($totalAmount, 0, ',', '.')
+        );
 
         return response()->json([
             'success' => true,
-            'message' => "Berhasil memverifikasi {$count} tabungan!",
-            'verified_count' => $count
+            'message' => "Berhasil transfer {$selectedSavings->count()} tabungan sebesar Rp " . number_format($totalAmount, 0, ',', '.'),
+            'transferred_count' => $selectedSavings->count(),
+            'total_amount' => $totalAmount,
+            'formatted_amount' => 'Rp ' . number_format($totalAmount, 0, ',', '.'),
+            'new_bank_balance' => $newBalance
         ]);
     }
 
+    /**
+     * Update bank balance manually
+     */
     public function updateBankBalance(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'bank_balance' => 'required|numeric|min:0',
+            'balance' => 'required|numeric|min:0',
+            'bank_name' => 'required|string|in:Bank Octo,BCA,Mandiri,Other',
+            'balance_date' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string',
         ]);
 
-        $latestSaving = Saving::latest('transaction_date')->first();
-
-        if ($latestSaving) {
-            Saving::create([
-                'payment_id' => $latestSaving->payment_id,
-                'amount' => 0,
-                'bank_balance' => $validated['bank_balance'],
-                'transaction_date' => Carbon::now(),
-                'notes' => $validated['notes'] ?? 'Update saldo bank manual',
-                'is_verified' => true
-            ]);
-        }
+        BankBalance::create([
+            'balance' => $validated['balance'],
+            'balance_date' => $validated['balance_date'],
+            'bank_name' => $validated['bank_name'],
+            'notes' => $validated['notes'] ?: 'Manual bank balance update',
+            'is_verified' => true
+        ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Saldo bank berhasil diperbarui!',
-            'new_balance' => $validated['bank_balance']
+            'new_balance' => $validated['balance'],
+            'formatted_balance' => 'Rp ' . number_format($validated['balance'], 0, ',', '.')
         ]);
     }
 
+    /**
+     * Check balance status
+     */
     public function checkBalance(): JsonResponse
     {
         $totalSavings = Saving::getTotalSavings();
+        $pendingSavings = Saving::getPendingSavings();
+        $transferredSavings = Saving::getTransferredSavings();
         $currentBankBalance = Saving::getCurrentBankBalance();
         $isBalanced = Saving::isSavingsBalanced();
         $difference = Saving::getSavingsDifference();
 
         return response()->json([
             'total_savings' => $totalSavings,
+            'pending_savings' => $pendingSavings,
+            'transferred_savings' => $transferredSavings,
             'current_bank_balance' => $currentBankBalance,
             'is_balanced' => $isBalanced,
             'difference' => $difference,
             'formatted_total_savings' => 'Rp ' . number_format($totalSavings, 0, ',', '.'),
+            'formatted_pending_savings' => 'Rp ' . number_format($pendingSavings, 0, ',', '.'),
+            'formatted_transferred_savings' => 'Rp ' . number_format($transferredSavings, 0, ',', '.'),
             'formatted_bank_balance' => 'Rp ' . number_format($currentBankBalance, 0, ',', '.'),
             'formatted_difference' => 'Rp ' . number_format(abs($difference), 0, ',', '.')
         ]);
     }
 
-    public function getSummary(): JsonResponse
+    /**
+     * Get transfer history
+     */
+    public function getTransferHistory(): JsonResponse
     {
-        $currentYear = Carbon::now()->year;
-        $currentMonth = Carbon::now()->month;
+        $transfers = Saving::with(['payment.project.client'])
+            ->where('status', 'TRANSFERRED')
+            ->orderBy('transfer_date', 'desc')
+            ->get()
+            ->groupBy('transfer_date')
+            ->map(function ($group, $date) {
+                return [
+                    'transfer_date' => Carbon::parse($date)->format('d M Y'),
+                    'count' => $group->count(),
+                    'total_amount' => $group->sum('amount'),
+                    'formatted_amount' => 'Rp ' . number_format($group->sum('amount'), 0, ',', '.'),
+                    'transfer_method' => $group->first()->transfer_method,
+                    'reference' => $group->first()->transfer_reference,
+                    'savings' => $group->map(function ($saving) {
+                        return [
+                            'amount' => $saving->formatted_amount,
+                            'project' => $saving->payment->project->title,
+                            'client' => $saving->payment->project->client->name,
+                        ];
+                    })
+                ];
+            })->values();
 
-        $monthlySavings = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $total = Saving::whereYear('transaction_date', $date->year)
-                ->whereMonth('transaction_date', $date->month)
-                ->sum('amount');
-
-            $monthlySavings[] = [
-                'month' => $date->format('M Y'),
-                'total' => $total,
-                'formatted_total' => 'Rp ' . number_format($total, 0, ',', '.')
-            ];
-        }
-
-        $yearlySavings = Saving::whereYear('transaction_date', $currentYear)->sum('amount');
-        $averageMonthlySavings = $yearlySavings / $currentMonth;
-
-        $verifiedCount = Saving::where('is_verified', true)->count();
-        $unverifiedCount = Saving::where('is_verified', false)->count();
-
-        return response()->json([
-            'monthly_savings' => $monthlySavings,
-            'yearly_savings' => $yearlySavings,
-            'average_monthly_savings' => $averageMonthlySavings,
-            'verified_count' => $verifiedCount,
-            'unverified_count' => $unverifiedCount,
-            'formatted_yearly_savings' => 'Rp ' . number_format($yearlySavings, 0, ',', '.'),
-            'formatted_average_monthly' => 'Rp ' . number_format($averageMonthlySavings, 0, ',', '.')
-        ]);
+        return response()->json($transfers);
     }
 }

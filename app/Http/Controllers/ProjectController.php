@@ -143,7 +143,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project): View
     {
-        $project->load(['client', 'payments', 'testimonial']);
+        $project->load(['client', 'payments']);
 
         // Calculate additional metrics
         $totalPayments = $project->payments()->count();
@@ -324,6 +324,24 @@ class ProjectController extends Controller
                 'progress_percentage' => $project->progress_percentage,
             ],
             'payments' => $payments
+        ]);
+    }
+
+    /**
+     * Toggle testimonial status
+     */
+    public function toggleTestimonial(Request $request, Project $project): JsonResponse
+    {
+        $project->update([
+            'has_testimonial' => !$project->has_testimonial
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $project->has_testimonial
+                ? 'Proyek ditandai sudah ada testimoni'
+                : 'Proyek ditandai belum ada testimoni',
+            'has_testimonial' => $project->has_testimonial
         ]);
     }
 }

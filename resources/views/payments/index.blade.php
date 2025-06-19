@@ -19,37 +19,33 @@
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-cash-stack stat-icon"></i>
-                    <div class="stat-value">Rp {{ number_format($totalPayments ?? 0, 0, ',', '.') }}</div>
-                    <div class="stat-label">Total Pembayaran</div>
+                <div class="card-body text-center">
+                    <h3 class="text-primary">Rp {{ number_format($totalPayments ?? 0, 0, ',', '.') }}</h3>
+                    <p class="mb-0 text-muted">Total Pembayaran</p>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-piggy-bank stat-icon"></i>
-                    <div class="stat-value">Rp {{ number_format($totalSavings ?? 0, 0, ',', '.') }}</div>
-                    <div class="stat-label">Total Tabungan 10%</div>
+                <div class="card-body text-center">
+                    <h3 class="text-success">Rp {{ number_format($totalSavings ?? 0, 0, ',', '.') }}</h3>
+                    <p class="mb-0 text-muted">Total Tabungan 10%</p>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-calendar-month stat-icon"></i>
-                    <div class="stat-value">Rp {{ number_format($monthlyIncome ?? 0, 0, ',', '.') }}</div>
-                    <div class="stat-label">Pendapatan Bulan Ini</div>
+                <div class="card-body text-center">
+                    <h3 class="text-warning">Rp {{ number_format($monthlyIncome ?? 0, 0, ',', '.') }}</h3>
+                    <p class="mb-0 text-muted">Pendapatan Bulan Ini</p>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-3">
             <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-list-ol stat-icon"></i>
-                    <div class="stat-value">{{ $paymentCount ?? 0 }}</div>
-                    <div class="stat-label">Total Transaksi</div>
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ $paymentCount ?? 0 }}</h3>
+                    <p class="mb-0 text-muted">Total Transaksi</p>
                 </div>
             </div>
         </div>
@@ -101,91 +97,65 @@
                     </h5>
 
                     @if (isset($payments) && $payments->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach ($payments as $payment)
-                                <div class="list-group-item">
-                                    <div class="d-flex align-items-start">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
-                                            style="width: 50px; height: 50px; background: var(--lilac-light); color: var(--lilac-primary);">
-                                            <i class="bi bi-credit-card"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <h6 class="mb-1 text-lilac">{{ $payment->project->title }}</h6>
-                                                    <small class="text-muted">{{ $payment->project->client->name }}</small>
-                                                </div>
-                                                <div class="text-end">
-                                                    <div class="fw-bold text-success fs-5">{{ $payment->formatted_amount }}</div>
-                                                    @if ($payment->payment_type == 'DP')
-                                                        <span class="badge" style="background: var(--lilac-secondary); color: white;">DP</span>
-                                                    @elseif($payment->payment_type == 'INSTALLMENT')
-                                                        <span class="badge badge-warning">CICILAN</span>
-                                                    @elseif($payment->payment_type == 'FULL')
-                                                        <span class="badge badge-success">LUNAS</span>
-                                                    @else
-                                                        <span class="badge badge-success">FINAL</span>
-                                                    @endif
-                                                </div>
-                                            </div>
-
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-calendar3 text-muted me-2"></i>
-                                                        <small class="text-muted">{{ $payment->payment_date->format('d M Y') }}</small>
-                                                    </div>
-                                                </div>
-                                                @if ($payment->payment_method)
-                                                    <div class="col-md-3">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-credit-card text-muted me-2"></i>
-                                                            <small class="text-muted">{{ $payment->payment_method }}</small>
-                                                        </div>
-                                                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Proyek</th>
+                                        <th>Klien</th>
+                                        <th>Jumlah</th>
+                                        <th>Tipe</th>
+                                        <th>Metode</th>
+                                        <th>Tabungan 10%</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($payments as $payment)
+                                        <tr>
+                                            <td>{{ $payment->payment_date->format('d M Y') }}</td>
+                                            <td>
+                                                <strong class="text-lilac">{{ $payment->project->title }}</strong>
+                                                @if ($payment->notes)
+                                                    <br><small class="text-muted">{{ Str::limit($payment->notes, 50) }}</small>
                                                 @endif
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-piggy-bank text-muted me-2"></i>
-                                                        <small class="text-success">Tabungan: {{ $payment->formatted_saving_amount }}</small>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-graph-up text-muted me-2"></i>
-                                                        <small class="text-muted">Progress: {{ $payment->project->progress_percentage }}%</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            @if ($payment->notes)
-                                                <div class="mb-2">
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-journal-text me-1"></i>
-                                                        {{ $payment->notes }}
-                                                    </small>
-                                                </div>
-                                            @endif
-
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="progress flex-grow-1 me-3" style="height: 6px;">
-                                                    <div class="progress-bar"
-                                                        style="width: {{ $payment->project->progress_percentage }}%; background: var(--lilac-primary);"
-                                                        role="progressbar"></div>
-                                                </div>
+                                            </td>
+                                            <td>{{ $payment->project->client->name }}</td>
+                                            <td>
+                                                <strong class="text-success">{{ $payment->formatted_amount }}</strong>
+                                            </td>
+                                            <td>
+                                                @if ($payment->payment_type == 'DP')
+                                                    <span class="badge" style="background: var(--lilac-secondary); color: white;">DP</span>
+                                                @elseif($payment->payment_type == 'INSTALLMENT')
+                                                    <span class="badge bg-warning">CICILAN</span>
+                                                @elseif($payment->payment_type == 'FULL')
+                                                    <span class="badge bg-success">LUNAS</span>
+                                                @else
+                                                    <span class="badge bg-success">FINAL</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $payment->payment_method ?? '-' }}</td>
+                                            <td>
+                                                <span class="text-success">{{ $payment->formatted_saving_amount }}</span>
+                                            </td>
+                                            <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('projects.show', $payment->project) }}" class="btn btn-sm btn-outline-primary">
+                                                    <a href="{{ route('projects.show', $payment->project) }}" class="btn btn-sm btn-outline-primary"
+                                                        title="Lihat Proyek">
                                                         <i class="bi bi-folder2-open"></i>
                                                     </a>
-                                                    <a href="{{ route('payments.edit', $payment) }}" class="btn btn-sm btn-outline-secondary">
+                                                    <a href="{{ route('payments.edit', $payment) }}" class="btn btn-sm btn-outline-secondary"
+                                                        title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
 
                         <!-- Pagination -->
@@ -196,7 +166,7 @@
                         @endif
                     @else
                         <div class="text-center py-5">
-                            <i class="bi bi-credit-card-2-front text-lilac-secondary" style="font-size: 3rem;"></i>
+                            <i class="bi bi-credit-card-2-front text-muted" style="font-size: 3rem;"></i>
                             <p class="text-muted mt-3">Tidak ada pembayaran ditemukan</p>
                             <a href="{{ route('payments.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-circle me-2"></i>Tambah Pembayaran Pertama

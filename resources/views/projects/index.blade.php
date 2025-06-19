@@ -51,17 +51,17 @@
         </div>
     </div>
 
-    <!-- Search and Filter -->
+    <!-- Simplified Search and Filter -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
                     <form method="GET" class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <input type="text" name="search" class="form-control" placeholder="Cari proyek atau klien..."
                                 value="{{ request('search') }}">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <select name="status" class="form-select">
                                 <option value="">Semua Status</option>
                                 <option value="WAITING" {{ request('status') == 'WAITING' ? 'selected' : '' }}>Menunggu</option>
@@ -70,28 +70,9 @@
                                 <option value="CANCELLED" {{ request('status') == 'CANCELLED' ? 'selected' : '' }}>Dibatalkan</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <select name="has_testimonial" class="form-select">
-                                <option value="">Semua Testimoni</option>
-                                <option value="1" {{ request('has_testimonial') == '1' ? 'selected' : '' }}>Ada Testimoni</option>
-                                <option value="0" {{ request('has_testimonial') == '0' ? 'selected' : '' }}>Belum Testimoni</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select name="client_id" class="form-select">
-                                <option value="">Semua Klien</option>
-                                @if (isset($clients))
-                                    @foreach ($clients as $client)
-                                        <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                            {{ $client->name }}
-                                        </option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search"></i> Filter
+                                <i class="bi bi-search"></i> Cari
                             </button>
                         </div>
                     </form>
@@ -165,15 +146,16 @@
                                             </td>
                                             <td>
                                                 @if ($project->has_testimonial)
-                                                    <span class="badge bg-success">
+                                                    <button class="btn btn-sm btn-success" onclick="toggleTestimonial({{ $project->id }}, false)"
+                                                        title="Klik untuk tandai belum ada">
                                                         <i class="bi bi-check-circle"></i> Ada
-                                                    </span>
+                                                    </button>
                                                 @else
                                                     @if ($project->status == 'FINISHED')
-                                                        <a href="{{ route('testimonials.create', ['project' => $project->id]) }}"
-                                                            class="badge bg-warning text-decoration-none">
-                                                            <i class="bi bi-plus"></i> Buat
-                                                        </a>
+                                                        <button class="btn btn-sm btn-warning" onclick="toggleTestimonial({{ $project->id }}, true)"
+                                                            title="Klik untuk tandai sudah ada">
+                                                            <i class="bi bi-plus"></i> Tandai
+                                                        </button>
                                                     @else
                                                         <span class="badge bg-secondary">
                                                             <i class="bi bi-minus"></i> N/A
@@ -219,3 +201,35 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function toggleTestimonial(projectId, hasTestimonial) {
+            const message = hasTestimonial ?
+                'Tandai proyek ini sudah ada testimoni?' :
+                'Tandai proyek ini belum ada testimoni?';
+
+            if (confirm(message)) {
+                fetch(`/projects/${projectId}/testimonial`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Gagal mengubah status testimoni');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan');
+                    });
+            }
+        }
+    </script>
+@endpush

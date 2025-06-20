@@ -82,7 +82,8 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
                                     <input type="number" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount"
-                                        value="{{ old('amount') }}" min="1" step="1000" placeholder="0" required>
+                                        value="{{ old('amount') }}" min="0" step="1000" placeholder="0" required>
+
                                 </div>
                                 @error('amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -312,59 +313,6 @@
                 updateProjectInfo();
             }
 
-            // Quick amount buttons
-            function addQuickAmountButtons() {
-                const selectedOption = projectSelect.options[projectSelect.selectedIndex];
-                if (selectedOption.value) {
-                    const remaining = parseFloat(selectedOption.dataset.remaining) || 0;
-                    const total = parseFloat(selectedOption.dataset.total) || 0;
-
-                    const quickAmounts = [{
-                            label: '25%',
-                            value: Math.round(total * 0.25)
-                        },
-                        {
-                            label: '50%',
-                            value: Math.round(total * 0.50)
-                        },
-                        {
-                            label: 'Sisa',
-                            value: remaining
-                        }
-                    ];
-
-                    // Remove existing buttons
-                    const existingButtons = document.querySelector('#quick-amounts');
-                    if (existingButtons) {
-                        existingButtons.remove();
-                    }
-
-                    // Add new buttons
-                    const buttonsDiv = document.createElement('div');
-                    buttonsDiv.id = 'quick-amounts';
-                    buttonsDiv.className = 'mt-2';
-
-                    quickAmounts.forEach(qa => {
-                        if (qa.value > 0 && qa.value <= remaining) {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'btn btn-sm btn-outline-secondary me-2';
-                            btn.textContent = qa.label;
-                            btn.onclick = () => {
-                                amountInput.value = qa.value;
-                                updateSavingsPreview();
-                            };
-                            buttonsDiv.appendChild(btn);
-                        }
-                    });
-
-                    if (buttonsDiv.children.length > 0) {
-                        amountInput.parentNode.appendChild(buttonsDiv);
-                    }
-                }
-            }
-
-            projectSelect.addEventListener('change', addQuickAmountButtons);
         });
     </script>
 @endpush

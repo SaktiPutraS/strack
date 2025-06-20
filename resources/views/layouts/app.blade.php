@@ -156,6 +156,24 @@
                 padding: 1rem;
             }
         }
+
+        /* Override pagination Tailwind dengan Bootstrap */
+        nav[role="navigation"] {
+            display: none !important;
+        }
+
+        .bootstrap-pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .pagination-info-alt {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 
@@ -175,7 +193,6 @@
                             <i class="bi bi-house me-1"></i>Dashboard
                         </a>
                     </li>
-                    <!-- Merged Proyek Menu -->
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}">
                             <i class="bi bi-list-task me-1"></i>Proyek

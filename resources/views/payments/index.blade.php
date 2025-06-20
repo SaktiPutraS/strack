@@ -158,10 +158,56 @@
                             </table>
                         </div>
 
-                        <!-- Pagination -->
                         @if (method_exists($payments, 'links'))
-                            <div class="d-flex justify-content-center mt-4">
-                                {{ $payments->links() }}
+                            <div class="mt-4">
+                                <div style="display: none;">
+                                    {{ $payments->links() }}
+                                </div>
+
+                                <div class="pagination-info-alt">
+                                    Menampilkan {{ $payments->firstItem() }}-{{ $payments->lastItem() }}
+                                    dari {{ $payments->total() }} proyek
+                                </div>
+
+                                <nav class="bootstrap-pagination">
+                                    <ul class="pagination">
+                                        @if ($payments->onFirstPage())
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $payments->previousPageUrl() }}">
+                                                    <i class="bi bi-chevron-left"></i>
+                                                </a>
+                                            </li>
+                                        @endif
+
+                                        @for ($i = 1; $i <= $payments->lastPage(); $i++)
+                                            @if ($i == $payments->currentPage())
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ $i }}</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ $payments->url($i) }}">{{ $i }}</a>
+                                                </li>
+                                            @endif
+                                        @endfor
+
+                                        @if ($payments->hasMorePages())
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $payments->nextPageUrl() }}">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        @else
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </nav>
                             </div>
                         @endif
                     @else

@@ -103,10 +103,56 @@
                             </table>
                         </div>
 
-                        <!-- Pagination -->
                         @if (method_exists($clients, 'links'))
-                            <div class="d-flex justify-content-center mt-4">
-                                {{ $clients->links() }}
+                            <div class="mt-4">
+                                <div style="display: none;">
+                                    {{ $clients->links() }}
+                                </div>
+
+                                <div class="pagination-info-alt">
+                                    Menampilkan {{ $clients->firstItem() }}-{{ $clients->lastItem() }}
+                                    dari {{ $clients->total() }} proyek
+                                </div>
+
+                                <nav class="bootstrap-pagination">
+                                    <ul class="pagination">
+                                        @if ($clients->onFirstPage())
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $clients->previousPageUrl() }}">
+                                                    <i class="bi bi-chevron-left"></i>
+                                                </a>
+                                            </li>
+                                        @endif
+
+                                        @for ($i = 1; $i <= $clients->lastPage(); $i++)
+                                            @if ($i == $clients->currentPage())
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ $i }}</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ $clients->url($i) }}">{{ $i }}</a>
+                                                </li>
+                                            @endif
+                                        @endfor
+
+                                        @if ($clients->hasMorePages())
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $clients->nextPageUrl() }}">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        @else
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </nav>
                             </div>
                         @endif
                     @else

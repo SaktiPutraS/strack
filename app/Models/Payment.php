@@ -1,5 +1,5 @@
 <?php
-// app/Models/Payment.php - Updated boot method
+// app/Models/Payment.php - NO automatic savings creation
 
 namespace App\Models;
 
@@ -118,16 +118,8 @@ class Payment extends Model
     {
         parent::boot();
 
-        // Create PENDING saving record when payment is created
-        static::created(function ($payment) {
-            Saving::create([
-                'payment_id' => $payment->id,
-                'amount' => $payment->saving_amount,
-                'transaction_date' => $payment->payment_date,
-                'status' => 'PENDING', // Not transferred yet
-                'notes' => "10% tabungan dari pembayaran: {$payment->project->title}"
-            ]);
-        });
+        // ❌ REMOVED: No automatic saving creation
+        // User will manually create savings records when needed
 
         // Update project's paid_amount when payment is saved
         static::saved(function ($payment) {
@@ -138,7 +130,7 @@ class Payment extends Model
 
         // Update project's paid_amount when payment is deleted
         static::deleted(function ($payment) {
-            // Delete associated saving record
+            // Delete associated saving record if exists
             $payment->savingRecord?->delete();
 
             // Update project paid amount

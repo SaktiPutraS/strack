@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class Saving extends Model
 {
@@ -43,7 +44,12 @@ class Saving extends Model
      */
     public static function getTotalSavings(): float
     {
-        return static::sum('amount');
+        try {
+            return static::sum('amount') ?? 0;
+        } catch (\Exception $e) {
+            Log::error('Error getting total savings: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -51,7 +57,12 @@ class Saving extends Model
      */
     public static function getPendingSavings(): float
     {
-        return static::where('status', 'PENDING')->sum('amount');
+        try {
+            return static::where('status', 'PENDING')->sum('amount') ?? 0;
+        } catch (\Exception $e) {
+            Log::error('Error getting pending savings: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -59,7 +70,12 @@ class Saving extends Model
      */
     public static function getTransferredSavings(): float
     {
-        return static::where('status', 'TRANSFERRED')->sum('amount');
+        try {
+            return static::where('status', 'TRANSFERRED')->sum('amount') ?? 0;
+        } catch (\Exception $e) {
+            Log::error('Error getting transferred savings: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -67,8 +83,13 @@ class Saving extends Model
      */
     public static function getCurrentBankBalance(): float
     {
-        $latestBalance = \App\Models\BankBalance::latest('balance_date')->first();
-        return $latestBalance ? $latestBalance->balance : 0;
+        try {
+            $latestBalance = \App\Models\BankBalance::latest('balance_date')->first();
+            return $latestBalance ? $latestBalance->balance : 0;
+        } catch (\Exception $e) {
+            Log::error('Error getting current bank balance: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -76,11 +97,16 @@ class Saving extends Model
      */
     public static function isSavingsBalanced(): bool
     {
-        $transferredSavings = static::getTransferredSavings();
-        $bankBalance = static::getCurrentBankBalance();
+        try {
+            $transferredSavings = static::getTransferredSavings();
+            $bankBalance = static::getCurrentBankBalance();
 
-        // Allow small difference (1000 rupiah) due to rounding or bank fees
-        return abs($transferredSavings - $bankBalance) <= 1000;
+            // Allow small difference (1000 rupiah) due to rounding or bank fees
+            return abs($transferredSavings - $bankBalance) <= 1000;
+        } catch (\Exception $e) {
+            Log::error('Error checking savings balance: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -88,7 +114,12 @@ class Saving extends Model
      */
     public static function getSavingsDifference(): float
     {
-        return static::getTransferredSavings() - static::getCurrentBankBalance();
+        try {
+            return static::getTransferredSavings() - static::getCurrentBankBalance();
+        } catch (\Exception $e) {
+            Log::error('Error getting savings difference: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -154,5 +185,13 @@ class Saving extends Model
     {
         return $query->where('status', 'PENDING')
             ->where('amount', '>=', $minAmount);
+    }
+
+    /**
+     * Scope: Unverified savings
+     */
+    public function scopeUnverified($query)
+    {
+        return $query->where('status', 'PENDING');
     }
 }

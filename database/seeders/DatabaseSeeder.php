@@ -1,5 +1,5 @@
 <?php
-// database/seeders/DatabaseSeeder.php - Updated with Latest Data June 2025
+// database/seeders/DatabaseSeeder.php - Clean Version WITHOUT any savings creation
 
 namespace Database\Seeders;
 
@@ -7,7 +7,6 @@ use Illuminate\Database\Seeder;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\Payment;
-use App\Models\Saving;
 use App\Models\BankBalance;
 use Carbon\Carbon;
 
@@ -19,7 +18,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->createProjectsFromRealData();
-        $this->createBankBalanceHistory();
+
+        // Create initial bank balance entry only
+        $this->createInitialBankBalance();
     }
 
     private function createProjectsFromRealData()
@@ -119,7 +120,7 @@ class DatabaseSeeder extends Seeder
             'updated_at' => $updatedAt,
         ]);
 
-        // Create payments
+        // Create payments WITHOUT any savings creation
         $this->createPaymentsForProject($project, $data, $createdAt, $updatedAt);
     }
 
@@ -161,7 +162,7 @@ class DatabaseSeeder extends Seeder
             ];
         }
 
-        // Create payment records and savings
+        // Create payment records AND savings in PENDING status for manual transfer
         foreach ($payments as $paymentData) {
             $payment = Payment::create([
                 'project_id' => $project->id,
@@ -174,82 +175,29 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => $paymentData['date'],
             ]);
 
-            // Create saving record
-            $savingStatus = $this->determineSavingStatus($paymentData['date']);
-            $saving = Saving::create([
+            // ✅ CREATE SAVING IN PENDING STATUS for manual transfer later
+            \App\Models\Saving::create([
                 'payment_id' => $payment->id,
-                'amount' => $paymentData['amount'] * 0.1,
+                'amount' => $paymentData['amount'] * 0.1, // 10%
                 'transaction_date' => $paymentData['date'],
-                'status' => $savingStatus,
-                'notes' => "Tabungan 10% dari {$project->client->name} - {$project->title}",
+                'status' => 'PENDING', // Ready for manual transfer
+                'notes' => "Tabungan 10% dari {$project->client->name} - {$project->title} (Siap transfer ke Bank Octo)",
                 'created_at' => $paymentData['date'],
                 'updated_at' => $paymentData['date'],
             ]);
-
-            // Add transfer details if status is TRANSFERRED
-            if ($savingStatus === 'TRANSFERRED') {
-                $transferDate = $paymentData['date']->copy()->addDays(rand(1, 14));
-                $saving->update([
-                    'transfer_date' => $transferDate,
-                    'transfer_method' => 'Bank Octo',
-                    'transfer_reference' => 'TF' . $transferDate->format('Ymd') . rand(1000, 9999),
-                ]);
-            }
         }
     }
 
-    private function determineSavingStatus(Carbon $paymentDate): string
+    private function createInitialBankBalance()
     {
-        // Payments older than 30 days are likely transferred
-        // Recent payments (last 30 days) are still pending
-        $daysDiff = $paymentDate->diffInDays(Carbon::now());
-
-        if ($daysDiff > 30) {
-            return 'TRANSFERRED'; // Older payments likely transferred
-        } elseif ($daysDiff > 15) {
-            return rand(0, 1) ? 'TRANSFERRED' : 'PENDING'; // 50/50 chance
-        } else {
-            return 'PENDING'; // Recent payments still pending
-        }
-    }
-
-    private function createBankBalanceHistory()
-    {
-        // Get all transferred savings to create realistic bank balance history
-        $transferredSavings = Saving::where('status', 'TRANSFERRED')
-            ->whereNotNull('transfer_date')
-            ->orderBy('transfer_date')
-            ->get()
-            ->groupBy(function ($saving) {
-                return $saving->transfer_date->format('Y-m-d');
-            });
-
-        $currentBalance = 0;
-        foreach ($transferredSavings as $date => $savings) {
-            $dailyTotal = $savings->sum('amount');
-            $currentBalance += $dailyTotal;
-
-            BankBalance::create([
-                'balance' => $currentBalance,
-                'balance_date' => $date,
-                'bank_name' => 'Bank Octo',
-                'notes' => "Transfer batch {$savings->count()} tabungan - Total: Rp " . number_format($dailyTotal, 0, ',', '.'),
-                'is_verified' => true,
-                'created_at' => Carbon::parse($date),
-                'updated_at' => Carbon::parse($date),
-            ]);
-        }
-
-        // Add latest bank balance entry (manual update)
-        if ($currentBalance > 0) {
-            BankBalance::create([
-                'balance' => $currentBalance + rand(10000, 50000), // Add some variation
-                'balance_date' => Carbon::now()->format('Y-m-d'),
-                'bank_name' => 'Bank Octo',
-                'notes' => 'Update saldo bank manual - cek saldo terkini',
-                'is_verified' => true,
-            ]);
-        }
+        // Create only initial bank balance entry
+        BankBalance::create([
+            'balance' => 1765000, // Set actual current balance
+            'balance_date' => Carbon::now()->format('Y-m-d'),
+            'bank_name' => 'Bank Octo',
+            'notes' => 'Saldo aktual Bank Octo saat ini',
+            'is_verified' => true, // Mark as verified
+        ]);
     }
 
     private function normalizeType(string $tipe): string

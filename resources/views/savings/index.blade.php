@@ -393,15 +393,28 @@
             document.getElementById('pendingSavingsList').innerHTML =
                 '<div class="text-center text-muted"><i class="bi bi-hourglass-split"></i> Loading...</div>';
 
-            fetch('{{ route('savings.pending') }}')
-                .then(response => response.json())
+            // Updated route URL
+            fetch('{{ url('savings/pending-data') }}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    pendingSavings = data.pending_savings;
-                    renderPendingSavings();
+                    console.log('API Response:', data); // Debug log
+
+                    if (data.success) {
+                        pendingSavings = data.pending_savings;
+                        renderPendingSavings();
+                    } else {
+                        throw new Error(data.message || 'Failed to load data');
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('pendingSavingsList').innerHTML = '<div class="text-danger">Error loading data</div>';
+                    document.getElementById('pendingSavingsList').innerHTML =
+                        '<div class="text-danger"><i class="bi bi-exclamation-triangle"></i> Error loading data: ' + error.message + '</div>';
                 });
         }
 
@@ -505,7 +518,8 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i>Processing...';
 
-            fetch('{{ route('savings.transfer') }}', {
+            // Updated route URL
+            fetch('{{ url('savings/transfer-batch') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -513,7 +527,12 @@
                     },
                     body: JSON.stringify(transferData)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
@@ -525,7 +544,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Terjadi kesalahan saat transfer');
+                    alert('Terjadi kesalahan saat transfer: ' + error.message);
                 })
                 .finally(() => {
                     submitBtn.disabled = false;
@@ -544,7 +563,8 @@
                 notes: document.getElementById('updateNotes').value
             };
 
-            fetch('{{ route('savings.update-bank-balance') }}', {
+            // Updated route URL
+            fetch('{{ url('savings/update-balance') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -552,7 +572,12 @@
                     },
                     body: JSON.stringify(formData)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
@@ -564,7 +589,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Terjadi kesalahan');
+                    alert('Terjadi kesalahan: ' + error.message);
                 });
         });
     </script>

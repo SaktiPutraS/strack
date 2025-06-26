@@ -39,7 +39,6 @@ class PaymentController extends Controller
         $payments = $query->paginate(15)->withQueryString();
 
         $totalPayments = Payment::sum('amount');
-        $totalSavings = Payment::sum('amount') * 0.1;
         $monthlyIncome = Payment::whereYear('payment_date', Carbon::now()->year)
             ->whereMonth('payment_date', Carbon::now()->month)
             ->sum('amount');
@@ -48,7 +47,6 @@ class PaymentController extends Controller
         return view('payments.index', compact(
             'payments',
             'totalPayments',
-            'totalSavings',
             'monthlyIncome',
             'paymentCount'
         ));

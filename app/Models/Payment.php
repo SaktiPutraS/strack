@@ -1,12 +1,11 @@
 <?php
-// app/Models/Payment.php - NO automatic savings creation
+// app/Models/Payment.php - CLEAN VERSION without savings
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
@@ -37,32 +36,11 @@ class Payment extends Model
     }
 
     /**
-     * Relationship: Payment has one saving record (10%)
-     */
-    public function savingRecord(): HasOne
-    {
-        return $this->hasOne(Saving::class);
-    }
-
-    /**
-     * Get 10% amount for saving
-     */
-    public function getSavingAmountAttribute(): float
-    {
-        return $this->amount * 0.10;
-    }
-
-    /**
      * Format currency
      */
     public function getFormattedAmountAttribute(): string
     {
         return 'Rp ' . number_format($this->amount ?? 0, 0, ',', '.');
-    }
-
-    public function getFormattedSavingAmountAttribute(): string
-    {
-        return 'Rp ' . number_format($this->saving_amount ?? 0, 0, ',', '.');
     }
 
     /**
@@ -118,9 +96,6 @@ class Payment extends Model
     {
         parent::boot();
 
-        // ❌ REMOVED: No automatic saving creation
-        // User will manually create savings records when needed
-
         // Update project's paid_amount when payment is saved
         static::saved(function ($payment) {
             $project = $payment->project;
@@ -130,9 +105,6 @@ class Payment extends Model
 
         // Update project's paid_amount when payment is deleted
         static::deleted(function ($payment) {
-            // Delete associated saving record if exists
-            $payment->savingRecord?->delete();
-
             // Update project paid amount
             $project = $payment->project;
             $project->paid_amount = $project->payments()->sum('amount');

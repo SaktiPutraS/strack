@@ -208,11 +208,6 @@
                             <i class="bi bi-credit-card me-1"></i>Pembayaran
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('savings.*') ? 'active' : '' }}" href="{{ route('savings.index') }}">
-                            <i class="bi bi-piggy-bank me-1"></i>Tabungan 10%
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>

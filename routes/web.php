@@ -1,11 +1,10 @@
 <?php
-// routes/web.php - Fixed Routes Structure
+// routes/web.php - Updated Routes without Savings
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\SavingController;
 use App\Http\Controllers\ProjectTypeController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,7 +20,6 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 // Projects
 Route::resource('projects', ProjectController::class);
 Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
-Route::patch('projects/{project}/testimonial', [ProjectController::class, 'toggleTestimonial'])->name('projects.toggle-testimonial');
 
 // Clients
 Route::resource('clients', ClientController::class);
@@ -32,16 +30,6 @@ Route::resource('project-types', ProjectTypeController::class)->except(['show', 
 // Payments
 Route::resource('payments', PaymentController::class);
 Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');
-
-// Savings - IMPORTANT: Custom routes MUST come BEFORE resource routes
-Route::get('savings/pending-data', [SavingController::class, 'getPendingSavings'])->name('savings.pending');
-Route::post('savings/transfer-batch', [SavingController::class, 'transferToBank'])->name('savings.transfer');
-Route::post('savings/update-balance', [SavingController::class, 'updateBankBalance'])->name('savings.update-bank-balance');
-Route::get('savings/check-balance', [SavingController::class, 'checkBalance'])->name('savings.check-balance');
-Route::get('savings/transfer-history', [SavingController::class, 'getTransferHistory'])->name('savings.transfer-history');
-
-// Savings Resource Routes (AFTER custom routes)
-Route::resource('savings', SavingController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
 
 // API Routes for AJAX requests
 Route::prefix('api')->group(function () {

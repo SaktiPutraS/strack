@@ -6,8 +6,6 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Client;
 use App\Models\Payment;
-use App\Models\Saving;
-use App\Models\Testimonial;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -63,16 +61,8 @@ class DashboardController extends Controller
         $totalPaid = Project::sum('paid_amount');
         $totalRemaining = $totalValue - $totalPaid;
 
-        // Savings statistics
-        $totalSavings = Saving::getTotalSavings();
-        $currentBankBalance = Saving::getCurrentBankBalance();
-        $savingsBalanced = Saving::isSavingsBalanced();
-
         // Client statistics
         $totalClients = Client::count();
-        $clientsWithTestimonials = Client::whereHas('projects', function ($query) {
-            $query->where('has_testimonial', true);
-        })->count();
 
         // Status breakdown
         $statusBreakdown = [
@@ -110,16 +100,8 @@ class DashboardController extends Controller
                 'total_remaining' => $totalRemaining,
                 'completion_percentage' => $totalValue > 0 ? round(($totalPaid / $totalValue) * 100, 1) : 0,
             ],
-            'savings' => [
-                'total' => $totalSavings,
-                'bank_balance' => $currentBankBalance,
-                'is_balanced' => $savingsBalanced,
-                'difference' => Saving::getSavingsDifference(),
-            ],
             'clients' => [
                 'total' => $totalClients,
-                'with_testimonials' => $clientsWithTestimonials,
-                'without_testimonials' => $totalClients - $clientsWithTestimonials,
             ],
             'monthly_income' => $monthlyIncome,
             'status_breakdown' => $statusBreakdown,
@@ -207,15 +189,10 @@ class DashboardController extends Controller
                 'latest_project' => Project::with('client')
                     ->latest()
                     ->first(),
-                'pending_testimonials' => Project::with('client')
-                    ->where('status', 'FINISHED')
-                    ->where('has_testimonial', false)
-                    ->count(),
             ],
             'urgent_tasks' => [
                 'overdue_count' => Project::overdue()->count(),
                 'deadline_this_week' => Project::upcomingDeadlines(7)->count(),
-                'unverified_savings' => Saving::unverified()->count(),
             ]
         ]);
     }

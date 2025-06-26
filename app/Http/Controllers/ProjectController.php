@@ -47,6 +47,14 @@ class ProjectController extends Controller
 
         $projects = $query->paginate(15)->withQueryString();
 
+        // ✅ FIX: Get statistics from ALL projects, not just filtered results
+        $projectStats = [
+            'waiting' => Project::where('status', 'WAITING')->count(),
+            'progress' => Project::where('status', 'PROGRESS')->count(),
+            'finished' => Project::where('status', 'FINISHED')->count(),
+            'cancelled' => Project::where('status', 'CANCELLED')->count(),
+        ];
+
         // Get filter options
         $clients = Client::orderBy('name')->get();
         $projectTypes = Project::distinct()->pluck('type')->filter();
@@ -54,6 +62,7 @@ class ProjectController extends Controller
 
         return view('projects.index', compact(
             'projects',
+            'projectStats',  // ✅ Pass separate stats variable
             'clients',
             'projectTypes',
             'statuses'
@@ -306,8 +315,6 @@ class ProjectController extends Controller
                     'payment_date_formatted' => $payment->payment_date->format('d M Y'),
                     'payment_method' => $payment->payment_method,
                     'notes' => $payment->notes,
-                    'saving_amount' => $payment->saving_amount,
-                    'formatted_saving_amount' => $payment->formatted_saving_amount,
                 ];
             });
 
@@ -324,24 +331,6 @@ class ProjectController extends Controller
                 'progress_percentage' => $project->progress_percentage,
             ],
             'payments' => $payments
-        ]);
-    }
-
-    /**
-     * Toggle testimonial status
-     */
-    public function toggleTestimonial(Request $request, Project $project): JsonResponse
-    {
-        $project->update([
-            'has_testimonial' => !$project->has_testimonial
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => $project->has_testimonial
-                ? 'Proyek ditandai sudah ada testimoni'
-                : 'Proyek ditandai belum ada testimoni',
-            'has_testimonial' => $project->has_testimonial
         ]);
     }
 }

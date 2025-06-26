@@ -12,7 +12,7 @@
 
     <!-- Financial Stats -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
             <div class="card">
                 <div class="stat-card">
                     <i class="bi bi-graph-up-arrow stat-icon"></i>
@@ -21,7 +21,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
             <div class="card">
                 <div class="stat-card">
                     <i class="bi bi-wallet2 stat-icon"></i>
@@ -30,21 +30,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
             <div class="card">
                 <div class="stat-card">
                     <i class="bi bi-clock-history stat-icon"></i>
                     <div class="stat-value">Rp {{ number_format($stats['financial']['total_remaining'], 0, ',', '.') }}</div>
                     <div class="stat-label">Total Piutang</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-3">
-            <div class="card">
-                <div class="stat-card">
-                    <i class="bi bi-piggy-bank stat-icon"></i>
-                    <div class="stat-value">Rp {{ number_format($stats['savings']['total'], 0, ',', '.') }}</div>
-                    <div class="stat-label">Tabungan 10%</div>
                 </div>
             </div>
         </div>

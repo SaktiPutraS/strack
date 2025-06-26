@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('paid_amount', 15, 2)->default(0);
             $table->enum('status', ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'])->default('WAITING');
             $table->date('deadline');
-            $table->boolean('has_testimonial')->default(false);
+            // REMOVED: has_testimonial column
             $table->text('notes')->nullable();
             $table->timestamps();
 

@@ -73,14 +73,6 @@ class Client extends Model
     }
 
     /**
-     * Check if client has testimonial
-     */
-    public function getHasTestimonialAttribute(): bool
-    {
-        return $this->projects()->where('has_testimonial', true)->exists();
-    }
-
-    /**
      * Format phone number for WhatsApp link
      */
     public function getWhatsappLinkAttribute(): string

@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 
 class Project extends Model
@@ -24,7 +23,6 @@ class Project extends Model
         'paid_amount',
         'status',
         'deadline',
-        'has_testimonial',
         'notes',
     ];
 
@@ -33,7 +31,6 @@ class Project extends Model
         'dp_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'deadline' => 'date',
-        'has_testimonial' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

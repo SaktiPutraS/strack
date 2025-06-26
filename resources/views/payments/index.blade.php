@@ -17,7 +17,7 @@
 
     <!-- Payment Statistics -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
             <div class="card">
                 <div class="card-body text-center">
                     <h3 class="text-primary">Rp {{ number_format($totalPayments ?? 0, 0, ',', '.') }}</h3>
@@ -25,15 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h3 class="text-success">Rp {{ number_format($totalSavings ?? 0, 0, ',', '.') }}</h3>
-                    <p class="mb-0 text-muted">Total Tabungan 10%</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
             <div class="card">
                 <div class="card-body text-center">
                     <h3 class="text-warning">Rp {{ number_format($monthlyIncome ?? 0, 0, ',', '.') }}</h3>
@@ -41,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
             <div class="card">
                 <div class="card-body text-center">
                     <h3 class="text-info">{{ $paymentCount ?? 0 }}</h3>
@@ -107,7 +99,6 @@
                                         <th>Jumlah</th>
                                         <th>Tipe</th>
                                         <th>Metode</th>
-                                        <th>Tabungan 10%</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -138,9 +129,6 @@
                                             </td>
                                             <td>{{ $payment->payment_method ?? '-' }}</td>
                                             <td>
-                                                <span class="text-success">{{ $payment->formatted_saving_amount }}</span>
-                                            </td>
-                                            <td>
                                                 <div class="btn-group" role="group">
                                                     <a href="{{ route('projects.show', $payment->project) }}" class="btn btn-sm btn-outline-primary"
                                                         title="Lihat Proyek">
@@ -166,7 +154,7 @@
 
                                 <div class="pagination-info-alt">
                                     Menampilkan {{ $payments->firstItem() }}-{{ $payments->lastItem() }}
-                                    dari {{ $payments->total() }} proyek
+                                    dari {{ $payments->total() }} pembayaran
                                 </div>
 
                                 <nav class="bootstrap-pagination">

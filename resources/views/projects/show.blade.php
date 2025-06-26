@@ -185,9 +185,6 @@
                                                 <p class="text-muted mt-1 mb-0 small">{{ $payment->notes }}</p>
                                             @endif
                                         </div>
-                                        <small class="text-success">
-                                            <i class="bi bi-piggy-bank me-1"></i>{{ $payment->formatted_saving_amount }}
-                                        </small>
                                     </div>
                                 </div>
                             @endforeach
@@ -224,50 +221,12 @@
                             </button>
                         @endif
 
-                        @if ($project->status === 'FINISHED' && !$project->has_testimonial)
-                            <a href="{{ route('testimonials.create') }}?project={{ $project->id }}" class="btn btn-warning">
-                                <i class="bi bi-star me-2"></i>Tambah Testimoni
-                            </a>
-                        @endif
-
                         <a href="{{ $project->client->whatsapp_link }}" target="_blank" class="btn btn-success">
                             <i class="bi bi-whatsapp me-2"></i>Chat Client
                         </a>
                     </div>
                 </div>
             </div>
-
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h6 class="section-title">
-                        <i class="bi bi-star"></i>Status Testimoni
-                    </h6>
-
-                    @if ($project->has_testimonial)
-                        <div class="alert alert-success">
-                            <i class="bi bi-check-circle me-2"></i>
-                            Proyek ini sudah ada testimoni
-                        </div>
-                        @if ($project->status === 'FINISHED')
-                            <button class="btn btn-outline-warning btn-sm" onclick="toggleTestimonial({{ $project->id }})">
-                                <i class="bi bi-x-circle me-1"></i>Tandai Belum Ada
-                            </button>
-                        @endif
-                    @else
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            Proyek ini belum ada testimoni
-                        </div>
-                        @if ($project->status === 'FINISHED')
-                            <button class="btn btn-success btn-sm" onclick="toggleTestimonial({{ $project->id }})">
-                                <i class="bi bi-check-circle me-1"></i>Tandai Sudah Ada
-                            </button>
-                        @endif
-                    @endif
-                </div>
-            </div>
-
         </div>
     </div>
 @endsection

@@ -43,7 +43,6 @@ class ClientController extends Controller
 
         $client = Client::create($validated);
 
-        // ✅ Handle AJAX/JSON requests
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -56,17 +55,16 @@ class ClientController extends Controller
                     'whatsapp_link' => $client->whatsapp_link,
                     'created_at' => $client->created_at->format('Y-m-d H:i:s'),
                 ]
-            ], 201); // 201 Created status
+            ], 201);
         }
 
-        // ✅ Handle regular form submissions
         return redirect()->route('clients.index')
             ->with('success', 'Klien berhasil ditambahkan!');
     }
 
     public function show(Client $client): View
     {
-        $client->load(['projects.payments', 'projects.testimonial']);
+        $client->load(['projects.payments']);
 
         $activeProjects = $client->activeProjects()->count();
         $finishedProjects = $client->finishedProjects()->count();
@@ -172,7 +170,6 @@ class ClientController extends Controller
                     'deadline_formatted' => $project->deadline->format('d M Y'),
                     'is_overdue' => $project->is_overdue,
                     'is_deadline_near' => $project->is_deadline_near,
-                    'has_testimonial' => $project->has_testimonial,
                     'formatted_total_value' => $project->formatted_total_value,
                     'formatted_paid_amount' => $project->formatted_paid_amount,
                     'formatted_remaining_amount' => $project->formatted_remaining_amount,

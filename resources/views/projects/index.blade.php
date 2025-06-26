@@ -15,12 +15,12 @@
         </div>
     </div>
 
-    <!-- Quick Stats -->
+    <!-- Quick Stats - ✅ FIXED: Now shows total from ALL projects -->
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h3 class="text-warning">{{ $projects->where('status', 'WAITING')->count() }}</h3>
+                    <h3 class="text-warning">{{ $projectStats['waiting'] }}</h3>
                     <p class="mb-0 text-muted">Menunggu</p>
                 </div>
             </div>
@@ -28,7 +28,7 @@
         <div class="col-12 col-md-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h3 class="text-primary">{{ $projects->where('status', 'PROGRESS')->count() }}</h3>
+                    <h3 class="text-primary">{{ $projectStats['progress'] }}</h3>
                     <p class="mb-0 text-muted">Progress</p>
                 </div>
             </div>
@@ -36,7 +36,7 @@
         <div class="col-12 col-md-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h3 class="text-success">{{ $projects->where('status', 'FINISHED')->count() }}</h3>
+                    <h3 class="text-success">{{ $projectStats['finished'] }}</h3>
                     <p class="mb-0 text-muted">Selesai</p>
                 </div>
             </div>
@@ -44,8 +44,8 @@
         <div class="col-12 col-md-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h3 class="text-muted">{{ $projects->where('has_testimonial', true)->count() }}</h3>
-                    <p class="mb-0 text-muted">Ada Testimoni</p>
+                    <h3 class="text-danger">{{ $projectStats['cancelled'] }}</h3>
+                    <p class="mb-0 text-muted">Dibatalkan</p>
                 </div>
             </div>
         </div>
@@ -102,7 +102,6 @@
                                         <th>Progress</th>
                                         <th>Deadline</th>
                                         <th>Status</th>
-                                        <th>Testimoni</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -142,25 +141,6 @@
                                                     <span class="badge bg-success">SELESAI</span>
                                                 @else
                                                     <span class="badge bg-danger">DIBATALKAN</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($project->has_testimonial)
-                                                    <button class="btn btn-sm btn-success" onclick="toggleTestimonial({{ $project->id }}, false)"
-                                                        title="Klik untuk tandai belum ada">
-                                                        <i class="bi bi-check-circle"></i> Ada
-                                                    </button>
-                                                @else
-                                                    @if ($project->status == 'FINISHED')
-                                                        <button class="btn btn-sm btn-warning" onclick="toggleTestimonial({{ $project->id }}, true)"
-                                                            title="Klik untuk tandai sudah ada">
-                                                            <i class="bi bi-plus"></i> Tandai
-                                                        </button>
-                                                    @else
-                                                        <span class="badge bg-secondary">
-                                                            <i class="bi bi-minus"></i> N/A
-                                                        </span>
-                                                    @endif
                                                 @endif
                                             </td>
                                             <td>
@@ -248,35 +228,3 @@
         </div>
     </div>
 @endsection
-
-@push('scripts')
-    <script>
-        function toggleTestimonial(projectId, hasTestimonial) {
-            const message = hasTestimonial ?
-                'Tandai proyek ini sudah ada testimoni?' :
-                'Tandai proyek ini belum ada testimoni?';
-
-            if (confirm(message)) {
-                fetch(`/projects/${projectId}/testimonial`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert('Gagal mengubah status testimoni');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan');
-                    });
-            }
-        }
-    </script>
-@endpush

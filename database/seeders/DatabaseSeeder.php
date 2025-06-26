@@ -1,5 +1,5 @@
 <?php
-// database/seeders/DatabaseSeeder.php - Clean Version WITHOUT any savings creation
+// database/seeders/DatabaseSeeder.php - Clean Version WITHOUT savings/testimonials
 
 namespace Database\Seeders;
 
@@ -7,7 +7,6 @@ use Illuminate\Database\Seeder;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\Payment;
-use App\Models\BankBalance;
 use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
@@ -18,52 +17,49 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->createProjectsFromRealData();
-
-        // Create initial bank balance entry only
-        $this->createInitialBankBalance();
     }
 
     private function createProjectsFromRealData()
     {
         $projectsData = [
             // WAITING PROJECTS (3 projects)
-            ['customer' => 'Rafi', 'testimoni' => false, 'kontak' => '83875766344', 'tipe' => 'HTML/PHP', 'nilai' => 1100000, 'progres' => 'WAITING', 'deadline' => '2025-06-30', 'dp' => 50000, 'pelunasan' => 0, 'piutang' => 1050000, 'keterangan' => 'Website E-Commerce'],
-            ['customer' => 'Sipak', 'testimoni' => false, 'kontak' => '85155439091', 'tipe' => 'LARAVEL', 'nilai' => 1500000, 'progres' => 'WAITING', 'deadline' => '2025-06-20', 'dp' => 500000, 'pelunasan' => 0, 'piutang' => 1000000, 'keterangan' => 'Website Pelayanan Appointment RS'],
-            ['customer' => 'Wanda', 'testimoni' => false, 'kontak' => '81525959882', 'tipe' => 'HTML/PHP', 'nilai' => 120000, 'progres' => 'WAITING', 'deadline' => '2025-06-22', 'dp' => 50000, 'pelunasan' => 0, 'piutang' => 70000, 'keterangan' => 'Website Layanan TI dan Pengaduan Mahasiswa'],
+            ['customer' => 'Rafi', 'kontak' => '83875766344', 'tipe' => 'HTML/PHP', 'nilai' => 1100000, 'progres' => 'WAITING', 'deadline' => '2025-06-30', 'dp' => 50000, 'pelunasan' => 0, 'piutang' => 1050000, 'keterangan' => 'Website E-Commerce'],
+            ['customer' => 'Sipak', 'kontak' => '85155439091', 'tipe' => 'LARAVEL', 'nilai' => 1500000, 'progres' => 'WAITING', 'deadline' => '2025-06-20', 'dp' => 500000, 'pelunasan' => 0, 'piutang' => 1000000, 'keterangan' => 'Website Pelayanan Appointment RS'],
+            ['customer' => 'Wanda', 'kontak' => '81525959882', 'tipe' => 'HTML/PHP', 'nilai' => 120000, 'progres' => 'WAITING', 'deadline' => '2025-06-22', 'dp' => 50000, 'pelunasan' => 0, 'piutang' => 70000, 'keterangan' => 'Website Layanan TI dan Pengaduan Mahasiswa'],
 
             // PROGRESS PROJECTS (10 projects)
-            ['customer' => 'Dava', 'testimoni' => true, 'kontak' => '85717082754', 'tipe' => 'LARAVEL', 'nilai' => 250000, 'progres' => 'PROGRESS', 'deadline' => '2025-04-15', 'dp' => 0, 'pelunasan' => 250000, 'piutang' => 0, 'keterangan' => 'Revisi Web Kuesioner'],
-            ['customer' => 'Audy', 'testimoni' => false, 'kontak' => '85694042303', 'tipe' => 'HTML/PHP', 'nilai' => 1200000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-30', 'dp' => 50000, 'pelunasan' => 950000, 'piutang' => 200000, 'keterangan' => 'Website Penilaian Siswa TK'],
-            ['customer' => 'Tan', 'testimoni' => false, 'kontak' => '82123796084', 'tipe' => 'HTML/PHP', 'nilai' => 250000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-07', 'dp' => 0, 'pelunasan' => 250000, 'piutang' => 0, 'keterangan' => 'Website Topup Game'],
-            ['customer' => 'Pika', 'testimoni' => false, 'kontak' => '87780850246', 'tipe' => 'LARAVEL', 'nilai' => 1300000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-20', 'dp' => 700000, 'pelunasan' => 0, 'piutang' => 600000, 'keterangan' => 'Figma & Website Sekolah'],
-            ['customer' => 'Fira', 'testimoni' => false, 'kontak' => '85890352821', 'tipe' => 'LARAVEL', 'nilai' => 300000, 'progres' => 'PROGRESS', 'deadline' => '2025-05-28', 'dp' => 0, 'pelunasan' => 300000, 'piutang' => 0, 'keterangan' => 'Revisi Website Kampung Kecil'],
-            ['customer' => 'Ika', 'testimoni' => false, 'kontak' => '85211857817', 'tipe' => 'OTHER', 'nilai' => 600000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-01', 'dp' => 50000, 'pelunasan' => 550000, 'piutang' => 0, 'keterangan' => 'Figma, Wireframe & Dokumentasi'],
-            ['customer' => 'Reza', 'testimoni' => false, 'kontak' => '85783123168', 'tipe' => 'HTML/PHP', 'nilai' => 1000000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-09', 'dp' => 150000, 'pelunasan' => 850000, 'piutang' => 0, 'keterangan' => 'Website Perpustakaan Sekolah'],
-            ['customer' => 'Ravelia', 'testimoni' => false, 'kontak' => '81379155009', 'tipe' => 'OTHER', 'nilai' => 475000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-16', 'dp' => 300000, 'pelunasan' => 175000, 'piutang' => 0, 'keterangan' => 'Laporan Bab 4-6'],
-            ['customer' => 'Elbiana', 'testimoni' => false, 'kontak' => '85788601992', 'tipe' => 'HTML/PHP', 'nilai' => 1000000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-12', 'dp' => 650000, 'pelunasan' => 350000, 'piutang' => 0, 'keterangan' => 'Website SPP Sekolah'],
-            ['customer' => 'Amanda Devia', 'testimoni' => true, 'kontak' => '81388043167', 'tipe' => 'LARAVEL', 'nilai' => 800000, 'progres' => 'PROGRESS', 'deadline' => '2025-05-03', 'dp' => 0, 'pelunasan' => 800000, 'piutang' => 0, 'keterangan' => 'Revisi Web FIK Collab'],
+            ['customer' => 'Dava', 'kontak' => '85717082754', 'tipe' => 'LARAVEL', 'nilai' => 250000, 'progres' => 'PROGRESS', 'deadline' => '2025-04-15', 'dp' => 0, 'pelunasan' => 250000, 'piutang' => 0, 'keterangan' => 'Revisi Web Kuesioner'],
+            ['customer' => 'Audy', 'kontak' => '85694042303', 'tipe' => 'HTML/PHP', 'nilai' => 1200000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-30', 'dp' => 50000, 'pelunasan' => 950000, 'piutang' => 200000, 'keterangan' => 'Website Penilaian Siswa TK'],
+            ['customer' => 'Tan', 'kontak' => '82123796084', 'tipe' => 'HTML/PHP', 'nilai' => 250000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-07', 'dp' => 0, 'pelunasan' => 250000, 'piutang' => 0, 'keterangan' => 'Website Topup Game'],
+            ['customer' => 'Pika', 'kontak' => '87780850246', 'tipe' => 'LARAVEL', 'nilai' => 1300000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-20', 'dp' => 700000, 'pelunasan' => 0, 'piutang' => 600000, 'keterangan' => 'Figma & Website Sekolah'],
+            ['customer' => 'Fira', 'kontak' => '85890352821', 'tipe' => 'LARAVEL', 'nilai' => 300000, 'progres' => 'PROGRESS', 'deadline' => '2025-05-28', 'dp' => 0, 'pelunasan' => 300000, 'piutang' => 0, 'keterangan' => 'Revisi Website Kampung Kecil'],
+            ['customer' => 'Ika', 'kontak' => '85211857817', 'tipe' => 'OTHER', 'nilai' => 600000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-01', 'dp' => 50000, 'pelunasan' => 550000, 'piutang' => 0, 'keterangan' => 'Figma, Wireframe & Dokumentasi'],
+            ['customer' => 'Reza', 'kontak' => '85783123168', 'tipe' => 'HTML/PHP', 'nilai' => 1000000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-09', 'dp' => 150000, 'pelunasan' => 850000, 'piutang' => 0, 'keterangan' => 'Website Perpustakaan Sekolah'],
+            ['customer' => 'Ravelia', 'kontak' => '81379155009', 'tipe' => 'OTHER', 'nilai' => 475000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-16', 'dp' => 300000, 'pelunasan' => 175000, 'piutang' => 0, 'keterangan' => 'Laporan Bab 4-6'],
+            ['customer' => 'Elbiana', 'kontak' => '85788601992', 'tipe' => 'HTML/PHP', 'nilai' => 1000000, 'progres' => 'PROGRESS', 'deadline' => '2025-06-12', 'dp' => 650000, 'pelunasan' => 350000, 'piutang' => 0, 'keterangan' => 'Website SPP Sekolah'],
+            ['customer' => 'Amanda Devia', 'kontak' => '81388043167', 'tipe' => 'LARAVEL', 'nilai' => 800000, 'progres' => 'PROGRESS', 'deadline' => '2025-05-03', 'dp' => 0, 'pelunasan' => 800000, 'piutang' => 0, 'keterangan' => 'Revisi Web FIK Collab'],
 
             // FINISHED PROJECTS (20 projects)
-            ['customer' => 'Amanda Devia', 'testimoni' => true, 'kontak' => '81388043167', 'tipe' => 'LARAVEL', 'nilai' => 2000000, 'progres' => 'FINISHED', 'deadline' => '2025-03-31', 'dp' => 600000, 'pelunasan' => 1400000, 'piutang' => 0, 'keterangan' => 'Web FIK Collab'],
-            ['customer' => 'Suhanda', 'testimoni' => false, 'kontak' => '87881111985', 'tipe' => 'OTHER', 'nilai' => 2200000, 'progres' => 'FINISHED', 'deadline' => '2025-03-13', 'dp' => 0, 'pelunasan' => 2200000, 'piutang' => 0, 'keterangan' => '2 Lisensi (FINA)'],
-            ['customer' => 'Dava', 'testimoni' => true, 'kontak' => '85717082754', 'tipe' => 'LARAVEL', 'nilai' => 2000000, 'progres' => 'FINISHED', 'deadline' => '2025-04-05', 'dp' => 2000000, 'pelunasan' => 0, 'piutang' => 0, 'keterangan' => 'Web Kuesioner'],
-            ['customer' => 'Dava', 'testimoni' => true, 'kontak' => '85717082754', 'tipe' => 'LARAVEL', 'nilai' => 200000, 'progres' => 'FINISHED', 'deadline' => '2025-04-25', 'dp' => 200000, 'pelunasan' => 0, 'piutang' => 0, 'keterangan' => 'Laporan Web Kuesioner'],
-            ['customer' => 'Rio', 'testimoni' => true, 'kontak' => '85828536005', 'tipe' => 'HTML/PHP', 'nilai' => 600000, 'progres' => 'FINISHED', 'deadline' => '2025-04-24', 'dp' => 50000, 'pelunasan' => 550000, 'piutang' => 0, 'keterangan' => 'Web Absensi'],
-            ['customer' => 'Wega', 'testimoni' => true, 'kontak' => '81333619280', 'tipe' => 'HTML/PHP', 'nilai' => 1050000, 'progres' => 'FINISHED', 'deadline' => '2025-05-15', 'dp' => 100000, 'pelunasan' => 950000, 'piutang' => 0, 'keterangan' => 'Web Pelayanan SRUT + Hosting'],
-            ['customer' => 'Kav', 'testimoni' => true, 'kontak' => '881081000000', 'tipe' => 'LARAVEL', 'nilai' => 210000, 'progres' => 'FINISHED', 'deadline' => '2025-05-25', 'dp' => 10000, 'pelunasan' => 200000, 'piutang' => 0, 'keterangan' => 'Website Data Gizi Buah'],
-            ['customer' => 'Ade', 'testimoni' => true, 'kontak' => '85781743145', 'tipe' => 'HTML/PHP', 'nilai' => 400000, 'progres' => 'FINISHED', 'deadline' => '2025-05-27', 'dp' => 150000, 'pelunasan' => 250000, 'piutang' => 0, 'keterangan' => 'Figma dan Website'],
-            ['customer' => 'Karin', 'testimoni' => false, 'kontak' => '85141302702', 'tipe' => 'OTHER', 'nilai' => 120000, 'progres' => 'FINISHED', 'deadline' => '2025-06-02', 'dp' => 50000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Prototype & Wireframe Figma'],
-            ['customer' => 'Rahma', 'testimoni' => false, 'kontak' => '85736448622', 'tipe' => 'LARAVEL', 'nilai' => 150000, 'progres' => 'FINISHED', 'deadline' => '2025-06-10', 'dp' => 0, 'pelunasan' => 150000, 'piutang' => 0, 'keterangan' => 'Penambahan Fitur Kuis Website'],
-            ['customer' => 'Anon1', 'testimoni' => true, 'kontak' => '82276717334', 'tipe' => 'LARAVEL', 'nilai' => 50000, 'progres' => 'FINISHED', 'deadline' => '2025-06-03', 'dp' => 0, 'pelunasan' => 50000, 'piutang' => 0, 'keterangan' => 'Penambahan Fitur Popup Delete'],
-            ['customer' => 'Niss', 'testimoni' => true, 'kontak' => '82178775079', 'tipe' => 'LARAVEL', 'nilai' => 150000, 'progres' => 'FINISHED', 'deadline' => '2025-05-31', 'dp' => 0, 'pelunasan' => 150000, 'piutang' => 0, 'keterangan' => 'Form Booking Website'],
-            ['customer' => 'byyyyyy', 'testimoni' => true, 'kontak' => '83891105494', 'tipe' => 'OTHER', 'nilai' => 100000, 'progres' => 'FINISHED', 'deadline' => '2025-05-29', 'dp' => 30000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Laporan Pengembangan Aplikasi'],
-            ['customer' => 'Clara', 'testimoni' => true, 'kontak' => '8119562230', 'tipe' => 'HTML/PHP', 'nilai' => 100000, 'progres' => 'FINISHED', 'deadline' => '2025-05-20', 'dp' => 30000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Website Kegiatan STARKI'],
-            ['customer' => 'Rio', 'testimoni' => true, 'kontak' => '85828536005', 'tipe' => 'HTML/PHP', 'nilai' => 250000, 'progres' => 'FINISHED', 'deadline' => '2025-05-20', 'dp' => 50000, 'pelunasan' => 200000, 'piutang' => 0, 'keterangan' => 'Laporan & Figma Website Absensi'],
-            ['customer' => 'Imelda', 'testimoni' => true, 'kontak' => '85896282281', 'tipe' => 'HTML/PHP', 'nilai' => 50000, 'progres' => 'FINISHED', 'deadline' => '2025-05-14', 'dp' => 0, 'pelunasan' => 50000, 'piutang' => 0, 'keterangan' => 'Revisi Codingan'],
-            ['customer' => 'Nelis', 'testimoni' => true, 'kontak' => '85868743959', 'tipe' => 'HTML/PHP', 'nilai' => 450000, 'progres' => 'FINISHED', 'deadline' => '2025-05-24', 'dp' => 150000, 'pelunasan' => 300000, 'piutang' => 0, 'keterangan' => 'Web Sekolah'],
-            ['customer' => 'Alss', 'testimoni' => true, 'kontak' => '83172900698', 'tipe' => 'LARAVEL', 'nilai' => 400000, 'progres' => 'FINISHED', 'deadline' => '2025-05-14', 'dp' => 200000, 'pelunasan' => 200000, 'piutang' => 0, 'keterangan' => 'Website Perawatan Hewan'],
-            ['customer' => 'Anjani', 'testimoni' => true, 'kontak' => '85862611099', 'tipe' => 'HTML/PHP', 'nilai' => 120000, 'progres' => 'FINISHED', 'deadline' => '2025-05-20', 'dp' => 50000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Website Martabak'],
-            ['customer' => 'Cici', 'testimoni' => false, 'kontak' => '82130323717', 'tipe' => 'LARAVEL', 'nilai' => 80000, 'progres' => 'FINISHED', 'deadline' => '2025-04-21', 'dp' => 0, 'pelunasan' => 80000, 'piutang' => 0, 'keterangan' => 'Revisi Codingan'],
+            ['customer' => 'Amanda Devia', 'kontak' => '81388043167', 'tipe' => 'LARAVEL', 'nilai' => 2000000, 'progres' => 'FINISHED', 'deadline' => '2025-03-31', 'dp' => 600000, 'pelunasan' => 1400000, 'piutang' => 0, 'keterangan' => 'Web FIK Collab'],
+            ['customer' => 'Suhanda', 'kontak' => '87881111985', 'tipe' => 'OTHER', 'nilai' => 2200000, 'progres' => 'FINISHED', 'deadline' => '2025-03-13', 'dp' => 0, 'pelunasan' => 2200000, 'piutang' => 0, 'keterangan' => '2 Lisensi (FINA)'],
+            ['customer' => 'Dava', 'kontak' => '85717082754', 'tipe' => 'LARAVEL', 'nilai' => 2000000, 'progres' => 'FINISHED', 'deadline' => '2025-04-05', 'dp' => 2000000, 'pelunasan' => 0, 'piutang' => 0, 'keterangan' => 'Web Kuesioner'],
+            ['customer' => 'Dava', 'kontak' => '85717082754', 'tipe' => 'LARAVEL', 'nilai' => 200000, 'progres' => 'FINISHED', 'deadline' => '2025-04-25', 'dp' => 200000, 'pelunasan' => 0, 'piutang' => 0, 'keterangan' => 'Laporan Web Kuesioner'],
+            ['customer' => 'Rio', 'kontak' => '85828536005', 'tipe' => 'HTML/PHP', 'nilai' => 600000, 'progres' => 'FINISHED', 'deadline' => '2025-04-24', 'dp' => 50000, 'pelunasan' => 550000, 'piutang' => 0, 'keterangan' => 'Web Absensi'],
+            ['customer' => 'Wega', 'kontak' => '81333619280', 'tipe' => 'HTML/PHP', 'nilai' => 1050000, 'progres' => 'FINISHED', 'deadline' => '2025-05-15', 'dp' => 100000, 'pelunasan' => 950000, 'piutang' => 0, 'keterangan' => 'Web Pelayanan SRUT + Hosting'],
+            ['customer' => 'Kav', 'kontak' => '881081000000', 'tipe' => 'LARAVEL', 'nilai' => 210000, 'progres' => 'FINISHED', 'deadline' => '2025-05-25', 'dp' => 10000, 'pelunasan' => 200000, 'piutang' => 0, 'keterangan' => 'Website Data Gizi Buah'],
+            ['customer' => 'Ade', 'kontak' => '85781743145', 'tipe' => 'HTML/PHP', 'nilai' => 400000, 'progres' => 'FINISHED', 'deadline' => '2025-05-27', 'dp' => 150000, 'pelunasan' => 250000, 'piutang' => 0, 'keterangan' => 'Figma dan Website'],
+            ['customer' => 'Karin', 'kontak' => '85141302702', 'tipe' => 'OTHER', 'nilai' => 120000, 'progres' => 'FINISHED', 'deadline' => '2025-06-02', 'dp' => 50000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Prototype & Wireframe Figma'],
+            ['customer' => 'Rahma', 'kontak' => '85736448622', 'tipe' => 'LARAVEL', 'nilai' => 150000, 'progres' => 'FINISHED', 'deadline' => '2025-06-10', 'dp' => 0, 'pelunasan' => 150000, 'piutang' => 0, 'keterangan' => 'Penambahan Fitur Kuis Website'],
+            ['customer' => 'Anon1', 'kontak' => '82276717334', 'tipe' => 'LARAVEL', 'nilai' => 50000, 'progres' => 'FINISHED', 'deadline' => '2025-06-03', 'dp' => 0, 'pelunasan' => 50000, 'piutang' => 0, 'keterangan' => 'Penambahan Fitur Popup Delete'],
+            ['customer' => 'Niss', 'kontak' => '82178775079', 'tipe' => 'LARAVEL', 'nilai' => 150000, 'progres' => 'FINISHED', 'deadline' => '2025-05-31', 'dp' => 0, 'pelunasan' => 150000, 'piutang' => 0, 'keterangan' => 'Form Booking Website'],
+            ['customer' => 'byyyyyy', 'kontak' => '83891105494', 'tipe' => 'OTHER', 'nilai' => 100000, 'progres' => 'FINISHED', 'deadline' => '2025-05-29', 'dp' => 30000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Laporan Pengembangan Aplikasi'],
+            ['customer' => 'Clara', 'kontak' => '8119562230', 'tipe' => 'HTML/PHP', 'nilai' => 100000, 'progres' => 'FINISHED', 'deadline' => '2025-05-20', 'dp' => 30000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Website Kegiatan STARKI'],
+            ['customer' => 'Rio', 'kontak' => '85828536005', 'tipe' => 'HTML/PHP', 'nilai' => 250000, 'progres' => 'FINISHED', 'deadline' => '2025-05-20', 'dp' => 50000, 'pelunasan' => 200000, 'piutang' => 0, 'keterangan' => 'Laporan & Figma Website Absensi'],
+            ['customer' => 'Imelda', 'kontak' => '85896282281', 'tipe' => 'HTML/PHP', 'nilai' => 50000, 'progres' => 'FINISHED', 'deadline' => '2025-05-14', 'dp' => 0, 'pelunasan' => 50000, 'piutang' => 0, 'keterangan' => 'Revisi Codingan'],
+            ['customer' => 'Nelis', 'kontak' => '85868743959', 'tipe' => 'HTML/PHP', 'nilai' => 450000, 'progres' => 'FINISHED', 'deadline' => '2025-05-24', 'dp' => 150000, 'pelunasan' => 300000, 'piutang' => 0, 'keterangan' => 'Web Sekolah'],
+            ['customer' => 'Alss', 'kontak' => '83172900698', 'tipe' => 'LARAVEL', 'nilai' => 400000, 'progres' => 'FINISHED', 'deadline' => '2025-05-14', 'dp' => 200000, 'pelunasan' => 200000, 'piutang' => 0, 'keterangan' => 'Website Perawatan Hewan'],
+            ['customer' => 'Anjani', 'kontak' => '85862611099', 'tipe' => 'HTML/PHP', 'nilai' => 120000, 'progres' => 'FINISHED', 'deadline' => '2025-05-20', 'dp' => 50000, 'pelunasan' => 70000, 'piutang' => 0, 'keterangan' => 'Website Martabak'],
+            ['customer' => 'Cici', 'kontak' => '82130323717', 'tipe' => 'LARAVEL', 'nilai' => 80000, 'progres' => 'FINISHED', 'deadline' => '2025-04-21', 'dp' => 0, 'pelunasan' => 80000, 'piutang' => 0, 'keterangan' => 'Revisi Codingan'],
         ];
 
         foreach ($projectsData as $data) {
@@ -114,7 +110,6 @@ class DatabaseSeeder extends Seeder
             'paid_amount' => $totalPaid,
             'status' => $data['progres'],
             'deadline' => $deadline,
-            'has_testimonial' => $data['testimoni'],
             'notes' => 'Project untuk ' . $data['customer'],
             'created_at' => $createdAt,
             'updated_at' => $updatedAt,
@@ -162,9 +157,9 @@ class DatabaseSeeder extends Seeder
             ];
         }
 
-        // Create payment records AND savings in PENDING status for manual transfer
+        // Create payment records (NO savings creation)
         foreach ($payments as $paymentData) {
-            $payment = Payment::create([
+            Payment::create([
                 'project_id' => $project->id,
                 'amount' => $paymentData['amount'],
                 'payment_type' => $paymentData['type'],
@@ -174,30 +169,7 @@ class DatabaseSeeder extends Seeder
                 'created_at' => $paymentData['date'],
                 'updated_at' => $paymentData['date'],
             ]);
-
-            // ✅ CREATE SAVING IN PENDING STATUS for manual transfer later
-            \App\Models\Saving::create([
-                'payment_id' => $payment->id,
-                'amount' => $paymentData['amount'] * 0.1, // 10%
-                'transaction_date' => $paymentData['date'],
-                'status' => 'PENDING', // Ready for manual transfer
-                'notes' => "Tabungan 10% dari {$project->client->name} - {$project->title} (Siap transfer ke Bank Octo)",
-                'created_at' => $paymentData['date'],
-                'updated_at' => $paymentData['date'],
-            ]);
         }
-    }
-
-    private function createInitialBankBalance()
-    {
-        // Create only initial bank balance entry
-        BankBalance::create([
-            'balance' => 1765000, // Set actual current balance
-            'balance_date' => Carbon::now()->format('Y-m-d'),
-            'bank_name' => 'Bank Octo',
-            'notes' => 'Saldo aktual Bank Octo saat ini',
-            'is_verified' => true, // Mark as verified
-        ]);
     }
 
     private function normalizeType(string $tipe): string

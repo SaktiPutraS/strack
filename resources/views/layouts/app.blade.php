@@ -208,6 +208,28 @@
                             <i class="bi bi-credit-card me-1"></i>Pembayaran
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-calculator me-1"></i>Keuangan
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ route('expenses.index') }}">
+                                    <i class="bi bi-credit-card me-2"></i>Pengeluaran
+                                </a></li>
+                            <li><a class="dropdown-item" href="{{ route('bank-transfers.index') }}">
+                                    <i class="bi bi-bank me-2"></i>Transfer Bank
+                                </a></li>
+                            <li><a class="dropdown-item" href="{{ route('gold.index') }}">
+                                    <i class="bi bi-coin me-2"></i>Emas
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ route('financial-reports.index') }}">
+                                    <i class="bi bi-file-earmark-bar-graph me-2"></i>Laporan Keuangan
+                                </a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>

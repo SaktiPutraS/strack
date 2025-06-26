@@ -1,11 +1,12 @@
 <?php
-// app/Models/Payment.php - CLEAN VERSION without savings
+// app/Models/Payment.php - UPDATED VERSION with Transfer Status
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
@@ -18,11 +19,13 @@ class Payment extends Model
         'payment_date',
         'notes',
         'payment_method',
+        'is_transferred', // NEW FIELD
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'payment_date' => 'date',
+        'is_transferred' => 'boolean', // NEW CAST
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -33,6 +36,14 @@ class Payment extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * Relationship: Payment has one bank transfer
+     */
+    public function bankTransfer(): HasOne
+    {
+        return $this->hasOne(BankTransfer::class);
     }
 
     /**
@@ -72,6 +83,25 @@ class Payment extends Model
     }
 
     /**
+     * Get transfer status badge
+     */
+    public function getTransferStatusBadgeAttribute(): string
+    {
+        if ($this->is_transferred) {
+            return '<span class="badge bg-success">SUDAH TRANSFER</span>';
+        }
+        return '<span class="badge bg-warning">BELUM TRANSFER</span>';
+    }
+
+    /**
+     * Get transfer status color
+     */
+    public function getTransferStatusColorAttribute(): string
+    {
+        return $this->is_transferred ? 'success' : 'warning';
+    }
+
+    /**
      * Scope: Search payments
      */
     public function scopeSearch($query, $search)
@@ -87,6 +117,22 @@ class Payment extends Model
                         });
                 });
         });
+    }
+
+    /**
+     * Scope: Transferred payments
+     */
+    public function scopeTransferred($query)
+    {
+        return $query->where('is_transferred', true);
+    }
+
+    /**
+     * Scope: Untransferred payments
+     */
+    public function scopeUntransferred($query)
+    {
+        return $query->where('is_transferred', false);
     }
 
     /**

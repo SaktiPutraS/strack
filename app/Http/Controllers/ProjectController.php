@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
+use Jenssegers\Agent\Agent;
 
 class ProjectController extends Controller
 {
@@ -17,94 +19,110 @@ class ProjectController extends Controller
      * Display a listing of projects
      */
     public function index(Request $request): View
-{
-    $query = Project::with('client');
-    
-    // Search functionality
-    if ($request->filled('search')) {
-        $query->search($request->search);
+    {
+        $agent = new Agent();
+        $isMobile = $agent->isMobile();
+        $query = Project::with('client');
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter untuk proyek yang memiliki piutang
+        if ($request->filled('piutang') && $request->piutang == 'true') {
+            $query->whereRaw('total_value > paid_amount')
+                ->whereIn('status', ['WAITING', 'PROGRESS']);
+        }
+
+        // Filter untuk proyek yang dibuat bulan ini
+        if ($request->filled('month') && $request->month == 'current') {
+            $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+        }
+
+        // Enhanced Sort functionality
+        $sortBy = $request->get('sort', 'created_at');
+        $sortOrder = $request->get('order', 'desc');
+
+        // Handle different sorting cases
+        switch ($sortBy) {
+            case 'client_id':
+                // Sort by client name instead of client_id
+                $query->join('clients', 'projects.client_id', '=', 'clients.id')
+                    ->orderBy('clients.name', $sortOrder)
+                    ->select('projects.*');
+                break;
+
+            case 'title':
+                $query->orderBy('title', $sortOrder);
+                break;
+
+            case 'deadline':
+                $query->orderBy('deadline', $sortOrder);
+                break;
+
+            case 'status':
+                $query->orderBy('status', $sortOrder);
+                break;
+
+            default:
+                $query->orderBy('created_at', $sortOrder);
+                break;
+        }
+
+        // Pagination dengan maksimal 5 proyek per halaman
+        $projects = $query->paginate(5)->withQueryString();
+
+        // ✅ FIX: Get statistics from ALL projects, not just filtered results
+        $projectStats = [
+            'waiting' => Project::where('status', 'WAITING')->count(),
+            'progress' => Project::where('status', 'PROGRESS')->count(),
+            'finished' => Project::where('status', 'FINISHED')->count(),
+            'cancelled' => Project::where('status', 'CANCELLED')->count(),
+        ];
+
+        // Hitung total piutang dari semua proyek yang belum lunas
+        $totalPiutang = Project::whereIn('status', ['WAITING', 'PROGRESS'])
+            ->sum(DB::raw('total_value - paid_amount'));
+
+        // Hitung total nilai proyek yang dibuat bulan ini
+        $totalNilaiBulanIni = Project::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('total_value');
+
+        // Get filter options
+        $clients = Client::orderBy('name')->get();
+        $projectTypes = Project::distinct()->pluck('type')->filter();
+        $statuses = ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
+
+        // Format currency function
+        $formatCurrency = function ($amount) {
+            if ($amount >= 1000000000) {
+                return 'Rp ' . number_format($amount / 1000000000, 1, ',', '.') . 'M';
+            } elseif ($amount >= 1000000) {
+                return 'Rp ' . number_format($amount / 1000000, 1, ',', '.') . 'Jt';
+            }
+            return 'Rp ' . number_format($amount, 0, ',', '.');
+        };
+
+        return view('projects.index', compact(
+            'projects',
+            'projectStats',
+            'totalPiutang',
+            'totalNilaiBulanIni',
+            'clients',
+            'projectTypes',
+            'statuses',
+            'formatCurrency',
+            'isMobile'
+        ));
     }
-    
-    // Filter by status
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-    
-    // Filter by type
-    if ($request->filled('type')) {
-        $query->where('type', $request->type);
-    }
-    
-    // Filter by client
-    if ($request->filled('client_id')) {
-        $query->where('client_id', $request->client_id);
-    }
-    
-    // Enhanced Sort functionality
-    $sortBy = $request->get('sort', 'created_at');
-    $sortOrder = $request->get('order', 'desc');
-    
-    // Handle different sorting cases
-    switch ($sortBy) {
-        case 'client_id':
-            // Sort by client name instead of client_id
-            $query->join('clients', 'projects.client_id', '=', 'clients.id')
-                  ->orderBy('clients.name', $sortOrder)
-                  ->select('projects.*');
-            break;
-            
-        case 'title':
-            $query->orderBy('title', $sortOrder);
-            break;
-            
-        case 'type':
-            $query->orderBy('type', $sortOrder);
-            break;
-            
-        case 'total_value':
-            $query->orderBy('total_value', $sortOrder);
-            break;
-            
-        case 'progress_percentage':
-            $query->orderBy('progress_percentage', $sortOrder);
-            break;
-            
-        case 'deadline':
-            $query->orderBy('deadline', $sortOrder);
-            break;
-            
-        case 'status':
-            $query->orderBy('status', $sortOrder);
-            break;
-            
-        default:
-            $query->orderBy('created_at', $sortOrder);
-            break;
-    }
-    
-    $projects = $query->paginate(15)->withQueryString();
-    
-    // ✅ FIX: Get statistics from ALL projects, not just filtered results
-    $projectStats = [
-        'waiting' => Project::where('status', 'WAITING')->count(),
-        'progress' => Project::where('status', 'PROGRESS')->count(),
-        'finished' => Project::where('status', 'FINISHED')->count(),
-        'cancelled' => Project::where('status', 'CANCELLED')->count(),
-    ];
-    
-    // Get filter options
-    $clients = Client::orderBy('name')->get();
-    $projectTypes = Project::distinct()->pluck('type')->filter();
-    $statuses = ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
-    
-    return view('projects.index', compact(
-        'projects',
-        'projectStats',
-        'clients',
-        'projectTypes',
-        'statuses'
-    ));
-}
 
     /**
      * Show the form for creating a new project
@@ -113,7 +131,7 @@ class ProjectController extends Controller
     {
         $clients = Client::orderBy('name')->get();
 
-        // Load project types from database instead of hardcoded array
+        // Load project types from database
         $projectTypes = ProjectType::active()->ordered()->get();
 
         // Fallback to default types if none exist in database
@@ -121,11 +139,10 @@ class ProjectController extends Controller
             $defaultTypes = [
                 ['name' => 'HTML/PHP', 'display_name' => 'HTML/PHP'],
                 ['name' => 'LARAVEL', 'display_name' => 'Laravel Framework'],
-                ['name' => 'WORDPRESS', 'display_name' => 'WordPress'],
-                ['name' => 'REACT', 'display_name' => 'React.js'],
-                ['name' => 'VUE', 'display_name' => 'Vue.js'],
-                ['name' => 'FLUTTER', 'display_name' => 'Flutter'],
-                ['name' => 'MOBILE', 'display_name' => 'Mobile App'],
+                ['name' => 'FIGMA', 'display_name' => 'Figma'],
+                ['name' => 'DELPHI', 'display_name' => 'Delphi'],
+                ['name' => 'LAPORAN', 'display_name' => 'Laporan'],
+                ['name' => 'HOSTING/DOMAIN', 'display_name' => 'Hosting/Domain'],
                 ['name' => 'OTHER', 'display_name' => 'Other'],
             ];
 
@@ -151,11 +168,14 @@ class ProjectController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Get valid project types from database
+        $validTypes = ProjectType::active()->pluck('name')->toArray();
+
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'type' => 'required|in:HTML/PHP,LARAVEL,WORDPRESS,REACT,VUE,FLUTTER,MOBILE,OTHER',
+            'type' => 'required|in:' . implode(',', $validTypes),
             'total_value' => 'required|numeric|min:0',
             'dp_amount' => 'nullable|numeric|min:0',
             'deadline' => 'required|date|after:today',
@@ -210,7 +230,9 @@ class ProjectController extends Controller
     public function edit(Project $project): View
     {
         $clients = Client::orderBy('name')->get();
-        $projectTypes = ['HTML/PHP', 'LARAVEL', 'WORDPRESS', 'REACT', 'VUE', 'FLUTTER', 'MOBILE', 'OTHER'];
+
+        // Load project types from database
+        $projectTypes = ProjectType::active()->ordered()->get();
 
         return view('projects.edit', compact('project', 'clients', 'projectTypes'));
     }
@@ -220,11 +242,14 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project): RedirectResponse
     {
+        // Get valid project types from database
+        $validTypes = ProjectType::active()->pluck('name')->toArray();
+
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'type' => 'required|in:HTML/PHP,LARAVEL,WORDPRESS,REACT,VUE,FLUTTER,MOBILE,OTHER',
+            'type' => 'required|in:' . implode(',', $validTypes),
             'total_value' => 'required|numeric|min:0',
             'deadline' => 'required|date',
             'status' => 'required|in:WAITING,PROGRESS,FINISHED,CANCELLED',

@@ -4,6 +4,7 @@
 use App\Http\Controllers\SimpleLoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectTypeController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ExpenseController;
@@ -35,6 +36,11 @@ Route::middleware('simpleauth')->group(function () {
     // Projects
     Route::resource('projects', ProjectController::class);
     Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
+
+    // Project Types Management
+    Route::resource('project-types', ProjectTypeController::class);
+    Route::patch('project-types/{project_type}/toggle', [ProjectTypeController::class, 'toggle'])
+        ->name('project-types.toggle');
 
     // Clients
     Route::resource('clients', ClientController::class);

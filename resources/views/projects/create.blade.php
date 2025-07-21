@@ -8,12 +8,15 @@
                 <h1 class="section-title">
                     <i class="bi bi-plus-circle"></i>Tambah Proyek Baru
                 </h1>
+                <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Kembali
+                </a>
             </div>
         </div>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-md-12">
+        <div class="col-md-10">
             <form action="{{ route('projects.store') }}" method="POST" id="project-form">
                 @csrf
 
@@ -31,24 +34,24 @@
                                     <i class="bi bi-person text-lilac me-2"></i>
                                     Klien <span class="text-danger">*</span>
                                 </label>
-                                <div class="d-flex gap-2">
-                                    <select name="client_id" id="client_id" class="form-select @error('client_id') is-invalid @enderror" required>
-                                        <option value="">Pilih Klien</option>
-                                        @if (isset($clients))
-                                            @foreach ($clients as $client)
-                                                <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
-                                                    {{ $client->name }} - {{ $client->phone }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <button type="button" class="btn btn-success" onclick="openNewClientModal()">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
-                                </div>
+                                <select name="client_id" id="client_id" class="form-select @error('client_id') is-invalid @enderror" required>
+                                    <option value="">Pilih Klien</option>
+                                    @if (isset($clients))
+                                        @foreach ($clients as $client)
+                                            <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
+                                                {{ $client->name }} - {{ $client->phone }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
                                 @error('client_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <div class="form-text">
+                                    <a href="{{ route('clients.create') }}" target="_blank" class="text-decoration-none">
+                                        <i class="bi bi-plus-circle me-1"></i>Tambah klien baru
+                                    </a>
+                                </div>
                             </div>
 
                             <!-- Project Type -->
@@ -57,21 +60,17 @@
                                     <i class="bi bi-tag text-lilac me-2"></i>
                                     Tipe Proyek <span class="text-danger">*</span>
                                 </label>
-                                <div class="d-flex gap-2">
-                                    <select name="type" id="type" class="form-select @error('type') is-invalid @enderror" required>
-                                        <option value="">Pilih Tipe</option>
-                                        @if (isset($projectTypes))
-                                            @foreach ($projectTypes as $projectType)
-                                                <option value="{{ $projectType->name }}" {{ old('type') == $projectType->name ? 'selected' : '' }}>
-                                                    {{ $projectType->formatted_name }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <button type="button" class="btn btn-success" onclick="openNewProjectTypeModal()">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
-                                </div>
+                                <select name="type" id="type" class="form-select @error('type') is-invalid @enderror" required>
+                                    <option value="">Pilih Tipe</option>
+                                    <option value="HTML/PHP" {{ old('type') == 'HTML/PHP' ? 'selected' : '' }}>HTML/PHP</option>
+                                    <option value="LARAVEL" {{ old('type') == 'LARAVEL' ? 'selected' : '' }}>Laravel Framework</option>
+                                    <option value="WORDPRESS" {{ old('type') == 'WORDPRESS' ? 'selected' : '' }}>WordPress</option>
+                                    <option value="REACT" {{ old('type') == 'REACT' ? 'selected' : '' }}>React.js</option>
+                                    <option value="VUE" {{ old('type') == 'VUE' ? 'selected' : '' }}>Vue.js</option>
+                                    <option value="FLUTTER" {{ old('type') == 'FLUTTER' ? 'selected' : '' }}>Flutter</option>
+                                    <option value="MOBILE" {{ old('type') == 'MOBILE' ? 'selected' : '' }}>Mobile App</option>
+                                    <option value="OTHER" {{ old('type') == 'OTHER' ? 'selected' : '' }}>Other</option>
+                                </select>
                                 @error('type')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -221,66 +220,6 @@
             </form>
         </div>
     </div>
-
-    <!-- New Client Modal -->
-    <div class="modal fade" id="newClientModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-person-plus me-2"></i>Tambah Klien Baru
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="newClientForm">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Nama Klien *</label>
-                            <input type="text" id="newClientName" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Nomor Telepon *</label>
-                            <input type="tel" id="newClientPhone" class="form-control" placeholder="08123456789" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="newClientEmail" class="form-control">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- New Project Type Modal -->
-    <div class="modal fade" id="newProjectTypeModal" tabindex="-1">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-tag-fill me-2"></i>Tambah Tipe Proyek
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="newProjectTypeForm">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Nama Tipe Proyek *</label>
-                            <input type="text" id="newProjectTypeName" class="form-control" placeholder="Contoh: Next.js, Angular" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
@@ -296,120 +235,9 @@
             document.getElementById('summary-remaining').textContent = formatCurrency(remaining);
         }
 
-        // Client Modal
-        function openNewClientModal() {
-            new bootstrap.Modal(document.getElementById('newClientModal')).show();
+        function formatCurrency(amount) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
         }
-
-        function closeClientModal() {
-            bootstrap.Modal.getInstance(document.getElementById('newClientModal'))?.hide();
-        }
-
-        // Project Type Modal
-        function openNewProjectTypeModal() {
-            new bootstrap.Modal(document.getElementById('newProjectTypeModal')).show();
-        }
-
-        function closeProjectTypeModal() {
-            bootstrap.Modal.getInstance(document.getElementById('newProjectTypeModal'))?.hide();
-        }
-
-        // Client form submission
-        document.getElementById('newClientForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const formData = {
-                name: document.getElementById('newClientName').value.trim(),
-                phone: document.getElementById('newClientPhone').value.trim(),
-                email: document.getElementById('newClientEmail').value.trim(),
-                address: ''
-            };
-
-            if (!formData.name || !formData.phone) {
-                alert('Nama dan nomor telepon wajib diisi!');
-                return;
-            }
-
-            fetch('{{ route('api.clients.store') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.client) {
-                        const clientSelect = document.getElementById('client_id');
-                        const newOption = new Option(
-                            `${data.client.name} - ${data.client.phone}`,
-                            data.client.id, true, true
-                        );
-                        clientSelect.add(newOption);
-                        closeClientModal();
-                        this.reset();
-                        alert('Klien berhasil ditambahkan!');
-                    } else {
-                        alert('Gagal menyimpan klien');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Terjadi kesalahan saat menyimpan klien');
-                });
-        });
-
-        // Project Type form submission
-        document.getElementById('newProjectTypeForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const typeName = document.getElementById('newProjectTypeName').value.trim();
-            if (!typeName) {
-                alert('Nama tipe proyek wajib diisi!');
-                return;
-            }
-
-            const technicalName = typeName.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_');
-            const displayName = typeName.replace(/\b\w/g, l => l.toUpperCase());
-
-            const formData = {
-                name: technicalName,
-                display_name: displayName,
-                description: `Proyek menggunakan teknologi ${displayName}`
-            };
-
-            fetch('{{ route('api.project-types.store') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.project_type) {
-                        const typeSelect = document.getElementById('type');
-                        const newOption = new Option(
-                            data.project_type.display_name,
-                            data.project_type.name, true, true
-                        );
-                        typeSelect.add(newOption);
-                        closeProjectTypeModal();
-                        this.reset();
-                        alert('Tipe proyek berhasil ditambahkan!');
-                    } else {
-                        alert('Gagal menyimpan tipe proyek');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Terjadi kesalahan saat menyimpan tipe proyek');
-                });
-        });
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
@@ -440,9 +268,5 @@
                 }
             });
         });
-
-        // Make functions global
-        window.openNewClientModal = openNewClientModal;
-        window.openNewProjectTypeModal = openNewProjectTypeModal;
     </script>
 @endpush

@@ -209,7 +209,8 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle {{ request()->is('financial/*') ? 'active' : '' }}" href="#" role="button"
+                            data-bs-toggle="dropdown">
                             <i class="bi bi-calculator me-1"></i>Keuangan
                         </a>
                         <ul class="dropdown-menu">
@@ -227,7 +228,20 @@
                             </li>
                             <li><a class="dropdown-item" href="{{ route('financial-reports.index') }}">
                                     <i class="bi bi-file-earmark-bar-graph me-2"></i>Laporan Keuangan
-                                </a></li>
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <form id="logout-form" action="{{ url('/logout') }}" method="GET" class="d-none">
+                                    @csrf
+                                </form>
+                                <a class="dropdown-item" href="#"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -236,6 +250,20 @@
     </nav>
 
     <main class="container my-4">
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         @yield('content')
     </main>
 
@@ -245,14 +273,6 @@
         // Simple utility functions
         function formatCurrency(amount) {
             return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
-        }
-
-        function showSuccess(message) {
-            alert('✅ ' + message);
-        }
-
-        function showError(message) {
-            alert('❌ ' + message);
         }
 
         // CSRF Token for AJAX

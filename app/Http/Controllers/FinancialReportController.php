@@ -20,232 +20,151 @@ class FinancialReportController extends Controller
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->toDateString());
 
-        // Profit & Loss Report
-        $profitLoss = $this->generateProfitLossReport($startDate, $endDate);
+        // A. Laporan Laba Rugi
+        $laporanLabaRugi = $this->generateLaporanLabaRugi($startDate, $endDate);
 
-        // Balance Sheet
-        $balanceSheet = $this->generateBalanceSheet();
+        // B. Neraca Sederhana
+        $neracaSederhana = $this->generateNeracaSederhana();
 
-        // Gold Portfolio
-        $goldPortfolio = $this->generateGoldPortfolio();
+        // C. Portfolio Emas
+        $portfolioEmas = $this->generatePortfolioEmas();
 
         return view('financial-reports.index', compact(
-            'profitLoss',
-            'balanceSheet',
-            'goldPortfolio',
+            'laporanLabaRugi',
+            'neracaSederhana',
+            'portfolioEmas',
             'startDate',
             'endDate'
         ));
     }
 
-    private function generateProfitLossReport(string $startDate, string $endDate): array
+    private function generateLaporanLabaRugi(string $startDate, string $endDate): array
     {
         // PENDAPATAN (yang sudah masuk ke Bank Octo)
-        $transferIncome = BankTransfer::whereBetween('transfer_date', [$startDate, $endDate])
+        $transferDariPembayaran = BankTransfer::whereBetween('transfer_date', [$startDate, $endDate])
             ->sum('transfer_amount');
 
-        $goldSales = GoldTransaction::sell()
+        $hasilPenjualanEmas = GoldTransaction::sell()
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->sum('total_price');
 
-        $totalIncome = $transferIncome + $goldSales;
+        $pendapatanLainLain = 0; // Placeholder untuk pendapatan lain
+
+        $totalPendapatanBankOcto = $transferDariPembayaran + $hasilPenjualanEmas + $pendapatanLainLain;
 
         // PENGELUARAN by Category
-        $expenses = Expense::whereBetween('expense_date', [$startDate, $endDate])
+        $pengeluaranByCategory = Expense::whereBetween('expense_date', [$startDate, $endDate])
             ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
             ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->category => $item->total];
-            });
+            ->keyBy('category');
 
-        $totalExpenses = $expenses->sum();
+        $biayaOperasional = $pengeluaranByCategory->get('OPERASIONAL')->total ?? 0;
+        $biayaMarketing = $pengeluaranByCategory->get('MARKETING')->total ?? 0;
+        $biayaPengembangan = $pengeluaranByCategory->get('PENGEMBANGAN')->total ?? 0;
+        $gajiFreelance = $pengeluaranByCategory->get('GAJI_FREELANCE')->total ?? 0;
+        $entertainment = $pengeluaranByCategory->get('ENTERTAINMENT')->total ?? 0;
+        $pengeluaranLainLain = $pengeluaranByCategory->get('LAIN_LAIN')->total ?? 0;
+
+        $totalPengeluaranOperasional = $biayaOperasional + $biayaMarketing + $biayaPengembangan +
+            $gajiFreelance + $entertainment + $pengeluaranLainLain;
 
         // INVESTASI
-        $goldInvestment = GoldTransaction::buy()
+        $pembelianEmas = GoldTransaction::buy()
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->sum('total_price');
 
-        $totalExpensesAndInvestment = $totalExpenses + $goldInvestment;
+        $totalPengeluaranDanInvestasi = $totalPengeluaranOperasional + $pembelianEmas;
 
-        // LABA/RUGI
-        $operationalProfit = $totalIncome - $totalExpensesAndInvestment;
-
-        // Bank Octo Balance at end of period
-        $bankBalance = BankBalance::getCurrentBalance();
+        // LABA/RUGI & SALDO
+        $labaRugiOperasional = $totalPendapatanBankOcto - $totalPengeluaranDanInvestasi;
+        $saldoBankOctoAkhir = BankBalance::getCurrentBalance();
 
         return [
-            'income' => [
-                'transfer_from_payments' => $transferIncome,
-                'gold_sales' => $goldSales,
-                'other_income' => 0, // Placeholder for future
-                'total_income' => $totalIncome,
+            'pendapatan' => [
+                'transfer_dari_pembayaran' => $transferDariPembayaran,
+                'hasil_penjualan_emas' => $hasilPenjualanEmas,
+                'pendapatan_lain_lain' => $pendapatanLainLain,
+                'total_pendapatan_bank_octo' => $totalPendapatanBankOcto,
             ],
-            'expenses' => [
-                'operasional' => $expenses->get('OPERASIONAL', 0),
-                'marketing' => $expenses->get('MARKETING', 0),
-                'pengembangan' => $expenses->get('PENGEMBANGAN', 0),
-                'gaji_freelance' => $expenses->get('GAJI_FREELANCE', 0),
-                'entertainment' => $expenses->get('ENTERTAINMENT', 0),
-                'lain_lain' => $expenses->get('LAIN_LAIN', 0),
-                'total_expenses' => $totalExpenses,
+            'pengeluaran' => [
+                'biaya_operasional' => $biayaOperasional,
+                'biaya_marketing' => $biayaMarketing,
+                'biaya_pengembangan' => $biayaPengembangan,
+                'gaji_freelance' => $gajiFreelance,
+                'entertainment' => $entertainment,
+                'pengeluaran_lain_lain' => $pengeluaranLainLain,
+                'total_pengeluaran_operasional' => $totalPengeluaranOperasional,
             ],
-            'investment' => [
-                'gold_purchase' => $goldInvestment,
-                'total_expenses_and_investment' => $totalExpensesAndInvestment,
+            'investasi' => [
+                'pembelian_emas' => $pembelianEmas,
+                'total_pengeluaran_dan_investasi' => $totalPengeluaranDanInvestasi,
             ],
-            'result' => [
-                'operational_profit' => $operationalProfit,
-                'bank_balance_end_period' => $bankBalance,
+            'hasil' => [
+                'laba_rugi_operasional' => $labaRugiOperasional,
+                'saldo_bank_octo_akhir' => $saldoBankOctoAkhir,
             ]
         ];
     }
 
-    private function generateBalanceSheet(): array
+    private function generateNeracaSederhana(): array
     {
         // ASET
-        $bankBalance = BankBalance::getCurrentBalance();
+        $kasBankOcto = BankBalance::getCurrentBalance();
 
-        // Gold Portfolio
-        $totalBoughtGrams = GoldTransaction::buy()->sum('grams');
-        $totalSoldGrams = GoldTransaction::sell()->sum('grams');
-        $currentGrams = $totalBoughtGrams - $totalSoldGrams;
-        $totalGoldInvestment = GoldTransaction::buy()->sum('total_price');
-        $averageGoldPrice = $totalBoughtGrams > 0 ? $totalGoldInvestment / $totalBoughtGrams : 0;
-        $goldValue = $currentGrams * $averageGoldPrice;
+        // Investasi Emas
+        $totalBeliEmas = GoldTransaction::buy()->sum('grams');
+        $totalJualEmas = GoldTransaction::sell()->sum('grams');
+        $sisaEmas = $totalBeliEmas - $totalJualEmas;
 
-        $totalAssets = $bankBalance + $goldValue;
+        $totalInvestasiEmas = GoldTransaction::buy()->sum('total_price');
+        $rataRataHargaBeli = $totalBeliEmas > 0 ? $totalInvestasiEmas / $totalBeliEmas : 0;
+        $nilaiInvestasiEmas = $sisaEmas * $rataRataHargaBeli;
+
+        $totalAset = $kasBankOcto + $nilaiInvestasiEmas;
 
         // PIUTANG
-        $untransferredPayments = Payment::where('is_transferred', false)->sum('amount');
-        $remainingProjectValues = Project::whereIn('status', ['WAITING', 'PROGRESS'])
+        $pembayaranBelumTransfer = Payment::where('is_transferred', false)->sum('amount');
+        $sisaTagihanProyek = Project::whereIn('status', ['WAITING', 'PROGRESS'])
             ->sum(DB::raw('total_value - paid_amount'));
 
-        $totalReceivables = $untransferredPayments + $remainingProjectValues;
+        $totalPiutang = $pembayaranBelumTransfer + $sisaTagihanProyek;
 
         // NET WORTH
-        $netWorth = $totalAssets + $totalReceivables;
+        $netWorth = $totalAset + $totalPiutang;
 
         return [
-            'assets' => [
-                'bank_octo_balance' => $bankBalance,
-                'gold_investment' => [
-                    'grams' => $currentGrams,
-                    'average_price' => $averageGoldPrice,
-                    'total_value' => $goldValue,
+            'aset' => [
+                'kas_bank_octo' => $kasBankOcto,
+                'investasi_emas' => [
+                    'grams' => $sisaEmas,
+                    'rata_rata_harga' => $rataRataHargaBeli,
+                    'nilai' => $nilaiInvestasiEmas,
                 ],
-                'total_assets' => $totalAssets,
+                'total_aset' => $totalAset,
             ],
-            'receivables' => [
-                'untransferred_payments' => $untransferredPayments,
-                'remaining_project_values' => $remainingProjectValues,
-                'total_receivables' => $totalReceivables,
+            'piutang' => [
+                'pembayaran_belum_transfer' => $pembayaranBelumTransfer,
+                'sisa_tagihan_proyek' => $sisaTagihanProyek,
+                'total_piutang' => $totalPiutang,
             ],
             'net_worth' => $netWorth,
         ];
     }
 
-    private function generateGoldPortfolio(): array
+    private function generatePortfolioEmas(): array
     {
-        $transactions = GoldTransaction::orderBy('transaction_date', 'desc')->get();
+        $totalBeliEmas = GoldTransaction::buy()->sum('grams');
+        $totalJualEmas = GoldTransaction::sell()->sum('grams');
+        $sisaEmas = $totalBeliEmas - $totalJualEmas;
 
-        $totalBoughtGrams = GoldTransaction::buy()->sum('grams');
-        $totalSoldGrams = GoldTransaction::sell()->sum('grams');
-        $currentGrams = $totalBoughtGrams - $totalSoldGrams;
-
-        $totalInvestment = GoldTransaction::buy()->sum('total_price');
-        $averageBuyPrice = $totalBoughtGrams > 0 ? $totalInvestment / $totalBoughtGrams : 0;
-
-        // Calculate running balance for each transaction
-        $runningGrams = 0;
-        $transactionHistory = $transactions->reverse()->map(function ($transaction) use (&$runningGrams) {
-            if ($transaction->type === 'BUY') {
-                $runningGrams += $transaction->grams;
-            } else {
-                $runningGrams -= $transaction->grams;
-            }
-
-            return [
-                'date' => $transaction->transaction_date->format('d M Y'),
-                'type' => $transaction->type_label,
-                'grams' => $transaction->grams,
-                'total_price' => $transaction->total_price,
-                'formatted_total_price' => $transaction->formatted_total_price,
-                'running_grams' => $runningGrams,
-                'notes' => $transaction->notes,
-            ];
-        })->reverse();
+        $totalInvestasiEmas = GoldTransaction::buy()->sum('total_price');
+        $rataRataHargaBeli = $totalBeliEmas > 0 ? $totalInvestasiEmas / $totalBeliEmas : 0;
 
         return [
-            'summary' => [
-                'total_grams' => $currentGrams,
-                'average_buy_price' => $averageBuyPrice,
-                'total_investment' => $totalInvestment,
-                'current_value' => $currentGrams * $averageBuyPrice,
-            ],
-            'transactions' => $transactionHistory,
+            'total_emas' => $sisaEmas,
+            'rata_rata_harga_beli' => $rataRataHargaBeli,
+            'total_investasi' => $totalInvestasiEmas,
         ];
-    }
-
-    public function exportProfitLoss(Request $request)
-    {
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->toDateString());
-
-        $profitLoss = $this->generateProfitLossReport($startDate, $endDate);
-
-        // Return JSON for now, can be extended to PDF/Excel
-        return response()->json([
-            'period' => "$startDate to $endDate",
-            'report' => $profitLoss,
-            'generated_at' => now()->format('Y-m-d H:i:s')
-        ]);
-    }
-
-    public function exportBalanceSheet()
-    {
-        $balanceSheet = $this->generateBalanceSheet();
-
-        // Return JSON for now, can be extended to PDF/Excel
-        return response()->json([
-            'as_of_date' => now()->format('Y-m-d'),
-            'report' => $balanceSheet,
-            'generated_at' => now()->format('Y-m-d H:i:s')
-        ]);
-    }
-
-    public function dashboard(): View
-    {
-        // Enhanced dashboard with financial overview
-        $currentMonth = Carbon::now();
-        $startOfMonth = $currentMonth->copy()->startOfMonth()->toDateString();
-        $endOfMonth = $currentMonth->copy()->endOfMonth()->toDateString();
-
-        // Current balances
-        $bankBalance = BankBalance::getCurrentBalance();
-        $goldPortfolio = $this->generateGoldPortfolio();
-        $netWorth = $bankBalance + $goldPortfolio['summary']['current_value'];
-
-        // Monthly performance
-        $monthlyProfit = $this->generateProfitLossReport($startOfMonth, $endOfMonth);
-
-        // Quick stats
-        $untransferredAmount = Payment::where('is_transferred', false)->sum('amount');
-        $monthlyExpensesByCategory = Expense::whereBetween('expense_date', [$startOfMonth, $endOfMonth])
-            ->selectRaw('category, SUM(amount) as total')
-            ->groupBy('category')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [Expense::CATEGORIES[$item->category] => $item->total];
-            });
-
-        return view('financial-reports.dashboard', compact(
-            'bankBalance',
-            'goldPortfolio',
-            'netWorth',
-            'monthlyProfit',
-            'untransferredAmount',
-            'monthlyExpensesByCategory'
-        ));
     }
 }

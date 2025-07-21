@@ -68,6 +68,21 @@
                         </div>
                     </div>
 
+                    <!-- Additional Info -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-muted mb-3">Informasi Tambahan</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Dibuat pada:</small>
+                                <div class="fw-bold">{{ $expense->created_at->format('d M Y H:i') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Terakhir diperbarui:</small>
+                                <div class="fw-bold">{{ $expense->updated_at->format('d M Y H:i') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                         <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">

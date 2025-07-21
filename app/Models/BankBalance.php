@@ -39,13 +39,32 @@ class BankBalance extends Model
     // Static methods
     public static function getCurrentBalance(): float
     {
-        return self::first()->current_balance ?? 0;
+        $record = self::first();
+
+        // Jika belum ada record, buat record default
+        if (!$record) {
+            $record = self::create([
+                'initial_balance' => 0,
+                'current_balance' => 0,
+                'last_updated' => now()->toDateString(),
+            ]);
+        }
+
+        return $record->current_balance ?? 0;
     }
 
     public static function updateBalance(): void
     {
         $record = self::first();
-        if (!$record) return;
+
+        // Jika belum ada record, buat dulu
+        if (!$record) {
+            $record = self::create([
+                'initial_balance' => 0,
+                'current_balance' => 0,
+                'last_updated' => now()->toDateString(),
+            ]);
+        }
 
         // Calculate balance based on transfers, expenses, and gold transactions
         $totalTransfers = BankTransfer::sum('transfer_amount');

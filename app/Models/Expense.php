@@ -83,6 +83,10 @@ class Expense extends Model
 
     public function getSubcategoryLabelAttribute(): string
     {
+        if (!$this->subcategory) {
+            return '-';
+        }
+
         $subcategories = self::SUBCATEGORIES[$this->category] ?? [];
         return $subcategories[$this->subcategory] ?? $this->subcategory;
     }

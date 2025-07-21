@@ -46,12 +46,11 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
                                     <input type="number" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount"
-                                        value="{{ old('amount') }}" min="1000" step="1000" placeholder="50000" required>
+                                        value="{{ old('amount') }}" required>
                                 </div>
                                 @error('amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Minimal Rp 1.000, kelipatan Rp 1.000</div>
                             </div>
 
                             <!-- Category -->
@@ -125,91 +124,75 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const categorySelect = document.getElementById('category');
-            const subcategorySelect = document.getElementById('subcategory');
+      document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const subcategorySelect = document.getElementById('subcategory');
 
-            // Load subcategories when category changes
-            categorySelect.addEventListener('change', function() {
-                const category = this.value;
-                subcategorySelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
+    // Load subcategories when category changes
+    categorySelect.addEventListener('change', function() {
+        loadSubcategories(this.value);
+    });
 
-                if (category) {
-                    // Perbaiki URL untuk route yang benar
-                    const url = `/financial/expenses/subcategories/${category}`;
+    // Load initial subcategories for current category
+    if (categorySelect.value) {
+        loadSubcategories(categorySelect.value);
+    }
 
-                    fetch(url)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            Object.entries(data).forEach(([key, label]) => {
-                                const option = new Option(label, key);
-                                subcategorySelect.add(option);
-                            });
-                        })
-                        .catch(error => {
-                            console.error('Error loading subcategories:', error);
-                            // Fallback: Add manual options
-                            addFallbackSubcategories(category);
-                        });
+    function loadSubcategories(category) {
+        subcategorySelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
+
+        if (category) {
+            // Fallback subcategories if route doesn't work
+            const fallbackSubcategories = {
+                'OPERASIONAL': {
+                    'hosting_domain': 'Hosting & Domain',
+                    'software_tools': 'Software & Tools',
+                    'internet_komunikasi': 'Internet & Komunikasi',
+                    'listrik_utilitas': 'Listrik & Utilitas'
+                },
+                'MARKETING': {
+                    'iklan_online': 'Iklan Online',
+                    'promosi_campaign': 'Promosi & Campaign',
+                    'content_tools': 'Content Creation Tools'
+                },
+                'PENGEMBANGAN': {
+                    'training_course': 'Training & Course',
+                    'hardware_equipment': 'Hardware & Equipment',
+                    'third_party_services': 'Third-party Services'
+                },
+                'GAJI_FREELANCE': {
+                    'gaji_freelancer': 'Gaji Freelancer',
+                    'fee_project': 'Fee Project',
+                    'bonus_insentif': 'Bonus & Insentif'
+                },
+                'ENTERTAINMENT': {
+                    'Alfa_Indomaret': 'Alfa & Indomaret',
+                    'Jajan_diluar': 'Jajan diluar',
+                    'Grab_Gojek_Shoopefood': 'Grab/Gojek/Shoopefood'
+                },
+                'LAIN_LAIN': {
+                    'transportasi': 'Transportasi',
+                    'pajak_admin': 'Pajak & Administrasi',
+                    'misc': 'Misc Expenses'
                 }
+            };
+
+            const subcategories = fallbackSubcategories[category] || {};
+            Object.entries(subcategories).forEach(([key, label]) => {
+                const option = new Option(label, key);
+                subcategorySelect.add(option);
             });
+        }
+    }
 
-            // Fallback function untuk subcategories
-            function addFallbackSubcategories(category) {
-                const fallbackSubcategories = {
-                    'OPERASIONAL': {
-                        'hosting_domain': 'Hosting & Domain',
-                        'software_tools': 'Software & Tools',
-                        'internet_komunikasi': 'Internet & Komunikasi',
-                        'listrik_utilitas': 'Listrik & Utilitas'
-                    },
-                    'MARKETING': {
-                        'iklan_online': 'Iklan Online',
-                        'promosi_campaign': 'Promosi & Campaign',
-                        'content_tools': 'Content Creation Tools'
-                    },
-                    'PENGEMBANGAN': {
-                        'training_course': 'Training & Course',
-                        'hardware_equipment': 'Hardware & Equipment',
-                        'third_party_services': 'Third-party Services'
-                    },
-                    'GAJI_FREELANCE': {
-                        'gaji_freelancer': 'Gaji Freelancer',
-                        'fee_project': 'Fee Project',
-                        'bonus_insentif': 'Bonus & Insentif'
-                    },
-                    'ENTERTAINMENT': {
-                        'kopi_makanan': 'Kopi & Makanan',
-                        'makan_kerja': 'Makan Kerja',
-                        'snack_minuman': 'Snack & Minuman',
-                        'entertainment_pribadi': 'Entertainment Pribadi'
-                    },
-                    'LAIN_LAIN': {
-                        'transportasi': 'Transportasi',
-                        'pajak_admin': 'Pajak & Administrasi',
-                        'misc': 'Misc Expenses'
-                    }
-                };
+    // Format amount display
+    document.getElementById('amount').addEventListener('input', function() {
+        const value = this.value;
+        if (value) {
+            this.title = 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+        }
+    });
+});
 
-                const subcategories = fallbackSubcategories[category] || {};
-                Object.entries(subcategories).forEach(([key, label]) => {
-                    const option = new Option(label, key);
-                    subcategorySelect.add(option);
-                });
-            }
-
-            // Format amount display
-            document.getElementById('amount').addEventListener('input', function() {
-                const value = this.value;
-                if (value) {
-                    this.title = 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
-                }
-            });
-        });
     </script>
 @endpush

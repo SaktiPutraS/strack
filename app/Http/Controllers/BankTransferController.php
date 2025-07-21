@@ -56,7 +56,14 @@ class BankTransferController extends Controller
             ->orderBy('payment_date', 'desc')
             ->get();
 
-        return view('bank-transfers.create', compact('payment', 'untransferredPayments'));
+        // Pass current bank balance directly to view
+        $currentBalance = BankBalance::getCurrentBalance();
+
+        return view('bank-transfers.create', compact(
+            'payment',
+            'untransferredPayments',
+            'currentBalance'
+        ));
     }
 
     public function store(Request $request): RedirectResponse

@@ -37,7 +37,7 @@
                                                 data-total="{{ $project->total_value }}" data-paid="{{ $project->paid_amount }}"
                                                 data-remaining="{{ $project->remaining_amount }}"
                                                 {{ old('project_id', request('project')) == $project->id ? 'selected' : '' }}>
-                                                {{ $project->title }} - {{ $project->client->name }}
+                                                {{ $project->client->name }} - {{ $project->title }}
                                                 (Sisa: Rp {{ number_format($project->remaining_amount, 0, ',', '.') }})
                                             </option>
                                         @endforeach
@@ -160,31 +160,12 @@
                             </div>
                         </div>
 
-                        <!-- Savings Preview -->
-                        <div class="mt-4 p-3 bg-light rounded" id="savings-preview" style="display: none;">
-                            <h6 class="text-muted mb-2">
-                                <i class="bi bi-piggy-bank text-success me-2"></i>
-                                Preview Tabungan 10%
-                            </h6>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Jumlah yang akan ditabung:</span>
-                                <strong class="text-success" id="savings-amount">Rp 0</strong>
-                            </div>
-                            <small class="text-muted">
-                                <i class="bi bi-info-circle me-1"></i>
-                                10% dari pembayaran akan otomatis masuk ke tabungan
-                            </small>
-                        </div>
-
                         <!-- Action Buttons -->
                         <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                             <a href="{{ route('payments.index') }}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle me-2"></i>Batal
                             </a>
                             <div>
-                                <button type="reset" class="btn btn-outline-warning me-2" onclick="resetForm()">
-                                    <i class="bi bi-arrow-clockwise me-2"></i>Reset
-                                </button>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-circle me-2"></i>Simpan Pembayaran
                                 </button>
@@ -203,7 +184,6 @@
             const projectSelect = document.getElementById('project_id');
             const amountInput = document.getElementById('amount');
             const projectInfo = document.getElementById('project-info');
-            const savingsPreview = document.getElementById('savings-preview');
 
             function updateProjectInfo() {
                 const selectedOption = projectSelect.options[projectSelect.selectedIndex];
@@ -250,12 +230,6 @@
 
             function formatCurrency(amount) {
                 return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
-            }
-
-            function resetForm() {
-                document.getElementById('payment-form').reset();
-                projectInfo.style.display = 'none';
-                savingsPreview.style.display = 'none';
             }
 
             // Event listeners

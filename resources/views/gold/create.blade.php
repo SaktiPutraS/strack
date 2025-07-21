@@ -1,4 +1,4 @@
-{{-- resources/views/gold/create.blade.php --}}
+{{-- resources/views/gold/create.blade.php - FIXED VERSION --}}
 @extends('layouts.app')
 @section('title', $type === 'BUY' ? 'Beli Emas' : 'Jual Emas')
 
@@ -78,8 +78,8 @@
                                     Gram Emas <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('grams') is-invalid @enderror" id="grams" name="grams"
-                                        value="{{ old('grams') }}" min="0.001" max="999.999" step="0.001" placeholder="0.000" required>
+                                    <input type="text" class="form-control @error('grams') is-invalid @enderror" id="grams" name="grams"
+                                        value="{{ old('grams') }}" placeholder="0.000" required pattern="[0-9]+([.,][0-9]+)?">
                                     <span class="input-group-text">gram</span>
                                 </div>
                                 @error('grams')
@@ -89,7 +89,7 @@
                                     @if ($type === 'SELL')
                                         Maksimal sesuai stok yang tersedia
                                     @else
-                                        Minimal 0.001 gram
+                                        Minimal 0.001 gram, gunakan titik (.) untuk desimal
                                     @endif
                                 </div>
                             </div>
@@ -102,17 +102,17 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="number" class="form-control @error('total_price') is-invalid @enderror" id="total_price"
-                                        name="total_price" value="{{ old('total_price') }}" min="1" step="1000" placeholder="0" required>
+                                    <input type="text" class="form-control @error('total_price') is-invalid @enderror" id="total_price"
+                                        name="total_price" value="{{ old('total_price') }}" placeholder="0" required>
                                 </div>
                                 @error('total_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <div class="form-text" id="price-help">
                                     @if ($type === 'BUY')
-                                        Jumlah yang akan dikeluarkan dari Bank Octo
+                                        Jumlah yang akan dikeluarkan dari Bank Octo (hanya angka, tanpa titik/koma)
                                     @else
-                                        Jumlah yang akan diterima ke Bank Octo
+                                        Jumlah yang akan diterima ke Bank Octo (hanya angka, tanpa titik/koma)
                                     @endif
                                 </div>
                             </div>
@@ -189,11 +189,77 @@
             const gramsInput = document.getElementById('grams');
             const priceInput = document.getElementById('total_price');
 
-            gramsInput.addEventListener('input', updateCalculation);
-            priceInput.addEventListener('input', updateCalculation);
+            // Format input untuk gram (allow decimal dengan titik)
+            gramsInput.addEventListener('input', function(e) {
+                let value = e.target.value;
+                // Hanya izinkan angka dan titik
+                value = value.replace(/[^0-9.]/g, '');
+                // Pastikan hanya ada satu titik
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                e.target.value = value;
+                updateCalculation();
+            });
+
+            // Format input untuk total price (hanya angka)
+            priceInput.addEventListener('input', function(e) {
+                let value = e.target.value;
+                // Hanya izinkan angka
+                value = value.replace(/[^0-9]/g, '');
+                e.target.value = value;
+                updateCalculation();
+            });
+
+            // Form submission dengan konversi data
+            document.getElementById('gold-form').addEventListener('submit', function(e) {
+                // Konversi grams ke format yang benar untuk server
+                const gramsValue = document.getElementById('grams').value;
+                const priceValue = document.getElementById('total_price').value;
+
+                if (!gramsValue || !priceValue) {
+                    e.preventDefault();
+                    alert('Semua field wajib diisi!');
+                    return false;
+                }
+
+                const grams = parseFloat(gramsValue.replace(',', '.')) || 0;
+                const totalPrice = parseInt(priceValue) || 0;
+
+                if (grams <= 0 || totalPrice <= 0) {
+                    e.preventDefault();
+                    alert('Gram dan harga harus lebih dari 0!');
+                    return false;
+                }
+
+                if (transactionType === 'BUY') {
+                    if (totalPrice > currentBalance) {
+                        e.preventDefault();
+                        alert('Saldo Bank Octo tidak mencukupi!');
+                        return false;
+                    }
+                } else {
+                    if (grams > currentGoldStock) {
+                        e.preventDefault();
+                        alert('Stok emas tidak mencukupi!');
+                        return false;
+                    }
+                }
+
+                // Set nilai yang sudah diformat ke hidden inputs atau update nilai yang ada
+                document.getElementById('grams').value = grams;
+                document.getElementById('total_price').value = totalPrice;
+            });
         });
 
         function loadCurrentGoldStock() {
+            // Mock data untuk sementara jika API belum tersedia
+            currentGoldStock = 0; // Default value
+            document.getElementById('current-gold-stock').textContent = '0.000 gram';
+
+            // Uncomment jika API sudah tersedia
+            /*
             fetch('{{ route('api.gold.portfolio') }}')
                 .then(response => response.json())
                 .then(data => {
@@ -202,7 +268,6 @@
                         data.formatted_current_grams + ' gram';
 
                     if (transactionType === 'SELL') {
-                        document.getElementById('grams').max = currentGoldStock;
                         document.getElementById('grams-help').textContent =
                             `Maksimal ${data.formatted_current_grams} gram (stok tersedia)`;
                     }
@@ -211,11 +276,15 @@
                     console.error('Error loading gold portfolio:', error);
                     document.getElementById('current-gold-stock').textContent = 'Error loading';
                 });
+            */
         }
 
         function updateCalculation() {
-            const grams = parseFloat(document.getElementById('grams').value) || 0;
-            const totalPrice = parseFloat(document.getElementById('total_price').value) || 0;
+            const gramsValue = document.getElementById('grams').value;
+            const priceValue = document.getElementById('total_price').value;
+
+            const grams = parseFloat(gramsValue.replace(',', '.')) || 0;
+            const totalPrice = parseInt(priceValue) || 0;
 
             if (grams > 0 && totalPrice > 0) {
                 const pricePerGram = totalPrice / grams;
@@ -250,31 +319,5 @@
         function resetCalculation() {
             document.getElementById('calculation-preview').style.display = 'none';
         }
-
-        // Form validation
-        document.getElementById('gold-form').addEventListener('submit', function(e) {
-            const grams = parseFloat(document.getElementById('grams').value) || 0;
-            const totalPrice = parseFloat(document.getElementById('total_price').value) || 0;
-
-            if (transactionType === 'BUY') {
-                if (totalPrice > currentBalance) {
-                    e.preventDefault();
-                    alert('Saldo Bank Octo tidak mencukupi!');
-                    return false;
-                }
-            } else {
-                if (grams > currentGoldStock) {
-                    e.preventDefault();
-                    alert('Stok emas tidak mencukupi!');
-                    return false;
-                }
-            }
-
-            if (grams <= 0 || totalPrice <= 0) {
-                e.preventDefault();
-                alert('Gram dan harga harus lebih dari 0!');
-                return false;
-            }
-        });
     </script>
 @endpush

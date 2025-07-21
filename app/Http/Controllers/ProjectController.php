@@ -17,57 +17,94 @@ class ProjectController extends Controller
      * Display a listing of projects
      */
     public function index(Request $request): View
-    {
-        $query = Project::with('client');
-
-        // Search functionality
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by type
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
-        // Filter by client
-        if ($request->filled('client_id')) {
-            $query->where('client_id', $request->client_id);
-        }
-
-        // Sort
-        $sortBy = $request->get('sort', 'created_at');
-        $sortOrder = $request->get('order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        $projects = $query->paginate(15)->withQueryString();
-
-        // ✅ FIX: Get statistics from ALL projects, not just filtered results
-        $projectStats = [
-            'waiting' => Project::where('status', 'WAITING')->count(),
-            'progress' => Project::where('status', 'PROGRESS')->count(),
-            'finished' => Project::where('status', 'FINISHED')->count(),
-            'cancelled' => Project::where('status', 'CANCELLED')->count(),
-        ];
-
-        // Get filter options
-        $clients = Client::orderBy('name')->get();
-        $projectTypes = Project::distinct()->pluck('type')->filter();
-        $statuses = ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
-
-        return view('projects.index', compact(
-            'projects',
-            'projectStats',  // ✅ Pass separate stats variable
-            'clients',
-            'projectTypes',
-            'statuses'
-        ));
+{
+    $query = Project::with('client');
+    
+    // Search functionality
+    if ($request->filled('search')) {
+        $query->search($request->search);
     }
+    
+    // Filter by status
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    
+    // Filter by type
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
+    }
+    
+    // Filter by client
+    if ($request->filled('client_id')) {
+        $query->where('client_id', $request->client_id);
+    }
+    
+    // Enhanced Sort functionality
+    $sortBy = $request->get('sort', 'created_at');
+    $sortOrder = $request->get('order', 'desc');
+    
+    // Handle different sorting cases
+    switch ($sortBy) {
+        case 'client_id':
+            // Sort by client name instead of client_id
+            $query->join('clients', 'projects.client_id', '=', 'clients.id')
+                  ->orderBy('clients.name', $sortOrder)
+                  ->select('projects.*');
+            break;
+            
+        case 'title':
+            $query->orderBy('title', $sortOrder);
+            break;
+            
+        case 'type':
+            $query->orderBy('type', $sortOrder);
+            break;
+            
+        case 'total_value':
+            $query->orderBy('total_value', $sortOrder);
+            break;
+            
+        case 'progress_percentage':
+            $query->orderBy('progress_percentage', $sortOrder);
+            break;
+            
+        case 'deadline':
+            $query->orderBy('deadline', $sortOrder);
+            break;
+            
+        case 'status':
+            $query->orderBy('status', $sortOrder);
+            break;
+            
+        default:
+            $query->orderBy('created_at', $sortOrder);
+            break;
+    }
+    
+    $projects = $query->paginate(15)->withQueryString();
+    
+    // ✅ FIX: Get statistics from ALL projects, not just filtered results
+    $projectStats = [
+        'waiting' => Project::where('status', 'WAITING')->count(),
+        'progress' => Project::where('status', 'PROGRESS')->count(),
+        'finished' => Project::where('status', 'FINISHED')->count(),
+        'cancelled' => Project::where('status', 'CANCELLED')->count(),
+    ];
+    
+    // Get filter options
+    $clients = Client::orderBy('name')->get();
+    $projectTypes = Project::distinct()->pluck('type')->filter();
+    $statuses = ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
+    
+    return view('projects.index', compact(
+        'projects',
+        'projectStats',
+        'clients',
+        'projectTypes',
+        'statuses'
+    ));
+}
 
     /**
      * Show the form for creating a new project

@@ -75,6 +75,10 @@
                                 <i class="bi bi-search"></i> Cari
                             </button>
                         </div>
+                        
+                        <!-- Hidden inputs to maintain sort parameters -->
+                        <input type="hidden" name="sort" value="{{ request('sort') }}">
+                        <input type="hidden" name="order" value="{{ request('order') }}">
                     </form>
                 </div>
             </div>
@@ -95,13 +99,97 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Proyek</th>
-                                        <th>Klien</th>
-                                        <th>Tipe</th>
-                                        <th>Nilai</th>
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'title', 'order' => request('sort') == 'title' && request('order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               class="text-decoration-none text-dark d-flex align-items-center">
+                                                Proyek
+                                                @if(request('sort') == 'title')
+                                                    @if(request('order') == 'asc')
+                                                        <i class="bi bi-arrow-up ms-1"></i>
+                                                    @else
+                                                        <i class="bi bi-arrow-down ms-1"></i>
+                                                    @endif
+                                                @else
+                                                    <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'client_id', 'order' => request('sort') == 'client_id' && request('order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               class="text-decoration-none text-dark d-flex align-items-center">
+                                                Klien
+                                                @if(request('sort') == 'client_id')
+                                                    @if(request('order') == 'asc')
+                                                        <i class="bi bi-arrow-up ms-1"></i>
+                                                    @else
+                                                        <i class="bi bi-arrow-down ms-1"></i>
+                                                    @endif
+                                                @else
+                                                    <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'type', 'order' => request('sort') == 'type' && request('order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               class="text-decoration-none text-dark d-flex align-items-center">
+                                                Tipe
+                                                @if(request('sort') == 'type')
+                                                    @if(request('order') == 'asc')
+                                                        <i class="bi bi-arrow-up ms-1"></i>
+                                                    @else
+                                                        <i class="bi bi-arrow-down ms-1"></i>
+                                                    @endif
+                                                @else
+                                                    <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'total_value', 'order' => request('sort') == 'total_value' && request('order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               class="text-decoration-none text-dark d-flex align-items-center">
+                                                Nilai
+                                                @if(request('sort') == 'total_value')
+                                                    @if(request('order') == 'asc')
+                                                        <i class="bi bi-arrow-up ms-1"></i>
+                                                    @else
+                                                        <i class="bi bi-arrow-down ms-1"></i>
+                                                    @endif
+                                                @else
+                                                    <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
                                         <th>Progress</th>
-                                        <th>Deadline</th>
-                                        <th>Status</th>
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'deadline', 'order' => request('sort') == 'deadline' && request('order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               class="text-decoration-none text-dark d-flex align-items-center">
+                                                Deadline
+                                                @if(request('sort') == 'deadline')
+                                                    @if(request('order') == 'asc')
+                                                        <i class="bi bi-arrow-up ms-1"></i>
+                                                    @else
+                                                        <i class="bi bi-arrow-down ms-1"></i>
+                                                    @endif
+                                                @else
+                                                    <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'status', 'order' => request('sort') == 'status' && request('order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               class="text-decoration-none text-dark d-flex align-items-center">
+                                                Status
+                                                @if(request('sort') == 'status')
+                                                    @if(request('order') == 'asc')
+                                                        <i class="bi bi-arrow-up ms-1"></i>
+                                                    @else
+                                                        <i class="bi bi-arrow-down ms-1"></i>
+                                                    @endif
+                                                @else
+                                                    <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -227,4 +315,29 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Custom styling for sortable headers */
+        .table th a {
+            color: #212529 !important;
+            text-decoration: none !important;
+        }
+        
+        .table th a:hover {
+            color: #0d6efd !important;
+        }
+        
+        .table th a:hover i {
+            opacity: 1 !important;
+        }
+        
+        .table th {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .table th a i {
+            font-size: 0.8rem;
+        }
+    </style>
 @endsection

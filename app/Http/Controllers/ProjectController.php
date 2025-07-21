@@ -34,6 +34,15 @@ class ProjectController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by testimoni status
+        if ($request->filled('testimoni')) {
+            if ($request->testimoni === 'true') {
+                $query->withTestimoni();
+            } elseif ($request->testimoni === 'false') {
+                $query->withoutTestimoni();
+            }
+        }
+
         // Filter untuk proyek yang memiliki piutang
         if ($request->filled('piutang') && $request->piutang == 'true') {
             $query->whereRaw('total_value > paid_amount')
@@ -71,6 +80,10 @@ class ProjectController extends Controller
                 $query->orderBy('status', $sortOrder);
                 break;
 
+            case 'testimoni':
+                $query->orderBy('testimoni', $sortOrder);
+                break;
+
             default:
                 $query->orderBy('created_at', $sortOrder);
                 break;
@@ -85,6 +98,14 @@ class ProjectController extends Controller
             'progress' => Project::where('status', 'PROGRESS')->count(),
             'finished' => Project::where('status', 'FINISHED')->count(),
             'cancelled' => Project::where('status', 'CANCELLED')->count(),
+        ];
+
+        // Tambahkan statistik testimoni
+        $testimoniStats = [
+            'with_testimoni' => Project::withTestimoni()->count(),
+            'without_testimoni' => Project::withoutTestimoni()->count(),
+            'finished_with_testimoni' => Project::finished()->withTestimoni()->count(),
+            'finished_without_testimoni' => Project::finished()->withoutTestimoni()->count(),
         ];
 
         // Hitung total piutang dari semua proyek yang belum lunas
@@ -114,6 +135,7 @@ class ProjectController extends Controller
         return view('projects.index', compact(
             'projects',
             'projectStats',
+            'testimoniStats',
             'totalPiutang',
             'totalNilaiBulanIni',
             'clients',
@@ -180,12 +202,14 @@ class ProjectController extends Controller
             'dp_amount' => 'nullable|numeric|min:0',
             'deadline' => 'required|date|after:today',
             'notes' => 'nullable|string',
+            'testimoni' => 'nullable|boolean',
         ]);
 
         // Set default DP amount if not provided
         $validated['dp_amount'] = $validated['dp_amount'] ?? 0;
         $validated['paid_amount'] = 0;
         $validated['status'] = 'WAITING';
+        $validated['testimoni'] = $validated['testimoni'] ?? false;
 
         $project = Project::create($validated);
 
@@ -254,7 +278,11 @@ class ProjectController extends Controller
             'deadline' => 'required|date',
             'status' => 'required|in:WAITING,PROGRESS,FINISHED,CANCELLED',
             'notes' => 'nullable|string',
+            'testimoni' => 'nullable|boolean',
         ]);
+
+        // Set default testimoni if not provided
+        $validated['testimoni'] = $validated['testimoni'] ?? false;
 
         $project->update($validated);
 
@@ -299,6 +327,28 @@ class ProjectController extends Controller
     }
 
     /**
+     * Update testimoni status
+     */
+    public function updateTestimoni(Request $request, Project $project): JsonResponse
+    {
+        $validated = $request->validate([
+            'testimoni' => 'required|boolean'
+        ]);
+
+        $oldTestimoni = $project->testimoni;
+        $project->update($validated);
+
+        $statusText = $project->testimoni ? 'sudah dibuat' : 'belum dibuat';
+        $oldStatusText = $oldTestimoni ? 'sudah dibuat' : 'belum dibuat';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Status testimoni berhasil diubah dari {$oldStatusText} ke {$statusText}",
+            'project' => $project->load('client')
+        ]);
+    }
+
+    /**
      * Get active projects for API
      */
     public function getActiveProjects(): JsonResponse
@@ -327,6 +377,10 @@ class ProjectController extends Controller
                     'formatted_remaining_amount' => $project->formatted_remaining_amount,
                     'status_color' => $project->status_color,
                     'status_icon' => $project->status_icon,
+                    'testimoni' => $project->testimoni,
+                    'testimoni_status_text' => $project->testimoni_status_text,
+                    'testimoni_color' => $project->testimoni_color,
+                    'testimoni_icon' => $project->testimoni_icon,
                 ];
             });
 
@@ -353,6 +407,8 @@ class ProjectController extends Controller
                     'is_overdue' => $project->is_overdue,
                     'status' => $project->status,
                     'status_color' => $project->status_color,
+                    'testimoni' => $project->testimoni,
+                    'testimoni_status_text' => $project->testimoni_status_text,
                 ];
             });
 
@@ -391,6 +447,8 @@ class ProjectController extends Controller
                 'formatted_paid_amount' => $project->formatted_paid_amount,
                 'formatted_remaining_amount' => $project->formatted_remaining_amount,
                 'progress_percentage' => $project->progress_percentage,
+                'testimoni' => $project->testimoni,
+                'testimoni_status_text' => $project->testimoni_status_text,
             ],
             'payments' => $payments
         ]);

@@ -31,7 +31,7 @@
                 <i class="bi bi-bar-chart me-2 text-purple"></i>Status & Progress
             </h5>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-2-4">
             <div class="card luxury-card stat-card stat-card-purple h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -60,18 +60,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card luxury-card stat-card stat-card-success h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-graph-up text-success fs-4"></i>
-                    </div>
-                    <h3 class="fw-bold text-success mb-1">{{ $project->progress_percentage }}%</h3>
-                    <small class="text-muted fw-medium">Progress</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-2-4">
             <div class="card luxury-card stat-card stat-card-info h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -82,14 +71,35 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card luxury-card stat-card stat-card-warning h-100">
+        <div class="col-6 col-md-2-4">
+            <div class="card luxury-card stat-card stat-card-success h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-clock-history text-warning fs-4"></i>
+                        <i class="bi bi-clock-history text-success fs-4"></i>
                     </div>
-                    <h5 class="fw-bold text-warning mb-1">{{ $project->formatted_remaining_amount }}</h5>
+                    <h5 class="fw-bold text-success mb-1">{{ $project->formatted_remaining_amount }}</h5>
                     <small class="text-muted fw-medium">Sisa</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2-4">
+            <div class="card luxury-card stat-card stat-card-{{ $project->testimoni_color }} h-100">
+                <div class="card-body text-center p-3">
+                    <div class="luxury-icon mx-auto mb-2">
+                        <i class="bi bi-{{ $project->testimoni_icon }} text-{{ $project->testimoni_color }} fs-4"></i>
+                    </div>
+                    <div class="fw-bold mb-2">
+                        @if ($project->testimoni)
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>SUDAH
+                            </span>
+                        @else
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">
+                                <i class="bi bi-clock-history me-1"></i>BELUM
+                            </span>
+                        @endif
+                    </div>
+                    <small class="text-muted fw-medium">Testimoni</small>
                 </div>
             </div>
         </div>
@@ -311,6 +321,15 @@
                             </button>
                         @endif
 
+                        @if ($project->status === 'FINISHED')
+                            <button
+                                class="btn btn-{{ $project->testimoni ? 'outline-primary' : 'primary' }} d-flex align-items-center justify-content-center"
+                                onclick="updateTestimoni({{ $project->testimoni ? 'false' : 'true' }})">
+                                <i class="bi bi-{{ $project->testimoni ? 'x-circle' : 'check-circle' }} me-2"></i>
+                                {{ $project->testimoni ? 'Batalkan Testimoni' : 'Tandai Ada Testimoni' }}
+                            </button>
+                        @endif
+
                         <a href="{{ $project->client->whatsapp_link }}" target="_blank"
                             class="btn btn-success d-flex align-items-center justify-content-center">
                             <i class="bi bi-whatsapp me-2"></i>Chat Client
@@ -369,6 +388,16 @@
                             </div>
                         @endif
 
+                        @if ($project->testimoni)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-info"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Testimoni Dibuat</h6>
+                                    <small class="text-muted">Sudah ada testimoni</small>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="timeline-item">
                             <div
                                 class="timeline-marker {{ $project->is_overdue ? 'bg-danger' : ($project->is_deadline_near ? 'bg-warning' : 'bg-info') }}">
@@ -393,43 +422,148 @@
                 'FINISHED': 'SELESAI'
             };
 
-            if (confirm(`Apakah Anda yakin ingin mengubah status menjadi ${statusLabels[newStatus]}?`)) {
-                const button = event.target;
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Memproses...';
-                button.disabled = true;
+            Swal.fire({
+                title: 'Konfirmasi Perubahan Status',
+                text: `Apakah Anda yakin ingin mengubah status menjadi ${statusLabels[newStatus]}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#8B5CF6',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Ubah!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const button = event.target;
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Memproses...';
+                    button.disabled = true;
 
-                fetch(`{{ route('projects.status', $project) }}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        },
-                        body: JSON.stringify({
-                            status: newStatus
+                    fetch(`{{ route('projects.status', $project) }}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({
+                                status: newStatus
+                            })
                         })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert('Gagal mengubah status: ' + (data.message || 'Terjadi kesalahan'));
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonColor: '#8B5CF6'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: 'Gagal mengubah status: ' + (data.message || 'Terjadi kesalahan'),
+                                    icon: 'error',
+                                    confirmButtonColor: '#8B5CF6'
+                                });
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Terjadi kesalahan koneksi',
+                                icon: 'error',
+                                confirmButtonColor: '#8B5CF6'
+                            });
                             button.innerHTML = originalText;
                             button.disabled = false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan koneksi');
-                        button.innerHTML = originalText;
-                        button.disabled = false;
-                    });
-            }
+                        });
+                }
+            });
+        }
+
+        function updateTestimoni(newTestimoni) {
+            const testimoniLabels = {
+                true: 'sudah dibuat',
+                false: 'belum dibuat'
+            };
+
+            Swal.fire({
+                title: 'Konfirmasi Perubahan Testimoni',
+                text: `Apakah Anda yakin ingin mengubah status testimoni menjadi ${testimoniLabels[newTestimoni]}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#8B5CF6',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Ubah!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const button = event.target;
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Memproses...';
+                    button.disabled = true;
+
+                    fetch(`{{ route('projects.testimoni', $project) }}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({
+                                testimoni: newTestimoni
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonColor: '#8B5CF6'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: 'Gagal mengubah status testimoni: ' + (data.message || 'Terjadi kesalahan'),
+                                    icon: 'error',
+                                    confirmButtonColor: '#8B5CF6'
+                                });
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Terjadi kesalahan koneksi',
+                                icon: 'error',
+                                confirmButtonColor: '#8B5CF6'
+                            });
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                        });
+                }
+            });
         }
     </script>
 
     <style>
+        /* Custom col-md-2-4 for 5 columns on medium screens */
+        @media (min-width: 768px) {
+            .col-md-2-4 {
+                flex: 0 0 auto;
+                width: 20%;
+            }
+        }
+
         /* Stat card styling dengan border atas berwarna */
         .stat-card {
             background: rgba(255, 255, 255, 0.95);

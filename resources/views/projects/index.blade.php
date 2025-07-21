@@ -26,7 +26,7 @@
                 <i class="bi bi-bar-chart me-2 text-purple"></i>Statistik Proyek
             </h5>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-xl-2 col-lg-3 col-md-4">
             <div class="card luxury-card stat-card stat-card-warning h-100 clickable-card" data-filter="status=WAITING">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -37,7 +37,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-xl-2 col-lg-3 col-md-4">
             <div class="card luxury-card stat-card stat-card-purple h-100 clickable-card" data-filter="status=PROGRESS">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -48,29 +48,41 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-success h-100 clickable-card" data-filter="month=current">
+
+        <div class="col-6 col-lg-3 col-md-4">
+            <div class="card luxury-card stat-card stat-card-secondary h-100 clickable-card" data-filter="month=current">
                 <div class="card-body text-center p-1">
                     <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-calendar-month text-success fs-4"></i>
+                        <i class="bi bi-calendar-month text-secondary fs-4"></i>
                     </div>
-                    <h3 class="fw-bold text-success mb-1" id="totalNilaiBulanIni">
+                    <h3 class="fw-bold text-secondary mb-1" id="totalNilaiBulanIni">
                         {{ $formatCurrency($totalNilaiBulanIni) }}
                     </h3>
                     <small class="text-muted fw-semibold">Nilai Bulan Ini</small>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-info h-100 clickable-card" data-filter="piutang=true">
+        <div class="col-6 col-lg-3 col-md-4">
+            <div class="card luxury-card stat-card stat-card-danger h-100 clickable-card" data-filter="piutang=true">
                 <div class="card-body text-center p-1">
                     <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-cash-coin text-info fs-4"></i>
+                        <i class="bi bi-cash-coin text-danger fs-4"></i>
                     </div>
-                    <h3 class="fw-bold text-info mb-1" id="totalPiutang">
+                    <h3 class="fw-bold text-danger mb-1" id="totalPiutang">
                         {{ $formatCurrency($totalPiutang) }}
                     </h3>
                     <small class="text-muted fw-semibold">Total Piutang</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-2 col-lg-3 col-md-4">
+            <div class="card luxury-card stat-card stat-card-info h-100 clickable-card" data-filter="testimoni=false">
+                <div class="card-body text-center p-3">
+                    <div class="luxury-icon mx-auto mb-2">
+                        <i class="bi bi-chat-quote-fill text-info fs-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-info mb-1">{{ $testimoniStats['without_testimoni'] }}</h3>
+                    <small class="text-muted fw-semibold">Belum Testimoni</small>
                 </div>
             </div>
         </div>
@@ -93,7 +105,8 @@
         <div class="card-body p-4 border-bottom">
             <form method="GET" class="row g-3">
                 <div class="col-md-9">
-                    <input type="text" name="search" class="form-control form-control-lg" value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control form-control-lg" value="{{ request('search') }}"
+                        placeholder="Cari proyek, klien, atau deskripsi...">
                 </div>
                 <div class="col-md-3">
                     <div class="d-flex gap-2">
@@ -111,6 +124,7 @@
                 <input type="hidden" name="order" value="{{ request('order') }}">
                 <input type="hidden" name="status" value="{{ request('status') }}">
                 <input type="hidden" name="piutang" value="{{ request('piutang') }}">
+                <input type="hidden" name="testimoni" value="{{ request('testimoni') }}">
             </form>
         </div>
 
@@ -190,6 +204,7 @@
                                         <td class="px-4 py-4">
                                             <div>
                                                 <h6 class="mb-1 fw-bold text-dark">{{ $project->title }}</h6>
+                                                <small class="text-muted">{{ $project->type }}</small>
                                             </div>
                                         </td>
                                         <td class="px-4 py-4">
@@ -205,6 +220,12 @@
                                                         </small>
                                                     @else
                                                         <small class="text-muted">Lunas</small>
+                                                    @endif
+
+                                                    @if (!$project->testimoni)
+                                                        <small class="text-primary fw-medium">
+                                                            <i class="bi bi-clock-history me-1"></i>Belum Testimoni
+                                                        </small>
                                                     @endif
                                                 </div>
                                             </div>
@@ -303,15 +324,22 @@
                                             <i class="bi bi-calendar-date me-2 text-muted"></i>
                                             <small class="fw-medium">{{ $project->deadline->format('d M Y') }}</small>
                                         </div>
-                                        @if ($project->is_overdue)
-                                            <small class="text-danger fw-medium">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>Terlambat
-                                            </small>
-                                        @elseif($project->is_deadline_near)
-                                            <small class="text-warning fw-medium">
-                                                <i class="bi bi-clock me-1"></i>Deadline Dekat
-                                            </small>
-                                        @endif
+                                        <div class="d-flex flex-column align-items-end">
+                                            @if ($project->is_overdue)
+                                                <small class="text-danger fw-medium">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>Terlambat
+                                                </small>
+                                            @elseif($project->is_deadline_near)
+                                                <small class="text-warning fw-medium">
+                                                    <i class="bi bi-clock me-1"></i>Deadline Dekat
+                                                </small>
+                                            @endif
+                                            @if (!$project->testimoni)
+                                                <small class="text-primary fw-medium mt-1">
+                                                    <i class="bi bi-clock-history me-1"></i>Belum Testimoni
+                                                </small>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -378,7 +406,7 @@
                             <i class="bi bi-folder-x text-muted" style="font-size: 2.5rem;"></i>
                         </div>
                         <h5 class="fw-bold mb-2">Tidak ada proyek ditemukan</h5>
-                        @if (request('search') || request('status') || request('piutang'))
+                        @if (request('search') || request('status') || request('piutang') || request('testimoni'))
                             <p class="text-muted mb-4">Coba ubah kriteria pencarian atau filter Anda</p>
                             <a href="{{ route('projects.index') }}" class="btn btn-outline-primary me-2">
                                 <i class="bi bi-arrow-clockwise me-2"></i>Reset Filter
@@ -591,6 +619,14 @@
             background: linear-gradient(90deg, #06B6D4, #0891B2);
         }
 
+        .stat-card-secondary::before {
+            background: linear-gradient(90deg, #6C757D, #5A6268);
+        }
+
+        .stat-card-danger::before {
+            background: linear-gradient(90deg, #DC3545, #C82333);
+        }
+
         /* Hover effect */
         .stat-card:hover {
             transform: translateY(-4px);
@@ -599,6 +635,31 @@
 
         .stat-card:hover::before {
             height: 6px;
+        }
+
+        .luxury-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.08);
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .luxury-card:hover {
+            box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .luxury-icon {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
+            border-radius: 12px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
         }
 
         /* Enhanced table styling */

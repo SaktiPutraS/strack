@@ -24,6 +24,7 @@ class Project extends Model
         'status',
         'deadline',
         'notes',
+        'testimoni',
     ];
 
     protected $casts = [
@@ -31,6 +32,7 @@ class Project extends Model
         'dp_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'deadline' => 'date',
+        'testimoni' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -122,6 +124,30 @@ class Project extends Model
     }
 
     /**
+     * Get testimoni status color for UI
+     */
+    public function getTestimoniColorAttribute(): string
+    {
+        return $this->testimoni ? 'success' : 'warning';
+    }
+
+    /**
+     * Get testimoni status icon for UI
+     */
+    public function getTestimoniIconAttribute(): string
+    {
+        return $this->testimoni ? 'check-circle-fill' : 'clock-history';
+    }
+
+    /**
+     * Get testimoni status text for UI
+     */
+    public function getTestimoniStatusTextAttribute(): string
+    {
+        return $this->testimoni ? 'Sudah' : 'Belum';
+    }
+
+    /**
      * Format currency
      */
     public function getFormattedTotalValueAttribute(): string
@@ -158,6 +184,22 @@ class Project extends Model
     public function scopeFinished($query)
     {
         return $query->where('status', 'FINISHED');
+    }
+
+    /**
+     * Scope: Projects with testimoni
+     */
+    public function scopeWithTestimoni($query)
+    {
+        return $query->where('testimoni', true);
+    }
+
+    /**
+     * Scope: Projects without testimoni
+     */
+    public function scopeWithoutTestimoni($query)
+    {
+        return $query->where('testimoni', false);
     }
 
     /**

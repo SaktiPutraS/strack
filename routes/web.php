@@ -36,6 +36,7 @@ Route::middleware('simpleauth')->group(function () {
     // Projects
     Route::resource('projects', ProjectController::class);
     Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
+    Route::patch('projects/{project}/testimoni', [ProjectController::class, 'updateTestimoni'])->name('projects.testimoni');
 
     // Project Types Management
     Route::resource('project-types', ProjectTypeController::class);

@@ -31,7 +31,7 @@
                 <i class="bi bi-bar-chart me-2 text-purple"></i>Status & Progress
             </h5>
         </div>
-        <div class="col-6 col-md-2-4">
+        <div class="col-6 col-md-3">
             <div class="card luxury-card stat-card stat-card-purple h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -60,7 +60,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-2-4">
+        <div class="col-6 col-md-3">
             <div class="card luxury-card stat-card stat-card-info h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -71,7 +71,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-2-4">
+        <div class="col-6 col-md-3">
             <div class="card luxury-card stat-card stat-card-success h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -82,7 +82,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-2-4">
+        <div class="col-6 col-md-3">
             <div class="card luxury-card stat-card stat-card-{{ $project->testimoni_color }} h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">

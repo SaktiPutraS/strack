@@ -37,25 +37,37 @@ class ExpenseController extends Controller
 
         $expenses = $query->orderBy('expense_date', 'desc')->paginate(15)->withQueryString();
 
-        // Statistics
-        $totalExpenses = Expense::sum('amount');
-        $monthlyExpenses = Expense::whereYear('expense_date', Carbon::now()->year)
-            ->whereMonth('expense_date', Carbon::now()->month)
-            ->sum('amount');
-
-        $expensesByCategory = Expense::selectRaw('category, SUM(amount) as total')
+        // Data untuk grafik - Bulan ini
+        $monthlyExpensesByCategory = Expense::selectRaw('category, SUM(amount) as total')
+            ->whereYear('expense_date', Carbon::now()->year)
             ->whereMonth('expense_date', Carbon::now()->month)
             ->groupBy('category')
             ->get()
             ->mapWithKeys(function ($item) {
-                return [Expense::CATEGORIES[$item->category] => $item->total];
+                // Cek apakah category ada di CATEGORIES konstanta
+                $categoryLabel = isset(Expense::CATEGORIES[$item->category])
+                    ? Expense::CATEGORIES[$item->category]
+                    : $item->category;
+                return [$categoryLabel => $item->total];
+            });
+
+        // Data untuk grafik - Tahun ini
+        $yearlyExpensesByCategory = Expense::selectRaw('category, SUM(amount) as total')
+            ->whereYear('expense_date', Carbon::now()->year)
+            ->groupBy('category')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                // Cek apakah category ada di CATEGORIES konstanta
+                $categoryLabel = isset(Expense::CATEGORIES[$item->category])
+                    ? Expense::CATEGORIES[$item->category]
+                    : $item->category;
+                return [$categoryLabel => $item->total];
             });
 
         return view('expenses.index', compact(
             'expenses',
-            'totalExpenses',
-            'monthlyExpenses',
-            'expensesByCategory'
+            'monthlyExpensesByCategory',
+            'yearlyExpensesByCategory'
         ));
     }
 
@@ -70,7 +82,6 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date|before_or_equal:today',
             'amount' => 'required|numeric|min:1',
             'category' => 'required|in:' . implode(',', array_keys(Expense::CATEGORIES)),
-            'subcategory' => 'nullable|string|max:255',
             'description' => 'required|string|max:500',
         ]);
 
@@ -99,7 +110,6 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date|before_or_equal:today',
             'amount' => 'required|numeric|min:1',
             'category' => 'required|in:' . implode(',', array_keys(Expense::CATEGORIES)),
-            'subcategory' => 'nullable|string|max:255',
             'description' => 'required|string|max:500',
         ]);
 
@@ -121,13 +131,5 @@ class ExpenseController extends Controller
 
         return redirect()->route('expenses.index')
             ->with('success', 'Pengeluaran berhasil dihapus!');
-    }
-
-    public function getSubcategories(Request $request): JsonResponse
-    {
-        $category = $request->get('category');
-        $subcategories = Expense::SUBCATEGORIES[$category] ?? [];
-
-        return response()->json($subcategories);
     }
 }

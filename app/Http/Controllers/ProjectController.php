@@ -15,26 +15,21 @@ use Jenssegers\Agent\Agent;
 
 class ProjectController extends Controller
 {
-    /**
-     * Display a listing of projects
-     */
+
     public function index(Request $request): View
     {
         $agent = new Agent();
         $isMobile = $agent->isMobile();
         $query = Project::with('client');
 
-        // Search functionality
         if ($request->filled('search')) {
             $query->search($request->search);
         }
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filter by testimoni status
         if ($request->filled('testimoni')) {
             if ($request->testimoni === 'true') {
                 $query->withTestimoni();
@@ -43,28 +38,23 @@ class ProjectController extends Controller
             }
         }
 
-        // Filter untuk proyek yang memiliki piutang
         if ($request->filled('piutang') && $request->piutang == 'true') {
             $query->whereRaw('total_value > paid_amount')
                 ->whereIn('status', ['WAITING', 'PROGRESS']);
         }
 
-        // Filter untuk proyek yang dibuat bulan ini
         if ($request->filled('month') && $request->month == 'current') {
             $query->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year);
         }
 
-        // Enhanced Sort functionality
         $sortBy = $request->get('sort', 'created_at');
         $sortOrder = in_array(strtolower($request->get('order', 'desc')), ['asc', 'desc'])
             ? strtolower($request->get('order', 'desc'))
             : 'desc';
 
-        // Handle different sorting cases
         switch ($sortBy) {
             case 'client_id':
-                // Sort by client name instead of client_id
                 $query->join('clients', 'projects.client_id', '=', 'clients.id')
                     ->orderBy('clients.name', $sortOrder)
                     ->select('projects.*');
@@ -91,10 +81,8 @@ class ProjectController extends Controller
                 break;
         }
 
-        // Pagination dengan maksimal 5 proyek per halaman
         $projects = $query->paginate(5)->withQueryString();
 
-        // ✅ FIX: Get statistics from ALL projects, not just filtered results
         $projectStats = [
             'waiting' => Project::where('status', 'WAITING')->count(),
             'progress' => Project::where('status', 'PROGRESS')->count(),
@@ -102,7 +90,6 @@ class ProjectController extends Controller
             'cancelled' => Project::where('status', 'CANCELLED')->count(),
         ];
 
-        // Tambahkan statistik testimoni
         $testimoniStats = [
             'with_testimoni' => Project::withTestimoni()->count(),
             'without_testimoni' => Project::withoutTestimoni()->count(),
@@ -110,21 +97,17 @@ class ProjectController extends Controller
             'finished_without_testimoni' => Project::finished()->withoutTestimoni()->count(),
         ];
 
-        // Hitung total piutang dari semua proyek yang belum lunas
         $totalPiutang = Project::whereIn('status', ['WAITING', 'PROGRESS'])
             ->sum(DB::raw('total_value - paid_amount'));
 
-        // Hitung total nilai proyek yang dibuat bulan ini
         $totalNilaiBulanIni = Project::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('total_value');
 
-        // Get filter options
         $clients = Client::orderBy('name')->get();
         $projectTypes = Project::distinct()->pluck('type')->filter();
         $statuses = ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
 
-        // Format currency function
         $formatCurrency = function ($amount) {
             if ($amount >= 1000000000) {
                 return 'Rp ' . number_format($amount / 1000000000, 1, ',', '.') . 'M';
@@ -148,17 +131,12 @@ class ProjectController extends Controller
         ));
     }
 
-    /**
-     * Show the form for creating a new project
-     */
+
     public function create(): View
     {
         $clients = Client::orderBy('name')->get();
-
-        // Load project types from database
         $projectTypes = ProjectType::active()->ordered()->get();
 
-        // Fallback to default types if none exist in database
         if ($projectTypes->isEmpty()) {
             $defaultTypes = [
                 ['name' => 'HTML/PHP', 'display_name' => 'HTML/PHP'],
@@ -170,7 +148,6 @@ class ProjectController extends Controller
                 ['name' => 'OTHER', 'display_name' => 'Other'],
             ];
 
-            // Create default types if database is empty
             foreach ($defaultTypes as $index => $typeData) {
                 ProjectType::create([
                     'name' => $typeData['name'],
@@ -180,34 +157,28 @@ class ProjectController extends Controller
                 ]);
             }
 
-            // Reload project types
             $projectTypes = ProjectType::active()->ordered()->get();
         }
 
         return view('projects.create', compact('clients', 'projectTypes'));
     }
 
-    /**
-     * Store a newly created project
-     */
     public function store(Request $request): RedirectResponse
     {
-        // Get valid project types from database
         $validTypes = ProjectType::active()->pluck('name')->toArray();
 
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'type' => 'required|in:' . implode(',', $validTypes),
             'total_value' => 'required|numeric|min:0',
             'dp_amount' => 'nullable|numeric|min:0',
-            'deadline' => 'required|date|after:today',
+            'deadline' => 'required|date',
             'notes' => 'nullable|string',
             'testimoni' => 'nullable|boolean',
         ]);
 
-        // Set default DP amount if not provided
         $validated['dp_amount'] = $validated['dp_amount'] ?? 0;
         $validated['paid_amount'] = 0;
         $validated['status'] = 'WAITING';
@@ -215,7 +186,6 @@ class ProjectController extends Controller
 
         $project = Project::create($validated);
 
-        // Create DP payment if DP amount > 0
         if ($validated['dp_amount'] > 0) {
             $project->payments()->create([
                 'amount' => $validated['dp_amount'],
@@ -230,14 +200,10 @@ class ProjectController extends Controller
             ->with('success', 'Proyek berhasil dibuat!');
     }
 
-    /**
-     * Display the specified project
-     */
     public function show(Project $project): View
     {
         $project->load(['client', 'payments']);
 
-        // Calculate additional metrics
         $totalPayments = $project->payments()->count();
         $lastPayment = $project->payments()->latest('payment_date')->first();
         $paymentHistory = $project->payments()->orderBy('payment_date', 'desc')->get();
@@ -250,31 +216,22 @@ class ProjectController extends Controller
         ));
     }
 
-    /**
-     * Show the form for editing the project
-     */
     public function edit(Project $project): View
     {
         $clients = Client::orderBy('name')->get();
-
-        // Load project types from database
         $projectTypes = ProjectType::active()->ordered()->get();
 
         return view('projects.edit', compact('project', 'clients', 'projectTypes'));
     }
 
-    /**
-     * Update the specified project
-     */
     public function update(Request $request, Project $project): RedirectResponse
     {
-        // Get valid project types from database
         $validTypes = ProjectType::active()->pluck('name')->toArray();
 
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'type' => 'required|in:' . implode(',', $validTypes),
             'total_value' => 'required|numeric|min:0',
             'deadline' => 'required|date',
@@ -283,7 +240,6 @@ class ProjectController extends Controller
             'testimoni' => 'nullable|boolean',
         ]);
 
-        // Set default testimoni if not provided
         $validated['testimoni'] = $validated['testimoni'] ?? false;
 
         $project->update($validated);
@@ -292,12 +248,8 @@ class ProjectController extends Controller
             ->with('success', 'Proyek berhasil diperbarui!');
     }
 
-    /**
-     * Remove the specified project
-     */
     public function destroy(Project $project): RedirectResponse
     {
-        // Check if project has payments
         if ($project->payments()->exists()) {
             return redirect()->route('projects.index')
                 ->with('error', 'Tidak dapat menghapus proyek yang sudah memiliki pembayaran!');
@@ -309,9 +261,6 @@ class ProjectController extends Controller
             ->with('success', 'Proyek berhasil dihapus!');
     }
 
-    /**
-     * Update project status
-     */
     public function updateStatus(Request $request, Project $project): JsonResponse
     {
         $validated = $request->validate([
@@ -328,9 +277,6 @@ class ProjectController extends Controller
         ]);
     }
 
-    /**
-     * Update testimoni status
-     */
     public function updateTestimoni(Request $request, Project $project): JsonResponse
     {
         $validated = $request->validate([
@@ -350,9 +296,6 @@ class ProjectController extends Controller
         ]);
     }
 
-    /**
-     * Get active projects for API
-     */
     public function getActiveProjects(): JsonResponse
     {
         $projects = Project::with('client')
@@ -389,9 +332,6 @@ class ProjectController extends Controller
         return response()->json($projects);
     }
 
-    /**
-     * Get upcoming deadlines for API
-     */
     public function getUpcomingDeadlines(): JsonResponse
     {
         $projects = Project::with('client')
@@ -417,9 +357,6 @@ class ProjectController extends Controller
         return response()->json($projects);
     }
 
-    /**
-     * Get project payments for API
-     */
     public function getProjectPayments(Project $project): JsonResponse
     {
         $payments = $project->payments()

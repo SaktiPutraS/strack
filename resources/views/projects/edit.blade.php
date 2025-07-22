@@ -130,10 +130,9 @@
                             <!-- Description -->
                             <div class="col-12">
                                 <label for="description" class="form-label fw-semibold">
-                                    Deskripsi Proyek <span class="text-danger">*</span>
+                                    Deskripsi Proyek
                                 </label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="5"
-                                    placeholder="Deskripsikan detail proyek, fitur yang akan dibuat, teknologi yang digunakan, dll." required>{{ old('description', $project->description) }}</textarea>
+                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="5">{{ old('description', $project->description) }}</textarea>
                                 @error('description')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -151,7 +150,6 @@
                             </div>
                             Informasi Keuangan
                         </h5>
-                        <p class="text-muted mb-0">Update nilai proyek dan tracking pembayaran</p>
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-4">
@@ -273,12 +271,6 @@
                 if (totalValue < paidAmount) {
                     e.preventDefault();
                     alert('Nilai total proyek tidak boleh lebih kecil dari jumlah yang sudah dibayar!');
-                    return false;
-                }
-
-                if (totalValue < 100000) {
-                    e.preventDefault();
-                    alert('Nilai proyek minimal Rp 100.000');
                     return false;
                 }
 

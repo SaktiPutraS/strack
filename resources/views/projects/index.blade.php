@@ -516,19 +516,6 @@
             const searchForm = document.querySelector('form');
             const searchBtn = searchForm.querySelector('button[type="submit"]');
 
-            // DEBUGGING: Cek apakah ada masalah dengan form action atau method
-            console.log('Form action:', searchForm.action);
-            console.log('Form method:', searchForm.method);
-
-            // Alternative: Debug Enter key
-            searchInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    console.log('Enter pressed - akan submit form');
-                    // Biarkan browser handle submit secara natural
-                    // Jangan preventDefault atau manual submit
-                }
-            });
-
             // Add loading state to search form
             searchForm.addEventListener('submit', function() {
                 searchBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Mencari...';

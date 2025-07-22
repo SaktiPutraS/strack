@@ -4,11 +4,14 @@
 @section('content')
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="section-title">
-                    <i class="bi bi-receipt"></i>Detail Pengeluaran
-                </h1>
-                <div class="btn-group">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div>
+                    <h1 class="h2 fw-bold text-purple mb-1">
+                        <i class="bi bi-receipt me-2"></i>Detail Pengeluaran
+                    </h1>
+                    <p class="text-muted mb-0">{{ $expense->description }}</p>
+                </div>
+                <div class="d-flex flex-column flex-sm-row gap-2">
                     <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-primary">
                         <i class="bi bi-pencil me-2"></i>Edit
                     </a>
@@ -20,101 +23,267 @@
         </div>
     </div>
 
-    <div class="row justify-content-center">
+    <div class="row">
+        <!-- Expense Details -->
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="section-title">
-                        <i class="bi bi-info-circle"></i>Informasi Pengeluaran
+            <!-- Main Information -->
+            <div class="card luxury-card border-0 mb-4">
+                <div class="card-header bg-white border-0 p-4">
+                    <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                        <div class="luxury-icon me-3">
+                            <i class="bi bi-info-circle text-purple"></i>
+                        </div>
+                        Informasi Pengeluaran
                     </h5>
-
-                    <div class="row g-3">
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Tanggal</label>
+                            <label class="form-label text-muted fw-semibold">Jumlah Pengeluaran</label>
                             <div class="d-flex align-items-center">
-                                <i class="bi bi-calendar3 text-lilac me-2"></i>
-                                <strong>{{ $expense->expense_date->format('d M Y') }}</strong>
+                                <i class="bi bi-cash text-purple me-2"></i>
+                                <strong class="text-danger fs-3">{{ $expense->formatted_amount }}</strong>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Jumlah</label>
+                            <label class="form-label text-muted fw-semibold">Tanggal Pengeluaran</label>
                             <div class="d-flex align-items-center">
-                                <i class="bi bi-cash text-lilac me-2"></i>
-                                <strong class="text-danger fs-4">{{ $expense->formatted_amount }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted">Kategori</label>
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-tag text-lilac me-2"></i>
-                                <span class="badge bg-secondary">{{ $expense->category_label }}</span>
-                            </div>
-                        </div>
-                        @if ($expense->subcategory)
-                            <div class="col-md-6">
-                                <label class="form-label text-muted">Sub Kategori</label>
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-tags text-lilac me-2"></i>
-                                    <span class="badge bg-light text-dark">{{ $expense->subcategory_label }}</span>
+                                <i class="bi bi-calendar3 text-purple me-2"></i>
+                                <div>
+                                    <strong>{{ $expense->expense_date->format('d M Y') }}</strong>
+                                    <small class="text-muted ms-2">({{ $expense->expense_date->diffForHumans() }})</small>
                                 </div>
                             </div>
-                        @endif
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fw-semibold">Kategori</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-tag text-purple me-2"></i>
+                                <span class="badge bg-purple-light text-purple border border-purple fs-6">{{ $expense->category_label }}</span>
+                            </div>
+                        </div>
                         <div class="col-12">
-                            <label class="form-label text-muted">Deskripsi</label>
+                            <label class="form-label text-muted fw-semibold">Deskripsi</label>
                             <div class="d-flex align-items-start">
-                                <i class="bi bi-journal-text text-lilac me-2 mt-1"></i>
-                                <p class="mb-0">{{ $expense->description }}</p>
+                                <i class="bi bi-journal-text text-purple me-2 mt-1"></i>
+                                <p class="mb-0 text-dark">{{ $expense->description }}</p>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Additional Info -->
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6 class="text-muted mb-3">Informasi Tambahan</h6>
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <small class="text-muted">Dibuat pada:</small>
-                                <div class="fw-bold">{{ $expense->created_at->format('d M Y H:i') }}</div>
+            <!-- Additional Information -->
+            <div class="card luxury-card border-0">
+                <div class="card-header bg-white border-0 p-4">
+                    <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                        <div class="luxury-icon me-3">
+                            <i class="bi bi-clock-history text-purple"></i>
+                        </div>
+                        Riwayat Transaksi
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fw-semibold">Dibuat pada</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-plus-circle text-purple me-2"></i>
+                                <div>
+                                    <strong>{{ $expense->created_at->format('d M Y') }}</strong>
+                                    <small class="text-muted ms-2">{{ $expense->created_at->format('H:i') }}</small>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <small class="text-muted">Terakhir diperbarui:</small>
-                                <div class="fw-bold">{{ $expense->updated_at->format('d M Y H:i') }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fw-semibold">Terakhir diperbarui</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-pencil-square text-purple me-2"></i>
+                                <div>
+                                    <strong>{{ $expense->updated_at->format('d M Y') }}</strong>
+                                    <small class="text-muted ms-2">{{ $expense->updated_at->format('H:i') }}</small>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Action Buttons -->
-                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Quick Actions -->
+            <div class="card luxury-card border-0 mb-4">
+                <div class="card-header bg-white border-0 p-4">
+                    <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                        <div class="luxury-icon me-3" style="width: 36px; height: 36px;">
+                            <i class="bi bi-lightning text-purple"></i>
+                        </div>
+                        Aksi Cepat
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>Edit Pengeluaran
+                        </a>
+                        <a href="{{ route('expenses.create') }}" class="btn btn-outline-success">
+                            <i class="bi bi-plus-circle me-2"></i>Pengeluaran Baru
+                        </a>
                         <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
                             <i class="bi bi-trash me-2"></i>Hapus Pengeluaran
                         </button>
-                        <div>
-                            <a href="{{ route('expenses.index') }}" class="btn btn-secondary me-2">
-                                <i class="bi bi-list me-2"></i>Kembali ke List
-                            </a>
-                            <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-primary">
-                                <i class="bi bi-pencil me-2"></i>Edit
-                            </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Summary -->
+            <div class="card luxury-card border-0">
+                <div class="card-header bg-white border-0 p-4">
+                    <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                        <div class="luxury-icon me-3" style="width: 36px; height: 36px;">
+                            <i class="bi bi-calculator text-purple"></i>
+                        </div>
+                        Ringkasan
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">ID Transaksi:</span>
+                                <strong>#{{ str_pad($expense->id, 4, '0', STR_PAD_LEFT) }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Bulan:</span>
+                                <strong>{{ $expense->expense_date->format('M Y') }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Hari:</span>
+                                <strong>{{ $expense->expense_date->format('l') }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <hr>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Status:</span>
+                                <span class="badge bg-success">Tercatat</span>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Delete Form -->
-                    <form id="delete-form" action="{{ route('expenses.destroy', $expense) }}" method="POST" style="display: none;">
-                        @csrf
-                        @method('DELETE')
-                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Delete Form -->
+    <form id="delete-form" action="{{ route('expenses.destroy', $expense) }}" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 
 @push('scripts')
     <script>
         function confirmDelete() {
-            if (confirm('Apakah Anda yakin ingin menghapus pengeluaran ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
-                document.getElementById('delete-form').submit();
+            Swal.fire({
+                title: 'Yakin menghapus pengeluaran?',
+                text: "Tindakan ini tidak dapat dibatalkan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form').submit();
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // SweetAlert messages
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: '{{ session('success') }}',
+                    confirmButtonColor: '#8B5CF6',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: '{{ session('error') }}',
+                    confirmButtonColor: '#8B5CF6'
+                });
+            @endif
+
+            // Add animation to cards
+            const cards = document.querySelectorAll('.luxury-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+
+    <style>
+        .luxury-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.08);
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .luxury-card:hover {
+            box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .luxury-icon {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+        }
+
+        .text-purple {
+            color: #8B5CF6 !important;
+        }
+
+        .bg-purple-light {
+            background-color: rgba(139, 92, 246, 0.05) !important;
+        }
+
+        .border-purple {
+            border-color: rgba(139, 92, 246, 0.3) !important;
+        }
+
+        @media (max-width: 768px) {
+            .luxury-card:hover {
+                transform: none !important;
             }
         }
-    </script>
+    </style>
 @endpush

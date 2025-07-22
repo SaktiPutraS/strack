@@ -309,7 +309,7 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="d-grid gap-3">
-                        @if ($project->status !== 'FINISHED')
+                        @if ($project->status !== 'FINISHED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING')
                             <button class="btn btn-success d-flex align-items-center justify-content-center" onclick="updateStatus('FINISHED')">
                                 <i class="bi bi-check-circle me-2"></i>Tandai Selesai
                             </button>

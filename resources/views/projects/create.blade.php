@@ -109,9 +109,9 @@
                             <!-- Description -->
                             <div class="col-12">
                                 <label for="description" class="form-label fw-semibold">
-                                    Deskripsi Proyek <span class="text-danger">*</span>
+                                    Deskripsi Proyek
                                 </label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="5" required>{{ old('description') }}</textarea>
+                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="5">{{ old('description') }}</textarea>
                                 @error('description')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -145,7 +145,6 @@
                                 @error('total_value')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Minimal Rp 100.000</div>
                             </div>
 
                             <!-- DP Amount -->
@@ -353,17 +352,6 @@
                         icon: 'error',
                         title: 'Validasi Gagal',
                         text: 'Jumlah DP tidak boleh melebihi nilai total proyek!',
-                        confirmButtonColor: '#8B5CF6'
-                    });
-                    return false;
-                }
-
-                if (totalValue < 100000) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validasi Gagal',
-                        text: 'Nilai proyek minimal Rp 100.000',
                         confirmButtonColor: '#8B5CF6'
                     });
                     return false;

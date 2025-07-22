@@ -35,7 +35,7 @@ class ExpenseController extends Controller
             $query->whereDate('expense_date', '<=', $request->date_to);
         }
 
-        $expenses = $query->orderBy('expense_date', 'desc')->paginate(15)->withQueryString();
+        $expenses = $query->orderBy('expense_date', 'desc')->paginate(5)->withQueryString();
 
         // Data untuk grafik - Bulan ini
         $monthlyExpensesByCategory = Expense::selectRaw('category, SUM(amount) as total')

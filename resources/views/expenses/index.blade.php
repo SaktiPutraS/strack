@@ -112,7 +112,6 @@
                                         style="cursor: pointer;">
                                         <td class="px-4 py-4">
                                             <div class="fw-medium">{{ $expense->expense_date->format('d M Y') }}</div>
-                                            <small class="text-muted">{{ $expense->expense_date->format('H:i') }}</small>
                                         </td>
                                         <td class="px-4 py-4">
                                             <span class="badge bg-secondary">{{ $expense->category_label }}</span>

@@ -121,14 +121,11 @@
                                             <i class="bi bi-toggle-on me-2 text-muted"></i>Status
                                         </span>
                                     </th>
-                                    <th class="px-4 py-3 border-0">
-                                        <span class="fw-semibold text-dark">Aksi</span>
-                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($projectTypes as $projectType)
-                                    <tr class="border-bottom project-type-row" data-id="{{ $projectType->id }}">
+                                    <tr class="border-bottom project-type-row clickable-row" data-id="{{ $projectType->id }}" style="cursor: pointer;">
                                         <td class="px-4 py-4">
                                             <div>
                                                 <h6 class="mb-1 fw-bold text-dark">{{ $projectType->name }}</h6>
@@ -164,33 +161,6 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-4">
-                                            <div class="btn-group" role="group">
-                                                <a href="{{ route('project-types.edit', $projectType) }}" class="btn btn-sm btn-outline-primary"
-                                                    title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <form action="{{ route('project-types.toggle', $projectType) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit"
-                                                        class="btn btn-sm btn-outline-{{ $projectType->is_active ? 'warning' : 'success' }}"
-                                                        title="{{ $projectType->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                                        <i class="bi bi-{{ $projectType->is_active ? 'pause' : 'play' }}"></i>
-                                                    </button>
-                                                </form>
-                                                @if ($projectType->projects()->count() == 0)
-                                                    <form action="{{ route('project-types.destroy', $projectType) }}" method="POST" class="d-inline"
-                                                        onsubmit="return confirm('Yakin ingin menghapus?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                @endif
-                                            </div>
-                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -202,7 +172,7 @@
                 <div class="d-lg-none">
                     <div class="p-3">
                         @foreach ($projectTypes as $projectType)
-                            <div class="card luxury-card project-card mb-3" data-id="{{ $projectType->id }}">
+                            <div class="card luxury-card project-card mb-3 clickable-card" data-id="{{ $projectType->id }}" style="cursor: pointer;">
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="flex-grow-1">
@@ -232,18 +202,8 @@
                                             <i class="bi bi-sort-numeric-down me-1 text-muted"></i>
                                             <small class="text-muted">Urutan: {{ $projectType->sort_order }}</small>
                                         </div>
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ route('project-types.edit', $projectType) }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <form action="{{ route('project-types.toggle', $projectType) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit"
-                                                    class="btn btn-sm btn-outline-{{ $projectType->is_active ? 'warning' : 'success' }}">
-                                                    <i class="bi bi-{{ $projectType->is_active ? 'pause' : 'play' }}"></i>
-                                                </button>
-                                            </form>
+                                        <div>
+                                            <i class="bi bi-pencil-square text-primary" title="Klik untuk edit"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -271,9 +231,35 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Add hover effects to table rows
-            const tableRows = document.querySelectorAll('.project-type-row');
-            tableRows.forEach(row => {
+            // SweetAlert untuk session messages
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: '{{ session('success') }}',
+                    confirmButtonColor: '#8B5CF6',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: '{{ session('error') }}',
+                    confirmButtonColor: '#8B5CF6'
+                });
+            @endif
+
+            // Clickable rows untuk edit
+            document.querySelectorAll('.clickable-row, .clickable-card').forEach(row => {
+                row.addEventListener('click', function() {
+                    const projectTypeId = this.getAttribute('data-id');
+                    window.location.href = `{{ url('project-types') }}/${projectTypeId}/edit`;
+                });
+
+                // Hover effect
                 row.addEventListener('mouseenter', function() {
                     this.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
                     this.style.transition = 'background-color 0.2s ease';
@@ -282,7 +268,28 @@
                 row.addEventListener('mouseleave', function() {
                     this.style.backgroundColor = '';
                 });
+
+                // Touch feedback for mobile
+                row.addEventListener('touchstart', function() {
+                    this.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+                }, {
+                    passive: true
+                });
+
+                row.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                    }, 200);
+                }, {
+                    passive: true
+                });
             });
+
+            // Remove old delete/toggle handlers since they're moved to edit page
+            // Konfirmasi delete dengan SweetAlert - DIHAPUS
+            // Konfirmasi toggle status - DIHAPUS
+
+            // Add hover effects to table rows - DIPINDAH KE ATAS
 
             // Add animation to statistics cards
             const statCards = document.querySelectorAll('.luxury-card');
@@ -300,7 +307,6 @@
     </script>
 
     <style>
-        /* Stat card styling dengan border atas berwarna */
         .stat-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -396,7 +402,6 @@
             width: 6px;
         }
 
-        /* Enhanced table styling */
         .table th {
             background-color: rgba(139, 92, 246, 0.05);
             border-bottom: 1px solid rgba(139, 92, 246, 0.1);

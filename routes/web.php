@@ -40,7 +40,7 @@ Route::middleware('simpleauth')->group(function () {
 
     // Project Types Management
     Route::resource('project-types', ProjectTypeController::class);
-    Route::patch('project-types/{project_type}/toggle', [ProjectTypeController::class, 'toggle'])
+    Route::patch('project-types/{projectType}/toggle', [ProjectTypeController::class, 'toggle'])
         ->name('project-types.toggle');
 
     // Clients

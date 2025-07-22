@@ -9,12 +9,11 @@
                     <h1 class="h2 fw-bold text-purple mb-1">
                         <i class="bi bi-pencil-square me-2"></i>Edit Tipe Proyek
                     </h1>
+                    <p class="text-muted mb-0">{{ $projectType->display_name }}</p>
                 </div>
-                <div class="d-flex flex-column flex-sm-row gap-2">
-                    <a href="{{ route('project-types.index') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left me-2"></i>Kembali
-                    </a>
-                </div>
+                <a href="{{ route('project-types.index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Kembali
+                </a>
             </div>
         </div>
     </div>
@@ -31,7 +30,7 @@
                             <div class="luxury-icon me-3">
                                 <i class="bi bi-info-circle text-purple"></i>
                             </div>
-                            Update data tipe proyek
+                            Update Data Tipe Proyek
                         </h5>
                     </div>
                     <div class="card-body p-4">
@@ -45,6 +44,7 @@
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <div class="form-text">Nama internal (huruf besar, tanpa spasi)</div>
                             </div>
 
                             <div class="col-lg-6">
@@ -56,12 +56,11 @@
                                 @error('display_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <div class="form-text">Nama yang ditampilkan di form</div>
                             </div>
 
                             <div class="col-12">
-                                <label for="description" class="form-label fw-semibold">
-                                    Deskripsi
-                                </label>
+                                <label for="description" class="form-label fw-semibold">Deskripsi</label>
                                 <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="3">{{ old('description', $projectType->description) }}</textarea>
                                 @error('description')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -80,11 +79,9 @@
                             </div>
 
                             <div class="col-lg-6">
-                                <label class="form-label fw-semibold">
-                                    Status
-                                </label>
+                                <label class="form-label fw-semibold">Status</label>
                                 <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
                                         {{ old('is_active', $projectType->is_active) ? 'checked' : '' }}>
                                     <label class="form-check-label fw-medium" for="is_active">
                                         Aktifkan tipe proyek ini
@@ -116,7 +113,6 @@
                     </div>
                 @endif
 
-                <!-- Action Buttons -->
                 <div class="card luxury-card border-0">
                     <div class="card-body p-4">
                         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
@@ -126,10 +122,8 @@
                                         <i class="bi bi-trash me-2"></i>Hapus Tipe
                                     </button>
                                 @endif
-                                @php
-                                    $project_type = $projectType; // Simpan ke variable baru
-                                @endphp
-                                {{-- Ganti method menjadi POST dan tambahkan @method --}}
+
+                                <!-- PERBAIKAN: Ganti route parameter -->
                                 <form action="{{ route('project-types.toggle', $projectType) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('PATCH')
@@ -152,7 +146,7 @@
                 </div>
             </form>
 
-            <!-- Delete Form (Hidden) -->
+            <!-- Delete Form -->
             <form id="delete-form" action="{{ route('project-types.destroy', $projectType) }}" method="POST" style="display: none;">
                 @csrf
                 @method('DELETE')
@@ -181,7 +175,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Form validation
+            // Form validation dengan SweetAlert
             document.getElementById('project-type-form').addEventListener('submit', function(e) {
                 const name = document.getElementById('name').value.trim();
                 const displayName = document.getElementById('display_name').value.trim();
@@ -190,27 +184,27 @@
                     e.preventDefault();
                     Swal.fire({
                         icon: 'error',
-                        title: 'Form tidak lengkap',
+                        title: 'Form Tidak Lengkap',
                         text: 'Nama tipe dan nama tampilan wajib diisi!',
                         confirmButtonColor: '#8B5CF6',
                     });
                     return false;
                 }
 
-                // Add loading state to submit button
                 const submitBtn = e.target.querySelector('button[type="submit"]');
                 submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Mengupdate...';
                 submitBtn.disabled = true;
             });
 
-            // Tampilkan notifikasi dari server
+            // SweetAlert untuk session messages
             @if (session('success'))
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
                     text: '{{ session('success') }}',
                     confirmButtonColor: '#8B5CF6',
-                    timer: 3000
+                    timer: 3000,
+                    timerProgressBar: true
                 });
             @endif
 
@@ -270,12 +264,6 @@
 
         .text-purple {
             color: #8B5CF6 !important;
-        }
-
-        @media (max-width: 768px) {
-            .card-header h5 {
-                font-size: 1.1rem;
-            }
         }
     </style>
 @endpush

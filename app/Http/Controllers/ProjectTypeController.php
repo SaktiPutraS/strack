@@ -15,7 +15,6 @@ class ProjectTypeController extends Controller
     public function index(): View
     {
         $projectTypes = ProjectType::orderBy('sort_order')->orderBy('name')->get();
-
         return view('project-types.index', compact('projectTypes'));
     }
 
@@ -37,12 +36,13 @@ class ProjectTypeController extends Controller
             'display_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:1',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        // Set default values
-        $validated['is_active'] = $request->has('is_active');
+        // PERBAIKAN: Handle checkbox is_active
+        $validated['is_active'] = $request->has('is_active') ? true : false;
 
+        // PERBAIKAN: Set default sort_order jika kosong
         if (empty($validated['sort_order'])) {
             $maxOrder = ProjectType::max('sort_order') ?: 0;
             $validated['sort_order'] = $maxOrder + 10;
@@ -61,7 +61,6 @@ class ProjectTypeController extends Controller
     {
         $projectType->load('projects');
         $projectCount = $projectType->projects()->count();
-
         return view('project-types.show', compact('projectType', 'projectCount'));
     }
 
@@ -83,10 +82,11 @@ class ProjectTypeController extends Controller
             'display_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'sort_order' => 'required|integer|min:1',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        $validated['is_active'] = $request->has('is_active');
+        // PERBAIKAN: Handle checkbox is_active untuk update
+        $validated['is_active'] = $request->has('is_active') ? true : false;
 
         $projectType->update($validated);
 
@@ -111,14 +111,17 @@ class ProjectTypeController extends Controller
             ->with('success', 'Tipe proyek berhasil dihapus!');
     }
 
-    // Ubah parameter menjadi snake_case
-    public function toggle(ProjectType $project_type): RedirectResponse
+    /**
+     * Toggle active status
+     * PERBAIKAN: Ubah parameter routing binding
+     */
+    public function toggle(ProjectType $projectType): RedirectResponse
     {
-        $project_type->update([
-            'is_active' => !$project_type->is_active
+        $projectType->update([
+            'is_active' => !$projectType->is_active
         ]);
 
-        $status = $project_type->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        $status = $projectType->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()->route('project-types.index')
             ->with('success', "Tipe proyek berhasil {$status}!");

@@ -266,8 +266,11 @@
 
             // Sort data from largest to smallest
             const sortDataDescending = (data) => {
-                return Object.entries(data).sort((a, b) => b[1] - a[1]);
+                return Object.entries(data)
+                    .filter(([key, value]) => key !== "Saldo Awal")
+                    .sort((a, b) => b[1] - a[1]);
             };
+
 
             // Shorten numbers (100k, 1.000k)
             const shortenNumber = (num) => {

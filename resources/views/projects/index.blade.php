@@ -50,12 +50,12 @@
         </div>
 
         <div class="col-6 col-lg-3 col-md-4">
-            <div class="card luxury-card stat-card stat-card-secondary h-100 clickable-card" data-filter="month=current">
+            <div class="card luxury-card stat-card stat-card-success h-100 clickable-card" data-filter="month=current">
                 <div class="card-body text-center p-1">
                     <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-calendar-month text-secondary fs-4"></i>
+                        <i class="bi bi-calendar-month text-success fs-4"></i>
                     </div>
-                    <h3 class="fw-bold text-secondary mb-1" id="totalNilaiBulanIni">
+                    <h3 class="fw-bold text-success mb-1" id="totalNilaiBulanIni">
                         {{ $formatCurrency($totalNilaiBulanIni) }}
                     </h3>
                     <small class="text-muted fw-semibold">Nilai Bulan Ini</small>

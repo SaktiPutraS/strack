@@ -41,25 +41,25 @@
                                 <label for="client_id" class="form-label fw-semibold">
                                     Klien <span class="text-danger">*</span>
                                 </label>
-                                <select name="client_id" id="client_id" class="form-select form-select-lg @error('client_id') is-invalid @enderror"
-                                    required>
-                                    <option value="">Pilih Klien</option>
-                                    @if (isset($clients))
-                                        @foreach ($clients as $client)
-                                            <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
-                                                {{ $client->name }} - {{ $client->phone }}
-                                            </option>
-                                        @endforeach
-                                    @endif
-                                </select>
+                                <div class="d-flex gap-2">
+                                    <select name="client_id" id="client_id" class="form-select form-select-lg @error('client_id') is-invalid @enderror"
+                                        required>
+                                        <option value="">Pilih Klien</option>
+                                        @if (isset($clients))
+                                            @foreach ($clients as $client)
+                                                <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
+                                                    {{ $client->name }} - {{ $client->phone }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
                                 @error('client_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">
-                                    <a href="{{ route('clients.create') }}" target="_blank" class="text-decoration-none text-purple fw-medium">
-                                        <i class="bi bi-plus-circle me-1"></i>Tambah klien baru
-                                    </a>
-                                </div>
                             </div>
 
                             <!-- Project Type -->
@@ -80,11 +80,6 @@
                                 @error('type')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">
-                                    <a href="{{ route('project-types.create') }}" target="_blank" class="text-decoration-none text-purple fw-medium">
-                                        <i class="bi bi-plus-circle me-1"></i>Tambah tipe proyek baru
-                                    </a>
-                                </div>
                             </div>
 
                             <!-- Deadline -->
@@ -196,11 +191,7 @@
                             <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary btn-lg">
                                 <i class="bi bi-arrow-left me-2"></i>Kembali
                             </a>
-
                             <div class="d-flex gap-3">
-                                <button type="button" class="btn btn-outline-primary btn-lg" onclick="resetForm()">
-                                    <i class="bi bi-arrow-clockwise me-2"></i>Reset
-                                </button>
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="bi bi-check-circle me-2"></i>Simpan Proyek
                                 </button>
@@ -211,39 +202,170 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Tambah Klien Baru -->
+    <div class="modal fade" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-purple" id="newClientModalLabel">
+                        <i class="bi bi-person-plus me-2"></i>Tambah Klien Baru
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="newClientForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="new_client_name" class="form-label fw-semibold">
+                                Nama Klien <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="new_client_name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_client_phone" class="form-label fw-semibold">
+                                Nomor Telepon <span class="text-danger">*</span>
+                            </label>
+                            <input type="tel" class="form-control" id="new_client_phone" name="phone" placeholder="08123456789" required>
+                            <div class="form-text">Format: 08xxxxxxxxxx</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_client_email" class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="new_client_email" name="email" placeholder="nama@email.com">
+                            <div class="form-text">Opsional</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Simpan Klien
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
-        function formatCurrency(amount) {
-            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
-        }
-
-        function resetForm() {
-            if (confirm('Apakah Anda yakin ingin mengatur ulang semua data form?')) {
-                document.getElementById('project-form').reset();
-                updateFinancialSummary();
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('total_value').addEventListener('input', updateFinancialSummary);
-            document.getElementById('dp_amount').addEventListener('input', updateFinancialSummary);
-            updateFinancialSummary();
+            // SweetAlert untuk session messages
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: '{{ session('success') }}',
+                    confirmButtonColor: '#8B5CF6',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            @endif
 
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: '{{ session('error') }}',
+                    confirmButtonColor: '#8B5CF6'
+                });
+            @endif
+
+            // Modal form submit handler
+            document.getElementById('newClientForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Menyimpan...';
+                submitBtn.disabled = true;
+
+                fetch('{{ route('api.clients.store') }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Add new client to select
+                            const clientSelect = document.getElementById('client_id');
+                            const newOption = new Option(
+                                `${data.client.name} - ${data.client.phone}`,
+                                data.client.id,
+                                true,
+                                true
+                            );
+                            clientSelect.add(newOption);
+
+                            // Close modal and reset form
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('newClientModal'));
+                            modal.hide();
+                            this.reset();
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: 'Klien baru berhasil ditambahkan',
+                                confirmButtonColor: '#8B5CF6',
+                                timer: 2000,
+                                timerProgressBar: true
+                            });
+                        } else {
+                            throw new Error(data.message || 'Terjadi kesalahan');
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: error.message,
+                            confirmButtonColor: '#8B5CF6'
+                        });
+                    })
+                    .finally(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    });
+            });
+
+            // Format phone number input
+            document.getElementById('new_client_phone').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^0-9]/g, '');
+                if (value && !value.startsWith('0') && !value.startsWith('62')) {
+                    value = '0' + value;
+                }
+                e.target.value = value;
+            });
+
+            // Project form validation
             document.getElementById('project-form').addEventListener('submit', function(e) {
                 const totalValue = parseFloat(document.getElementById('total_value').value) || 0;
                 const dpAmount = parseFloat(document.getElementById('dp_amount').value) || 0;
 
                 if (dpAmount > totalValue) {
                     e.preventDefault();
-                    alert('Jumlah DP tidak boleh melebihi nilai total proyek!');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validasi Gagal',
+                        text: 'Jumlah DP tidak boleh melebihi nilai total proyek!',
+                        confirmButtonColor: '#8B5CF6'
+                    });
                     return false;
                 }
 
                 if (totalValue < 100000) {
                     e.preventDefault();
-                    alert('Nilai proyek minimal Rp 100.000');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validasi Gagal',
+                        text: 'Nilai proyek minimal Rp 100.000',
+                        confirmButtonColor: '#8B5CF6'
+                    });
                     return false;
                 }
 
@@ -252,6 +374,7 @@
                 submitBtn.disabled = true;
             });
 
+            // Focus on client select
             document.getElementById('client_id').focus();
         });
     </script>
@@ -263,16 +386,8 @@
             box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
         }
 
-        .bg-purple-light {
-            background-color: rgba(139, 92, 246, 0.05) !important;
-        }
-
         .text-purple {
             color: #8B5CF6 !important;
-        }
-
-        .border-purple {
-            border-color: rgba(139, 92, 246, 0.3) !important;
         }
 
         .luxury-card {
@@ -298,6 +413,20 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+        }
+
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(139, 92, 246, 0.1);
         }
 
         @media (max-width: 768px) {

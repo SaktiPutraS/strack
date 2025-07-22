@@ -22,7 +22,7 @@ class ClientController extends Controller
         $sortOrder = $request->get('order', 'asc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $clients = $query->paginate(15)->withQueryString();
+        $clients = $query->paginate(10)->withQueryString();
 
         return view('clients.index', compact('clients'));
     }

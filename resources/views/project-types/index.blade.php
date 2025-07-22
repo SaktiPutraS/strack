@@ -19,59 +19,6 @@
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <h5 class="text-uppercase text-muted fw-bold mb-3 fs-6">
-                <i class="bi bi-bar-chart me-2 text-purple"></i>Statistik Tipe Proyek
-            </h5>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-purple h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-tags text-purple fs-4"></i>
-                    </div>
-                    <h3 class="fw-bold text-purple mb-1">{{ $projectTypes->count() }}</h3>
-                    <small class="text-muted fw-semibold">Total Tipe</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-success h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-check-circle text-success fs-4"></i>
-                    </div>
-                    <h3 class="fw-bold text-success mb-1">{{ $projectTypes->where('is_active', true)->count() }}</h3>
-                    <small class="text-muted fw-semibold">Aktif</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-warning h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-pause-circle text-warning fs-4"></i>
-                    </div>
-                    <h3 class="fw-bold text-warning mb-1">{{ $projectTypes->where('is_active', false)->count() }}</h3>
-                    <small class="text-muted fw-semibold">Nonaktif</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-info h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-folder text-info fs-4"></i>
-                    </div>
-                    <h3 class="fw-bold text-info mb-1">{{ $projectTypes->sum(function ($type) {return $type->projects()->count();}) }}</h3>
-                    <small class="text-muted fw-semibold">Total Proyek</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Project Types List -->
     <div class="card luxury-card border-0">
         <div class="card-header bg-white border-0 p-4">
@@ -83,7 +30,6 @@
                         </div>
                         Daftar Tipe Proyek
                     </h5>
-                    <p class="text-muted mb-0">{{ $projectTypes->count() }} tipe proyek tersedia</p>
                 </div>
             </div>
         </div>

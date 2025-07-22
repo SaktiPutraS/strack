@@ -57,7 +57,9 @@ class ProjectController extends Controller
 
         // Enhanced Sort functionality
         $sortBy = $request->get('sort', 'created_at');
-        $sortOrder = $request->get('order', 'desc');
+        $sortOrder = in_array(strtolower($request->get('order', 'desc')), ['asc', 'desc'])
+            ? strtolower($request->get('order', 'desc'))
+            : 'desc';
 
         // Handle different sorting cases
         switch ($sortBy) {

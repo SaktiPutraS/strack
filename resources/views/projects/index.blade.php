@@ -476,21 +476,13 @@
                 });
             });
 
-            // Double click to navigate to project detail
+            // Single click to navigate to project detail
             const projectRows = document.querySelectorAll('[data-project-id]');
-            let lastClickTime = 0;
 
             projectRows.forEach(row => {
                 row.addEventListener('click', function() {
-                    const currentTime = new Date().getTime();
-                    const clickGap = 300; // ms
-
-                    if (currentTime - lastClickTime < clickGap) {
-                        const projectId = this.getAttribute('data-project-id');
-                        window.location.href = `{{ url('projects') }}/${projectId}`;
-                    }
-
-                    lastClickTime = currentTime;
+                    const projectId = this.getAttribute('data-project-id');
+                    window.location.href = `{{ url('projects') }}/${projectId}`;
                 });
 
                 // Hover effects
@@ -519,19 +511,22 @@
                 });
             });
 
-            // Auto-submit form on search input with debounce
-            let searchTimeout;
+            // PERBAIKAN: Search handling tanpa auto-submit bermasalah
             const searchInput = document.querySelector('input[name="search"]');
             const searchForm = document.querySelector('form');
             const searchBtn = searchForm.querySelector('button[type="submit"]');
 
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    if (this.value.length >= 3 || this.value.length === 0) {
-                        searchForm.submit();
-                    }
-                }, 500);
+            // DEBUGGING: Cek apakah ada masalah dengan form action atau method
+            console.log('Form action:', searchForm.action);
+            console.log('Form method:', searchForm.method);
+
+            // Alternative: Debug Enter key
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    console.log('Enter pressed - akan submit form');
+                    // Biarkan browser handle submit secara natural
+                    // Jangan preventDefault atau manual submit
+                }
             });
 
             // Add loading state to search form

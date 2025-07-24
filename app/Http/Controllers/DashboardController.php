@@ -137,4 +137,9 @@ class DashboardController extends Controller
             'pieData' => $pieData,
         ]);
     }
+
+    public function userIndex(Request $request)
+    {
+        //
+    }
 }

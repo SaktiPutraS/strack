@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,11 +8,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PIN Login</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('image/favicon.ico') }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('image/favicon.ico') }}">
-    
+
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('image/favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('image/favicon.ico') }}">
@@ -22,13 +23,13 @@
     <link rel="apple-touch-icon" sizes="72x72" href="{{ asset('image/favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="60x60" href="{{ asset('image/favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="57x57" href="{{ asset('image/favicon.ico') }}">
-    
+
     <!-- Android Chrome Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('image/favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('image/favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('image/favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('image/favicon.ico') }}">
-    
+
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileImage" content="{{ asset('image/favicon.ico') }}">
     <meta name="msapplication-TileColor" content="#7c3aed">
@@ -58,23 +59,30 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 40% 60%, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
             animation: backgroundShift 10s ease-in-out infinite;
         }
 
         @keyframes backgroundShift {
-            0%, 100% { transform: translateX(0px) translateY(0px); }
-            50% { transform: translateX(20px) translateY(-20px); }
+
+            0%,
+            100% {
+                transform: translateX(0px) translateY(0px);
+            }
+
+            50% {
+                transform: translateX(20px) translateY(-20px);
+            }
         }
 
         .login-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 24px;
-            box-shadow: 
+            box-shadow:
                 0 32px 64px rgba(0, 0, 0, 0.15),
                 0 0 0 1px rgba(255, 255, 255, 0.2);
             overflow: hidden;
@@ -101,13 +109,18 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.1), transparent);
+            background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent);
             animation: rotate 8s linear infinite;
         }
 
         @keyframes rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .login-title {
@@ -174,9 +187,17 @@
         }
 
         @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(0); }
-            50% { transform: translate(-50%, -50%) scale(1.5); }
-            100% { transform: translate(-50%, -50%) scale(1); }
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         .pin-keypad {
@@ -299,9 +320,19 @@
         }
 
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
 
         .login-button {
@@ -342,7 +373,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
             transition: left 0.6s ease;
         }
 
@@ -392,12 +423,12 @@
 
         /* iPhone 11 & 13 Specific Optimizations */
         @media only screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2),
-               only screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
+        only screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
             body {
                 padding: 0;
                 background-attachment: fixed;
             }
-            
+
             .login-container {
                 max-width: 340px;
                 margin: 0 auto;
@@ -406,42 +437,42 @@
                 display: flex;
                 flex-direction: column;
             }
-            
+
             .login-header {
                 padding: 35px 25px 30px;
                 flex-shrink: 0;
             }
-            
+
             .login-form {
                 padding: 35px 25px 30px;
                 flex: 1;
                 display: flex;
                 flex-direction: column;
             }
-            
+
             .pin-keypad {
                 gap: 18px;
                 margin-bottom: 25px;
             }
-            
+
             .pin-key {
                 font-size: 26px;
                 min-height: 70px;
                 min-width: 70px;
                 border-radius: 22px;
             }
-            
+
             .pin-action {
                 width: 65px;
                 height: 65px;
                 font-size: 22px;
             }
-            
+
             .pin-dots {
                 gap: 14px;
                 margin-bottom: 25px;
             }
-            
+
             .pin-dot {
                 width: 18px;
                 height: 18px;
@@ -453,7 +484,7 @@
             body {
                 padding: 15px;
             }
-            
+
             .login-container {
                 margin: 0;
                 border-radius: 20px;
@@ -461,16 +492,16 @@
                 display: flex;
                 flex-direction: column;
             }
-            
+
             .login-header {
                 padding: 30px 20px 25px;
                 flex-shrink: 0;
             }
-            
+
             .login-title {
                 font-size: 24px;
             }
-            
+
             .login-form {
                 padding: 30px 20px;
                 flex: 1;
@@ -478,25 +509,25 @@
                 flex-direction: column;
                 justify-content: center;
             }
-            
+
             .pin-keypad {
                 gap: 14px;
                 margin-bottom: 20px;
             }
-            
+
             .pin-key {
                 font-size: 22px;
                 border-radius: 18px;
                 min-height: 65px;
                 min-width: 65px;
             }
-            
+
             .pin-action {
                 width: 60px;
                 height: 60px;
                 font-size: 18px;
             }
-            
+
             .pin-dots {
                 gap: 12px;
                 margin-bottom: 20px;
@@ -507,11 +538,11 @@
             .login-header {
                 padding: 25px 15px 20px;
             }
-            
+
             .login-form {
                 padding: 25px 15px;
             }
-            
+
             .pin-keypad {
                 gap: 10px;
             }
@@ -534,18 +565,18 @@
             <h1 class="login-title">Masukkan PIN</h1>
             <p class="login-subtitle">Gunakan PIN 6 digit untuk mengakses</p>
         </div>
-        
+
         <div class="login-form">
             @if (session('error'))
                 <div class="error-message">
                     PIN yang Anda masukkan salah!
                 </div>
             @endif
-            
+
             <form method="POST" action="/login" id="loginForm">
                 @csrf
                 <input type="hidden" name="password" id="hiddenPassword" class="hidden-input">
-                
+
                 <div class="pin-display">
                     <div class="pin-dots">
                         <div class="pin-dot" data-index="0"></div>
@@ -556,7 +587,7 @@
                         <div class="pin-dot" data-index="5"></div>
                     </div>
                 </div>
-                
+
                 <div class="pin-keypad">
                     <button type="button" class="pin-key" data-number="1"><span>1</span></button>
                     <button type="button" class="pin-key" data-number="2"><span>2</span></button>
@@ -569,7 +600,7 @@
                     <button type="button" class="pin-key" data-number="9"><span>9</span></button>
                     <button type="button" class="pin-key zero" data-number="0"><span>0</span></button>
                 </div>
-                
+
                 <div class="pin-actions">
                     <button type="button" class="pin-action" id="clearPin">
                         <span>⌫</span>
@@ -578,7 +609,7 @@
                         <span>✕</span>
                     </button>
                 </div>
-                
+
                 <button type="submit" class="login-button" id="loginBtn">
                     <span>Masuk</span>
                 </button>
@@ -595,7 +626,7 @@
 
     <script>
         let currentPin = '';
-        const correctPin = '123698';
+        // const correctPin = '123698';
         const maxPinLength = 6;
 
         // Get DOM elements
@@ -615,13 +646,13 @@
                 const number = this.getAttribute('data-number');
                 addNumber(number);
             });
-            
+
             // Add touch events for better mobile response
             key.addEventListener('touchstart', function(e) {
                 e.preventDefault();
                 this.style.transform = 'translateY(2px) scale(0.95)';
             });
-            
+
             key.addEventListener('touchend', function(e) {
                 e.preventDefault();
                 this.style.transform = '';
@@ -635,12 +666,12 @@
             e.preventDefault();
             removeLastNumber();
         });
-        
+
         clearPin.addEventListener('touchstart', function(e) {
             e.preventDefault();
             this.style.transform = 'translateY(2px) scale(0.95)';
         });
-        
+
         clearPin.addEventListener('touchend', function(e) {
             e.preventDefault();
             this.style.transform = '';
@@ -652,12 +683,12 @@
             e.preventDefault();
             clearAllNumbers();
         });
-        
+
         clearAll.addEventListener('touchstart', function(e) {
             e.preventDefault();
             this.style.transform = 'translateY(2px) scale(0.95)';
         });
-        
+
         clearAll.addEventListener('touchend', function(e) {
             e.preventDefault();
             this.style.transform = '';
@@ -669,12 +700,12 @@
             if (currentPin.length < maxPinLength) {
                 currentPin += number;
                 updatePinDisplay();
-                
+
                 // Add haptic feedback (if supported)
                 if ('vibrate' in navigator) {
                     navigator.vibrate(50);
                 }
-                
+
                 // Check if PIN is complete
                 if (currentPin.length === maxPinLength) {
                     checkPin();
@@ -705,35 +736,39 @@
                     dot.classList.remove('filled');
                 }
             });
-            
+
             // Update login button state
             if (currentPin.length === maxPinLength) {
                 loginBtn.classList.add('active');
             } else {
                 loginBtn.classList.remove('active');
             }
-            
+
             // Update hidden input
             hiddenPassword.value = currentPin;
         }
 
         // Check PIN
         function checkPin() {
-            if (currentPin === correctPin) {
-                // PIN correct - show success animation
-                showSuccessAnimation();
-                
-                // Submit form after animation
-                setTimeout(() => {
-                    loginForm.submit();
-                }, 1500);
-            } else {
-                // PIN incorrect - shake and clear
-                setTimeout(() => {
-                    shakeAndClear();
-                }, 500);
-            }
+            // Submit form langsung tanpa validasi client-side
+            loginForm.submit();
         }
+        // function checkPin() {
+        //     if (currentPin === correctPin) {
+        //         // PIN correct - show success animation
+        //         showSuccessAnimation();
+
+        //         // Submit form after animation
+        //         setTimeout(() => {
+        //             loginForm.submit();
+        //         }, 1500);
+        //     } else {
+        //         // PIN incorrect - shake and clear
+        //         setTimeout(() => {
+        //             shakeAndClear();
+        //         }, 500);
+        //     }
+        // }
 
         // Show success animation
         function showSuccessAnimation() {
@@ -746,7 +781,7 @@
             pinDots.forEach(dot => {
                 dot.style.animation = 'shake 0.5s ease-in-out';
             });
-            
+
             setTimeout(() => {
                 clearAllNumbers();
                 pinDots.forEach(dot => {
@@ -761,7 +796,7 @@
                 e.preventDefault();
                 return;
             }
-            
+
             if (currentPin !== correctPin) {
                 e.preventDefault();
                 return;
@@ -783,7 +818,7 @@
 
         // Prevent double-tap zoom on iOS
         let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
+        document.addEventListener('touchend', function(event) {
             const now = (new Date()).getTime();
             if (now - lastTouchEnd <= 300) {
                 event.preventDefault();
@@ -800,12 +835,14 @@
         document.addEventListener('selectstart', function(e) {
             e.preventDefault();
         });
-        
+
         // Prevent iOS bounce scroll
         document.addEventListener('touchmove', function(e) {
             e.preventDefault();
-        }, { passive: false });
-        
+        }, {
+            passive: false
+        });
+
         // Allow scroll only on specific elements if needed
         document.querySelectorAll('.login-container').forEach(element => {
             element.addEventListener('touchmove', function(e) {

@@ -55,12 +55,11 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-danger bg-opacity-10 text-danger fw-bold">Rp</span>
                                     <input type="number" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount"
-                                        value="{{ old('amount') }}" min="1000" step="1000" placeholder="0" required>
+                                        value="{{ old('amount') }}" min="1" placeholder="0" required>
                                 </div>
                                 @error('amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Minimal Rp 1.000</div>
                             </div>
 
                             <!-- Category -->

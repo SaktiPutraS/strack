@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
+use App\Models\Task;
+use App\Models\TaskAssignment;
 
 class DashboardController extends Controller
 {
@@ -140,6 +142,53 @@ class DashboardController extends Controller
 
     public function userIndex(Request $request)
     {
-        //
+        $agent = new Agent();
+        $isMobile = $agent->isMobile();
+        $today = Carbon::today();
+        $userId = session('role');
+
+        // Get today's tasks for current user
+        $todayTasks = Task::getTasksForDate($today);
+        $assignments = collect();
+
+        foreach ($todayTasks as $task) {
+            $assignment = $task->getAssignmentForUserAndDate($userId, $today);
+
+            if (!$assignment) {
+                $assignment = TaskAssignment::create([
+                    'task_id' => $task->id,
+                    'user_id' => $userId,
+                    'assigned_date' => $today,
+                    'status' => 'pending'
+                ]);
+                $assignment->load('task');
+            }
+
+            $assignments->push($assignment);
+        }
+
+        // Calculate statistics
+        $todayStats = [
+            'total' => $assignments->count(),
+            'pending' => $assignments->where('status', 'pending')->count(),
+            'submitted' => $assignments->where('status', 'dikerjakan')->count(),
+            'completed' => $assignments->where('status', 'valid')->count(),
+        ];
+
+        // Calculate progress percentage
+        $progressPercentage = $todayStats['total'] > 0
+            ? round(($todayStats['completed'] / $todayStats['total']) * 100)
+            : 0;
+
+        // Get next pending task
+        $nextTask = $assignments->where('status', 'pending')->first();
+
+        return view('dashboard.index-user', [
+            'isMobile' => $isMobile,
+            'todayStats' => $todayStats,
+            'progressPercentage' => $progressPercentage,
+            'todayTasks' => $assignments,
+            'nextTask' => $nextTask,
+        ]);
     }
 }

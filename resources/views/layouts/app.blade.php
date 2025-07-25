@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#8B5CF6">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+
     <title>@yield('title', 'STRACK')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -219,114 +221,130 @@
             <!-- Header -->
             <div class="p-4 border-bottom border-purple text-center">
                 <a href="{{ route('dashboard') }}" class="text-decoration-none">
-                    <h4 class="fw-bold text-purple mb-0">
-                        <i class="bi bi-kanban me-2"></i>STRACK
+                    <h4 class="fw-bold text-purple mb-0 p-0">
+                        <img src="{{ asset('Logo.png') }}" alt="STRACK Logo" class="d-inline-block align-middle me-2" style="width: 200px">
                     </h4>
                 </a>
             </div>
 
             <!-- Navigation -->
-            <!-- File: app.blade.php -->
-            <!-- ... kode sebelumnya ... -->
             <nav class="p-3">
                 <ul class="nav nav-pills flex-column">
-                    <li class="nav-item">
-                        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                            <i class="bi bi-house-door me-2"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('projects.index') }}" class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}">
-                            <i class="bi bi-list-task me-2"></i>Proyek
-                        </a>
-                    </li>
 
+                    @if (session('role') === 'admin')
+                        <li class="nav-item">
+                            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                                <i class="bi bi-house-door me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('projects.index') }}" class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}">
+                                <i class="bi bi-list-task me-2"></i>Proyek
+                            </a>
+                        </li>
 
-
-                    <!-- Kelompok Keuangan -->
-                    <li class="nav-item dropdown">
-                        <a href="#"
-                            class="nav-link dropdown-toggle {{ request()->routeIs('payments.*') ||
+                        <!-- Kelompok Keuangan -->
+                        <li class="nav-item dropdown">
+                            <a href="#"
+                                class="nav-link dropdown-toggle {{ request()->routeIs('payments.*') ||
+                                request()->routeIs('expenses.*') ||
+                                request()->routeIs('bank-transfers.*') ||
+                                request()->routeIs('gold.*') ||
+                                request()->routeIs('financial-reports.*')
+                                    ? 'active'
+                                    : '' }}"
+                                data-bs-toggle="collapse" data-bs-target="#financialMenu">
+                                <i class="bi bi-calculator me-2"></i>Keuangan
+                            </a>
+                            <div class="collapse ms-3 {{ request()->routeIs('payments.*') ||
                             request()->routeIs('expenses.*') ||
                             request()->routeIs('bank-transfers.*') ||
                             request()->routeIs('gold.*') ||
                             request()->routeIs('financial-reports.*')
-                                ? 'active'
+                                ? 'show'
                                 : '' }}"
-                            data-bs-toggle="collapse" data-bs-target="#financialMenu">
-                            <i class="bi bi-calculator me-2"></i>Keuangan
-                        </a>
-                        <div class="collapse ms-3 {{ request()->routeIs('payments.*') ||
-                        request()->routeIs('expenses.*') ||
-                        request()->routeIs('bank-transfers.*') ||
-                        request()->routeIs('gold.*') ||
-                        request()->routeIs('financial-reports.*')
-                            ? 'show'
-                            : '' }}"
-                            id="financialMenu">
-                            <ul class="nav nav-pills flex-column">
-                                <li>
-                                    <a href="{{ route('payments.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                                        <i class="bi bi-cash-coin me-2"></i>Pemasukan
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('expenses.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
-                                        <i class="bi bi-credit-card me-2"></i>Pengeluaran
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('bank-transfers.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('bank-transfers.*') ? 'active' : '' }}">
-                                        <i class="bi bi-bank me-2"></i>Transfer
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('gold.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('gold.*') ? 'active' : '' }}">
-                                        <i class="bi bi-coin me-2"></i>Emas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('financial-reports.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
-                                        <i class="bi bi-graph-up me-2"></i>Laporan
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
+                                id="financialMenu">
+                                <ul class="nav nav-pills flex-column">
+                                    <li>
+                                        <a href="{{ route('payments.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                                            <i class="bi bi-cash-coin me-2"></i>Pemasukan
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('expenses.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
+                                            <i class="bi bi-credit-card me-2"></i>Pengeluaran
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('bank-transfers.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('bank-transfers.*') ? 'active' : '' }}">
+                                            <i class="bi bi-bank me-2"></i>Transfer
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('gold.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('gold.*') ? 'active' : '' }}">
+                                            <i class="bi bi-coin me-2"></i>Emas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('financial-reports.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
+                                            <i class="bi bi-graph-up me-2"></i>Laporan
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
 
-                    <!-- Kelompok Master -->
-                    <li class="nav-item dropdown">
-                        <a href="#"
-                            class="nav-link dropdown-toggle {{ request()->routeIs('clients.*') || request()->routeIs('project-types.*') ? 'active' : '' }}"
-                            data-bs-toggle="collapse" data-bs-target="#masterMenu">
-                            <i class="bi bi-diagram-3 me-2"></i>Master
-                        </a>
-                        <div class="collapse ms-3 {{ request()->routeIs('clients.*') || request()->routeIs('project-types.*') ? 'show' : '' }}"
-                            id="masterMenu">
-                            <ul class="nav nav-pills flex-column">
-                                <li>
-                                    <a href="{{ route('clients.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('clients.*') ? 'active' : '' }}">
-                                        <i class="bi bi-people me-2"></i>Klien
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('project-types.index') }}"
-                                        class="nav-link py-2 fs-7 {{ request()->routeIs('project-types.*') ? 'active' : '' }}">
-                                        <i class="bi bi-tags me-2"></i>Tipe Proyek
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
+                        <!-- Kelompok Master -->
+                        <li class="nav-item dropdown">
+                            <a href="#"
+                                class="nav-link dropdown-toggle {{ request()->routeIs('clients.*') || request()->routeIs('project-types.*') ? 'active' : '' }}"
+                                data-bs-toggle="collapse" data-bs-target="#masterMenu">
+                                <i class="bi bi-diagram-3 me-2"></i>Master
+                            </a>
+                            <div class="collapse ms-3 {{ request()->routeIs('clients.*') || request()->routeIs('project-types.*') ? 'show' : '' }}"
+                                id="masterMenu">
+                                <ul class="nav nav-pills flex-column">
+                                    <li>
+                                        <a href="{{ route('clients.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('clients.*') ? 'active' : '' }}">
+                                            <i class="bi bi-people me-2"></i>Klien
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('project-types.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('project-types.*') ? 'active' : '' }}">
+                                            <i class="bi bi-tags me-2"></i>Tipe Proyek
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        {{-- Taks --}}
+                        <li class="nav-item">
+                            <a href="{{ route('tasks.index') }}" class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
+                                <i class="bi bi-list-task me-2"></i>Tugas
+                            </a>
+                        </li>
+                    @endif
+                    @if (session('role') === 'user')
+                        <li class="nav-item">
+                            <a href="{{ route('dashboard.user') }}" class="nav-link {{ request()->routeIs('dashboard.user') ? 'active' : '' }}">
+                                <i class="bi bi-house-door me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('tasks.user.index') }}" class="nav-link {{ request()->routeIs('tasks.user.*') ? 'active' : '' }}">
+                                <i class="bi bi-list-task me-2"></i>Tugas
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </nav>
-
             <!-- Footer -->
             <div class="mt-auto p-3 border-top border-purple">
                 <form action="{{ url('/logout') }}" method="GET" class="d-inline w-100">

@@ -13,8 +13,17 @@
                     <p class="text-muted mb-0">Kelola tugas harian yang akan dikerjakan oleh tim</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('tasks.validation') }}" class="btn btn-outline-warning">
+                    <a href="{{ route('tasks.export-excel') }}" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+                    </a>
+                    <a href="{{ route('tasks.validation') }}" class="btn btn-outline-warning position-relative">
                         <i class="bi bi-check-circle me-2"></i>Validasi Tugas
+                        @if ($needValidationCount > 0)
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ $needValidationCount }}
+                                <span class="visually-hidden">tugas perlu validasi</span>
+                            </span>
+                        @endif
                     </a>
                     <a href="{{ route('tasks.create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>Tambah Tugas
@@ -30,17 +39,6 @@
             <h5 class="text-uppercase text-muted fw-bold mb-3 fs-6">
                 <i class="bi bi-bar-chart me-2 text-purple"></i>Statistik Tugas
             </h5>
-        </div>
-        <div class="col-6 col-xl-3 col-lg-4 col-md-6">
-            <div class="card luxury-card stat-card stat-card-purple h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-list-task text-purple fs-4"></i>
-                    </div>
-                    <h3 class="fw-bold text-purple mb-1">{{ $tasks->count() }}</h3>
-                    <small class="text-muted fw-semibold">Total Tugas</small>
-                </div>
-            </div>
         </div>
         <div class="col-6 col-xl-3 col-lg-4 col-md-6">
             <div class="card luxury-card stat-card stat-card-success h-100">
@@ -72,6 +70,20 @@
                     </div>
                     <h3 class="fw-bold text-info mb-1">{{ $tasks->sum(function ($task) {return $task->assignments->count();}) }}</h3>
                     <small class="text-muted fw-semibold">Total Assignment</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3 col-lg-4 col-md-6">
+            <div class="card luxury-card stat-card stat-card-danger h-100">
+                <div class="card-body text-center p-3 position-relative">
+                    <div class="luxury-icon mx-auto mb-2">
+                        <i class="bi bi-exclamation-circle text-danger fs-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-danger mb-1">{{ $needValidationCount }}</h3>
+                    <small class="text-muted fw-semibold">Perlu Validasi</small>
+                    @if ($needValidationCount > 0)
+                        <div class="pulse-dot"></div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -392,6 +404,10 @@
             background: linear-gradient(90deg, #06B6D4, #0891B2);
         }
 
+        .stat-card-danger::before {
+            background: linear-gradient(90deg, #EF4444, #DC2626);
+        }
+
         .stat-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
@@ -483,6 +499,35 @@
 
         .btn:hover {
             transform: translateY(-2px);
+        }
+
+        /* Pulse animation for validation card */
+        .pulse-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 12px;
+            height: 12px;
+            background: #EF4444;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
         }
 
         @media (max-width: 768px) {

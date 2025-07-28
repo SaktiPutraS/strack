@@ -18,6 +18,25 @@
         </div>
     </div>
 
+    <!-- Bank Balance Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card luxury-card border-0 bg-gradient-primary text-white">
+                <div class="card-body text-center py-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                            <i class="bi bi-bank text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Saldo Bank Octo Saat Ini</h6>
+                            <h3 class="mb-0 fw-bold text-white">{{ $formattedBankBalance }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Charts -->
     <div class="row g-3 mb-4">
         <!-- Monthly Chart -->
@@ -446,6 +465,10 @@
         .pagination .page-item.active .page-link {
             background-color: #8B5CF6;
             border-color: #8B5CF6;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7) !important;
         }
     </style>
 @endpush

@@ -220,10 +220,14 @@
         <aside class="sidebar position-fixed top-0 start-0 vh-100 overflow-auto" id="sidebar">
             <!-- Header -->
             <div class="p-4 border-bottom border-purple text-center">
-                <a href="{{ route('dashboard') }}" class="text-decoration-none">
-                    <h4 class="fw-bold text-purple mb-0 p-0">
-                        <img src="{{ asset('Logo.png') }}" alt="STRACK Logo" class="d-inline-block align-middle me-2" style="width: 200px">
-                    </h4>
+                @if (session('role') === 'admin')
+                    <a href="{{ route('dashboard') }}" class="text-decoration-none">
+                    @else
+                        <a href="{{ route('dashboard.user') }}" class="text-decoration-none">
+                @endif
+                <h4 class="fw-bold text-purple mb-0 p-0">
+                    <img src="{{ asset('Logo.png') }}" alt="STRACK Logo" class="d-inline-block align-middle me-2" style="width: 200px">
+                </h4>
                 </a>
             </div>
 

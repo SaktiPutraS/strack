@@ -82,6 +82,9 @@ Route::middleware('simpleauth')->group(function () {
         Route::put('/{task}', [TaskController::class, 'update'])->name('update');
         Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
 
+        // Export routes
+        Route::get('/export/excel', [TaskController::class, 'exportExcel'])->name('export-excel');
+
         // Validation routes
         Route::get('/validation/pending', [TaskController::class, 'validation'])->name('validation');
         Route::post('/assignments/{assignment}/validate', [TaskController::class, 'validateAssignment'])->name('validate-assignment');

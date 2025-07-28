@@ -64,10 +64,16 @@ class ExpenseController extends Controller
                 return [$categoryLabel => $item->total];
             });
 
+        // Tambahkan informasi saldo Bank Octo saat ini
+        $currentBankBalance = BankBalance::getCurrentBalance();
+        $formattedBankBalance = 'Rp ' . number_format($currentBankBalance, 0, ',', '.');
+
         return view('expenses.index', compact(
             'expenses',
             'monthlyExpensesByCategory',
-            'yearlyExpensesByCategory'
+            'yearlyExpensesByCategory',
+            'currentBankBalance',
+            'formattedBankBalance'
         ));
     }
 

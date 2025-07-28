@@ -36,11 +36,17 @@ class BankTransferController extends Controller
         $totalTransferred = BankTransfer::sum('transfer_amount');
         $totalUntransferred = $untransferredPayments->sum('amount');
 
+        // Tambahkan informasi saldo Bank Octo saat ini
+        $currentBankBalance = BankBalance::getCurrentBalance();
+        $formattedBankBalance = 'Rp ' . number_format($currentBankBalance, 0, ',', '.');
+
         return view('bank-transfers.index', compact(
             'transfers',
             'untransferredPayments',
             'totalTransferred',
-            'totalUntransferred'
+            'totalUntransferred',
+            'currentBankBalance',
+            'formattedBankBalance'
         ));
     }
 

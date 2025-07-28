@@ -20,6 +20,10 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        if (!session('role') || session('role') !== 'admin') {
+            return redirect()->route('dashboard.user');
+        }
+
         $agent = new Agent();
         $isMobile = $agent->isMobile();
 

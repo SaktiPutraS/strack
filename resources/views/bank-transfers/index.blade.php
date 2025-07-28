@@ -1,4 +1,3 @@
-{{-- resources/views/bank-transfers/index.blade.php --}}
 @extends('layouts.app')
 @section('title', 'Transfer ke Bank Octo')
 
@@ -12,6 +11,26 @@
                 <a href="{{ route('bank-transfers.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-2"></i>Transfer Baru
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Balance Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-gradient-success text-white">
+                <div class="card-body text-center py-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3"
+                            style="width: 50px; height: 50px;">
+                            <i class="bi bi-bank text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Saldo Bank Octo Saat Ini</h6>
+                            <h3 class="mb-0 fw-bold text-white">{{ $formattedBankBalance }}</h3>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -220,4 +239,10 @@
             new bootstrap.Modal(document.getElementById('batchTransferModal')).show();
         }
     </script>
+
+    <style>
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #10B981, #059669) !important;
+        }
+    </style>
 @endpush

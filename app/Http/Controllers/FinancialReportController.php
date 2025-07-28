@@ -29,10 +29,20 @@ class FinancialReportController extends Controller
         // C. Portfolio Emas
         $portfolioEmas = $this->generatePortfolioEmas();
 
+        // D. Arus Kas Bank Octo (NEW)
+        $arusKasBank = $this->generateArusKasBank($startDate, $endDate);
+
+        // Current Bank Balance
+        $currentBankBalance = BankBalance::getCurrentBalance();
+        $formattedBankBalance = 'Rp ' . number_format($currentBankBalance, 0, ',', '.');
+
         return view('financial-reports.index', compact(
             'laporanLabaRugi',
             'neracaSederhana',
             'portfolioEmas',
+            'arusKasBank',
+            'currentBankBalance',
+            'formattedBankBalance',
             'startDate',
             'endDate'
         ));
@@ -52,22 +62,25 @@ class FinancialReportController extends Controller
 
         $totalPendapatanBankOcto = $transferDariPembayaran + $hasilPenjualanEmas + $pendapatanLainLain;
 
-        // PENGELUARAN by Category
+        // PENGELUARAN by Category - Updated dengan kategori yang ada di Expense model
         $pengeluaranByCategory = Expense::whereBetween('expense_date', [$startDate, $endDate])
             ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
             ->get()
             ->keyBy('category');
 
-        $biayaOperasional = $pengeluaranByCategory->get('OPERASIONAL')->total ?? 0;
-        $biayaMarketing = $pengeluaranByCategory->get('MARKETING')->total ?? 0;
-        $biayaPengembangan = $pengeluaranByCategory->get('PENGEMBANGAN')->total ?? 0;
-        $gajiFreelance = $pengeluaranByCategory->get('GAJI_FREELANCE')->total ?? 0;
-        $entertainment = $pengeluaranByCategory->get('ENTERTAINMENT')->total ?? 0;
-        $pengeluaranLainLain = $pengeluaranByCategory->get('LAIN_LAIN')->total ?? 0;
+        // Mapping sesuai dengan CATEGORIES di Expense model
+        $biayaAI = $pengeluaranByCategory->get('AI')->total ?? 0;
+        $biayaAdminBank = $pengeluaranByCategory->get('ADMIN_BANK')->total ?? 0;
+        $biayaBuku = $pengeluaranByCategory->get('BUKU')->total ?? 0;
+        $biayaDomainHosting = $pengeluaranByCategory->get('DOMAIN_HOSTING')->total ?? 0;
+        $biayaEntertain = $pengeluaranByCategory->get('ENTERTAIN')->total ?? 0;
+        $biayaGajiBonus = $pengeluaranByCategory->get('GAJI_BONUS')->total ?? 0;
+        $biayaKopiSusu = $pengeluaranByCategory->get('KOPI_SUSU')->total ?? 0;
+        $biayaLainnya = $pengeluaranByCategory->get('LAINNYA')->total ?? 0;
 
-        $totalPengeluaranOperasional = $biayaOperasional + $biayaMarketing + $biayaPengembangan +
-            $gajiFreelance + $entertainment + $pengeluaranLainLain;
+        $totalPengeluaranOperasional = $biayaAI + $biayaAdminBank + $biayaBuku + $biayaDomainHosting +
+            $biayaEntertain + $biayaGajiBonus + $biayaKopiSusu + $biayaLainnya;
 
         // INVESTASI
         $pembelianEmas = GoldTransaction::buy()
@@ -88,12 +101,14 @@ class FinancialReportController extends Controller
                 'total_pendapatan_bank_octo' => $totalPendapatanBankOcto,
             ],
             'pengeluaran' => [
-                'biaya_operasional' => $biayaOperasional,
-                'biaya_marketing' => $biayaMarketing,
-                'biaya_pengembangan' => $biayaPengembangan,
-                'gaji_freelance' => $gajiFreelance,
-                'entertainment' => $entertainment,
-                'pengeluaran_lain_lain' => $pengeluaranLainLain,
+                'biaya_ai' => $biayaAI,
+                'biaya_admin_bank' => $biayaAdminBank,
+                'biaya_buku' => $biayaBuku,
+                'biaya_domain_hosting' => $biayaDomainHosting,
+                'biaya_entertain' => $biayaEntertain,
+                'biaya_gaji_bonus' => $biayaGajiBonus,
+                'biaya_kopi_susu' => $biayaKopiSusu,
+                'biaya_lainnya' => $biayaLainnya,
                 'total_pengeluaran_operasional' => $totalPengeluaranOperasional,
             ],
             'investasi' => [
@@ -165,6 +180,59 @@ class FinancialReportController extends Controller
             'total_emas' => $sisaEmas,
             'rata_rata_harga_beli' => $rataRataHargaBeli,
             'total_investasi' => $totalInvestasiEmas,
+        ];
+    }
+
+    private function generateArusKasBank(string $startDate, string $endDate): array
+    {
+        // PEMASUKAN
+        $transferMasuk = BankTransfer::with('payment.project.client')
+            ->whereBetween('transfer_date', [$startDate, $endDate])
+            ->orderBy('transfer_date', 'desc')
+            ->get();
+
+        $penjualanEmas = GoldTransaction::sell()
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->orderBy('transaction_date', 'desc')
+            ->get();
+
+        $totalPemasukan = $transferMasuk->sum('transfer_amount') + $penjualanEmas->sum('total_price');
+
+        // PENGELUARAN
+        $pengeluaranDetail = Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->orderBy('expense_date', 'desc')
+            ->get();
+
+        $pembelianEmas = GoldTransaction::buy()
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->orderBy('transaction_date', 'desc')
+            ->get();
+
+        $totalPengeluaran = $pengeluaranDetail->sum('amount') + $pembelianEmas->sum('total_price');
+
+        // RINGKASAN
+        $netCashFlow = $totalPemasukan - $totalPengeluaran;
+        $saldoAwal = BankBalance::getCurrentBalance() - $netCashFlow; // Estimasi saldo awal
+        $saldoAkhir = BankBalance::getCurrentBalance();
+
+        return [
+            'pemasukan' => [
+                'transfer_masuk' => $transferMasuk,
+                'penjualan_emas' => $penjualanEmas,
+                'total_pemasukan' => $totalPemasukan,
+            ],
+            'pengeluaran' => [
+                'pengeluaran_detail' => $pengeluaranDetail,
+                'pembelian_emas' => $pembelianEmas,
+                'total_pengeluaran' => $totalPengeluaran,
+            ],
+            'ringkasan' => [
+                'saldo_awal_estimasi' => $saldoAwal,
+                'total_pemasukan' => $totalPemasukan,
+                'total_pengeluaran' => $totalPengeluaran,
+                'net_cash_flow' => $netCashFlow,
+                'saldo_akhir' => $saldoAkhir,
+            ]
         ];
     }
 }

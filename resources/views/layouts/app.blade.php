@@ -625,8 +625,6 @@
                                 <i class="bi bi-currency-dollar me-2"></i>Daftar Harga
                             </a>
                         </li>
-
-                        {{-- Urfav --}}
                         <li class="nav-item">
                             <a href="{{ route('urfav.index') }}" class="nav-link {{ request()->routeIs('urfav.*') ? 'active' : '' }}">
                                 <i class="bi bi-shop me-2"></i>Urfav
@@ -645,11 +643,9 @@
                                 <i class="bi bi-list-task me-2"></i>Tugas
                             </a>
                         </li>
-
-                        {{-- TAMBAHAN BARU: Menu Daftar Harga untuk User juga --}}
                         <li class="nav-item">
-                            <a href="{{ route('price-list') }}" class="nav-link {{ request()->routeIs('price-list') ? 'active' : '' }}">
-                                <i class="bi bi-currency-dollar me-2"></i>Daftar Harga
+                            <a href="{{ route('urfav.index') }}" class="nav-link {{ request()->routeIs('urfav.*') ? 'active' : '' }}">
+                                <i class="bi bi-shop me-2"></i>Urfav
                             </a>
                         </li>
                     @endif

@@ -203,13 +203,296 @@
         body.sidebar-open {
             overflow: hidden;
             position: relative;
-            /* Ubah dari fixed ke relative */
             width: 100%;
         }
 
         /* PERBAIKAN: Dropdown menu animation */
         .nav-item .collapse {
             transition: height 0.3s ease;
+        }
+
+        /* Styles khusus untuk Price List */
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.08);
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8B5CF6, #A855F7);
+        }
+
+        .page-title {
+            color: #8B5CF6;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .page-subtitle {
+            color: #6B7280;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .search-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.08);
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            background: rgba(139, 92, 246, 0.05);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #8B5CF6;
+            background: rgba(139, 92, 246, 0.08);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 35px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8B5CF6;
+            font-size: 18px;
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.08);
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .table-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8B5CF6, #A855F7);
+        }
+
+        .price-list-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .price-list-table th {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
+            color: #374151;
+            font-weight: 600;
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .price-list-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.05);
+            vertical-align: middle;
+        }
+
+        .price-list-table tr:hover {
+            background: rgba(139, 92, 246, 0.03);
+        }
+
+        .category-row {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7) !important;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .category-row td {
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .category-row:hover {
+            background: linear-gradient(135deg, #7C3AED, #9333EA) !important;
+        }
+
+        .price {
+            white-space: nowrap;
+            font-weight: bold;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.1);
+            color: #8B5CF6;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin: 2px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .timeline-badge {
+            background: rgba(249, 115, 22, 0.1);
+            color: #F97316;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(249, 115, 22, 0.2);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6B7280;
+        }
+
+        .no-results i {
+            font-size: 3rem;
+            color: #D1D5DB;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #8B5CF6;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #8B5CF6, #A855F7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .scroll-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-top:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(139, 92, 246, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .page-header {
+                padding: 20px;
+            }
+
+            .search-container {
+                padding: 15px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .price-list-table {
+                min-width: 800px;
+            }
+
+            .price-list-table th,
+            .price-list-table td {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            .category-row td {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .price-list-table th,
+            .price-list-table td {
+                padding: 6px 8px;
+                font-size: 0.8rem;
+            }
+
+            .search-input {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -328,13 +611,29 @@
                                 </ul>
                             </div>
                         </li>
-                        {{-- Taks --}}
+
+                        {{-- Tasks --}}
                         <li class="nav-item">
                             <a href="{{ route('tasks.index') }}" class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
                                 <i class="bi bi-list-task me-2"></i>Tugas
                             </a>
                         </li>
+
+                        {{-- TAMBAHAN BARU: Menu Daftar Harga --}}
+                        <li class="nav-item">
+                            <a href="{{ route('price-list') }}" class="nav-link {{ request()->routeIs('price-list') ? 'active' : '' }}">
+                                <i class="bi bi-currency-dollar me-2"></i>Daftar Harga
+                            </a>
+                        </li>
+
+                        {{-- Urfav --}}
+                        <li class="nav-item">
+                            <a href="{{ route('urfav.index') }}" class="nav-link {{ request()->routeIs('urfav.*') ? 'active' : '' }}">
+                                <i class="bi bi-shop me-2"></i>Urfav
+                            </a>
+                        </li>
                     @endif
+
                     @if (session('role') === 'user')
                         <li class="nav-item">
                             <a href="{{ route('dashboard.user') }}" class="nav-link {{ request()->routeIs('dashboard.user') ? 'active' : '' }}">
@@ -344,6 +643,13 @@
                         <li class="nav-item">
                             <a href="{{ route('tasks.user.index') }}" class="nav-link {{ request()->routeIs('tasks.user.*') ? 'active' : '' }}">
                                 <i class="bi bi-list-task me-2"></i>Tugas
+                            </a>
+                        </li>
+
+                        {{-- TAMBAHAN BARU: Menu Daftar Harga untuk User juga --}}
+                        <li class="nav-item">
+                            <a href="{{ route('price-list') }}" class="nav-link {{ request()->routeIs('price-list') ? 'active' : '' }}">
+                                <i class="bi bi-currency-dollar me-2"></i>Daftar Harga
                             </a>
                         </li>
                     @endif

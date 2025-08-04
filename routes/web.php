@@ -12,7 +12,9 @@ use App\Http\Controllers\BankTransferController;
 use App\Http\Controllers\GoldTransactionController;
 use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\UrfavController;
 use Illuminate\Support\Facades\Route;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -110,4 +112,22 @@ Route::middleware('simpleauth')->group(function () {
         Route::get('/assignments/{assignment}', [TaskController::class, 'userShow'])->name('show');
         Route::post('/assignments/{assignment}/submit', [TaskController::class, 'userSubmit'])->name('submit');
     });
+
+    // Urfav Management Routes
+    Route::prefix('urfav')->name('urfav.')->group(function () {
+        Route::get('/', [UrfavController::class, 'index'])->name('index');
+        Route::post('/', [UrfavController::class, 'store'])->name('store');
+        Route::post('/import-jakmall', [UrfavController::class, 'importJakmall'])->name('import-jakmall');
+        Route::post('/sync-shopee', [UrfavController::class, 'syncToShopee'])->name('sync-shopee');
+        Route::post('/update-urutan', [UrfavController::class, 'updateUrutan'])->name('update-urutan');
+        Route::post('/update-urutan-file', [UrfavController::class, 'updateUrutanFromFile'])->name('update-urutan-file');
+        Route::patch('/products/{product}', [UrfavController::class, 'updateProduct'])->name('update-product');
+        Route::get('/export-shopee', [UrfavController::class, 'exportShopee'])->name('export-shopee');
+        Route::get('/export-all', [UrfavController::class, 'exportAll'])->name('export-all');
+        Route::delete('/products/{product}', [UrfavController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::get('/price-list', function () {
+        return view('price-list.index');
+    })->name('price-list');
 });

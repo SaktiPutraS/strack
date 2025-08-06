@@ -340,7 +340,7 @@ class TaskController extends Controller
 
         $validated = $request->validate([
             'remarks' => 'required|string',
-            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx'
+            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx'
         ]);
 
         $attachmentPath = null;

@@ -35,6 +35,8 @@ class Expense extends Model
         'KOPI_SUSU' => 'Kopi/Susu',
         'INVENTARIS' => 'Inventaris',
         'BENSIN' => 'Bensin',
+        'SIERRA' => 'Sierra',
+        'SKINCARE' => 'Skincare',
         'SALDO_AWAL' => 'Saldo Awal',
         'LAINNYA' => 'Lainnya',
     ];

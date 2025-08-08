@@ -34,6 +34,7 @@ class Expense extends Model
         'GAJI_BONUS' => 'Gaji/Bonus',
         'KOPI_SUSU' => 'Kopi/Susu',
         'SALDO_AWAL' => 'Saldo Awal',
+        'PERALATAN' => 'Peralatan',
         'LAINNYA' => 'Lainnya',
     ];
 

@@ -33,8 +33,9 @@ class Expense extends Model
         'ENTERTAIN' => 'Entertain/Jajan/Traktir',
         'GAJI_BONUS' => 'Gaji/Bonus',
         'KOPI_SUSU' => 'Kopi/Susu',
+        'INVENTARIS' => 'Inventaris',
+        'BENSIN' => 'Bensin',
         'SALDO_AWAL' => 'Saldo Awal',
-        'PERALATAN' => 'Peralatan',
         'LAINNYA' => 'Lainnya',
     ];
 

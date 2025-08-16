@@ -531,11 +531,13 @@
                         </li>
 
                         <!-- Kelompok Keuangan -->
+                        <!-- Kelompok Keuangan -->
                         <li class="nav-item dropdown">
                             <a href="#"
                                 class="nav-link dropdown-toggle {{ request()->routeIs('payments.*') ||
                                 request()->routeIs('expenses.*') ||
                                 request()->routeIs('bank-transfers.*') ||
+                                request()->routeIs('cash-withdrawals.*') ||
                                 request()->routeIs('gold.*') ||
                                 request()->routeIs('financial-reports.*')
                                     ? 'active'
@@ -546,6 +548,7 @@
                             <div class="collapse ms-3 {{ request()->routeIs('payments.*') ||
                             request()->routeIs('expenses.*') ||
                             request()->routeIs('bank-transfers.*') ||
+                            request()->routeIs('cash-withdrawals.*') ||
                             request()->routeIs('gold.*') ||
                             request()->routeIs('financial-reports.*')
                                 ? 'show'
@@ -567,7 +570,13 @@
                                     <li>
                                         <a href="{{ route('bank-transfers.index') }}"
                                             class="nav-link py-2 fs-7 {{ request()->routeIs('bank-transfers.*') ? 'active' : '' }}">
-                                            <i class="bi bi-bank me-2"></i>Transfer
+                                            <i class="bi bi-bank me-2"></i>Transfer Bank
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('cash-withdrawals.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('cash-withdrawals.*') ? 'active' : '' }}">
+                                            <i class="bi bi-wallet2 me-2"></i>Tarik Cash
                                         </a>
                                     </li>
                                     <li>
@@ -576,12 +585,7 @@
                                             <i class="bi bi-coin me-2"></i>Emas
                                         </a>
                                     </li>
-                                    <li>
-                                        <a href="{{ route('financial-reports.index') }}"
-                                            class="nav-link py-2 fs-7 {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
-                                            <i class="bi bi-graph-up me-2"></i>Laporan
-                                        </a>
-                                    </li>
+
                                 </ul>
                             </div>
                         </li>
@@ -610,6 +614,13 @@
                                     </li>
                                 </ul>
                             </div>
+                        </li>
+
+                        <li>
+                            <a href="{{ route('financial-reports.index') }}"
+                                class="nav-link py-2 fs-7 {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
+                                <i class="bi bi-graph-up me-2"></i>Laporan
+                            </a>
                         </li>
 
                         {{-- Tasks --}}

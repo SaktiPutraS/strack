@@ -13,11 +13,11 @@
                         <p class="text-muted mb-0">{{ now()->format('F Y') }} • Selamat datang kembali</p>
                     @endif
                 </div>
-                <div>
-                    <a href="{{ route('projects.create') }}" class="btn btn-primary flex-fill flex-sm-grow-0">
+                <div class="d-flex gap-2">
+                    <a href="{{ route('projects.create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>Proyek Baru
                     </a>
-                    <a href="{{ route('financial-reports.index') }}" class="btn btn-outline-primary flex-fill flex-sm-grow-0">
+                    <a href="{{ route('financial-reports.index') }}" class="btn btn-outline-primary">
                         <i class="bi bi-chart-bar me-1"></i>Laporan
                     </a>
                 </div>
@@ -25,15 +25,15 @@
         </div>
     </div>
 
-    <!-- Project Status Cards -->
+    <!-- Project Status & Cash Balance Cards -->
     <div class="row g-3 mb-4">
         <div class="col-12">
             <h5 class="text-uppercase text-muted fw-bold mb-3 fs-6">
-                <i class="bi bi-kanban me-2 text-purple"></i>Status Proyek
+                <i class="bi bi-kanban me-2 text-purple"></i>Status Proyek & Saldo Kas
             </h5>
         </div>
 
-        <div class="col-6 col-md-6">
+        <div class="col-6 col-lg-3">
             <div class="card luxury-card stat-card stat-card-warning h-100 clickable-card" data-filter="status=WAITING">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div class="col-6 col-md-6">
+        <div class="col-6 col-lg-3">
             <div class="card luxury-card stat-card stat-card-purple h-100 clickable-card" data-filter="status=PROGRESS">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -53,6 +53,30 @@
                     </div>
                     <h3 class="fw-bold text-purple mb-1">{{ $proyekProgress }}</h3>
                     <small class="text-muted fw-semibold">Progress</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="card luxury-card stat-card stat-card-primary h-100">
+                <div class="card-body text-center p-3">
+                    <div class="luxury-icon mx-auto mb-2">
+                        <i class="bi bi-bank text-primary fs-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1 fs-6">{{ number_format($saldoBank, 0, ',', '.') }}</h3>
+                    <small class="text-muted fw-semibold">Bank Octo</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="card luxury-card stat-card stat-card-success h-100">
+                <div class="card-body text-center p-3">
+                    <div class="luxury-icon mx-auto mb-2">
+                        <i class="bi bi-cash-coin text-success fs-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1 fs-6">{{ number_format($saldoCash, 0, ',', '.') }}</h3>
+                    <small class="text-muted fw-semibold">Cash</small>
                 </div>
             </div>
         </div>
@@ -85,11 +109,8 @@
         <div class="col-12 col-lg-4">
             <div class="card luxury-card border-0 h-100">
                 <div class="card-header bg-white border-0 p-4">
-                    <h5 class="fw-bold mb-0">Asset
-                    </h5>
-                    <p class="text-muted mb-0">Total:
-                        <strong>Rp. {{ number_format($pieData['total']) }}</strong>
-                    </p>
+                    <h5 class="fw-bold mb-0">Asset</h5>
+                    <p class="text-muted mb-0">Total: <strong>Rp. {{ number_format($pieData['total']) }}</strong></p>
                 </div>
                 <div class="card-body position-relative">
                     <canvas id="pieChart" height="250"></canvas>
@@ -116,7 +137,7 @@
                         <div class="row g-3 p-3">
                             @foreach ($proyekDeadlineTermedekat as $project)
                                 <div class="col-12">
-                                    <div class="card luxury-card project-card border-0 project-card" data-url="{{ route('projects.show', $project) }}">
+                                    <div class="card luxury-card project-card border-0" data-url="{{ route('projects.show', $project) }}">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="flex-grow-1">
@@ -309,6 +330,14 @@
                     background: linear-gradient(90deg, #8B5CF6, #A855F7);
                 }
 
+                .stat-card-primary::before {
+                    background: linear-gradient(90deg, #3B82F6, #2563EB);
+                }
+
+                .stat-card-success::before {
+                    background: linear-gradient(90deg, #10B981, #059669);
+                }
+
                 /* Hover effect */
                 .stat-card:hover {
                     transform: translateY(-4px);
@@ -323,6 +352,7 @@
                 .project-card {
                     position: relative;
                     overflow: hidden;
+                    cursor: pointer;
                 }
 
                 .project-card::before {
@@ -342,23 +372,13 @@
             `;
             document.head.appendChild(style);
 
-            // Double click untuk buka detail proyek
+            // Project cards click handler
             const projectCards = document.querySelectorAll('.project-card');
-            let lastClickTime = 0;
-
             projectCards.forEach(card => {
                 card.addEventListener('click', function() {
-                    const currentTime = new Date().getTime();
-                    const clickGap = 300; // ms
-
-                    if (currentTime - lastClickTime < clickGap) {
-                        window.location.href = this.dataset.url;
-                    }
-
-                    lastClickTime = currentTime;
+                    window.location.href = this.dataset.url;
                 });
 
-                // Efek visual saat di-tap
                 card.addEventListener('touchstart', function() {
                     this.style.transform = 'scale(0.98)';
                 });
@@ -406,6 +426,7 @@
                         tooltip: {
                             callbacks: {
                                 title: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
                                     const weekData = @json($weeklyData)[index];
                                     return weekData.start_date + ' - ' + weekData.end_date;
                                 },

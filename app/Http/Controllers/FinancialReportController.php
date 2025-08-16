@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\BankTransfer;
 use App\Models\Expense;
+use App\Models\CashWithdrawal;
 use App\Models\GoldTransaction;
 use App\Models\BankBalance;
+use App\Models\CashBalance;
 use App\Models\Payment;
 use App\Models\Project;
 use Illuminate\Http\Request;
@@ -20,29 +22,37 @@ class FinancialReportController extends Controller
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->toDateString());
 
-        // A. Laporan Laba Rugi
+        // A. Laporan Laba Rugi (Enhanced with Cash)
         $laporanLabaRugi = $this->generateLaporanLabaRugi($startDate, $endDate);
 
-        // B. Neraca Sederhana
+        // B. Neraca Sederhana (Enhanced with Cash)
         $neracaSederhana = $this->generateNeracaSederhana();
 
         // C. Portfolio Emas
         $portfolioEmas = $this->generatePortfolioEmas();
 
-        // D. Arus Kas Bank Octo (NEW)
-        $arusKasBank = $this->generateArusKasBank($startDate, $endDate);
+        // D. Arus Kas Bank & Cash (Enhanced)
+        $arusKas = $this->generateArusKas($startDate, $endDate);
 
-        // Current Bank Balance
+        // E. Laporan Penjualan Project (NEW)
+        $laporanPenjualan = $this->generateLaporanPenjualan($startDate, $endDate);
+
+        // Current Balances
         $currentBankBalance = BankBalance::getCurrentBalance();
+        $currentCashBalance = CashBalance::getCurrentBalance();
         $formattedBankBalance = 'Rp ' . number_format($currentBankBalance, 0, ',', '.');
+        $formattedCashBalance = 'Rp ' . number_format($currentCashBalance, 0, ',', '.');
 
         return view('financial-reports.index', compact(
             'laporanLabaRugi',
             'neracaSederhana',
             'portfolioEmas',
-            'arusKasBank',
+            'arusKas',
+            'laporanPenjualan',
             'currentBankBalance',
+            'currentCashBalance',
             'formattedBankBalance',
+            'formattedCashBalance',
             'startDate',
             'endDate'
         ));
@@ -58,40 +68,44 @@ class FinancialReportController extends Controller
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->sum('total_price');
 
-        $pendapatanLainLain = 0; // Placeholder untuk pendapatan lain
-
+        $pendapatanLainLain = 0;
         $totalPendapatanBankOcto = $transferDariPembayaran + $hasilPenjualanEmas + $pendapatanLainLain;
 
-        // PENGELUARAN by Category - Updated dengan kategori yang ada di Expense model
-        $pengeluaranByCategory = Expense::whereBetween('expense_date', [$startDate, $endDate])
+        // PENGELUARAN by Category & Source
+        $pengeluaranBank = Expense::where('source', 'BANK')
+            ->whereBetween('expense_date', [$startDate, $endDate])
             ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
             ->get()
             ->keyBy('category');
 
-        // Mapping sesuai dengan CATEGORIES di Expense model
-        $biayaAI = $pengeluaranByCategory->get('AI')->total ?? 0;
-        $biayaAdminBank = $pengeluaranByCategory->get('ADMIN_BANK')->total ?? 0;
-        $biayaBuku = $pengeluaranByCategory->get('BUKU')->total ?? 0;
-        $biayaDomainHosting = $pengeluaranByCategory->get('DOMAIN_HOSTING')->total ?? 0;
-        $biayaEntertain = $pengeluaranByCategory->get('ENTERTAIN')->total ?? 0;
-        $biayaGajiBonus = $pengeluaranByCategory->get('GAJI_BONUS')->total ?? 0;
-        $biayaKopiSusu = $pengeluaranByCategory->get('KOPI_SUSU')->total ?? 0;
-        $biayaLainnya = $pengeluaranByCategory->get('LAINNYA')->total ?? 0;
+        $pengeluaranCash = Expense::where('source', 'CASH')
+            ->whereBetween('expense_date', [$startDate, $endDate])
+            ->selectRaw('category, SUM(amount) as total')
+            ->groupBy('category')
+            ->get()
+            ->keyBy('category');
 
-        $totalPengeluaranOperasional = $biayaAI + $biayaAdminBank + $biayaBuku + $biayaDomainHosting +
-            $biayaEntertain + $biayaGajiBonus + $biayaKopiSusu + $biayaLainnya;
+        // Total pengeluaran operasional
+        $totalPengeluaranBank = $pengeluaranBank->sum('total');
+        $totalPengeluaranCash = $pengeluaranCash->sum('total');
+        $totalPengeluaranOperasional = $totalPengeluaranBank + $totalPengeluaranCash;
 
         // INVESTASI
         $pembelianEmas = GoldTransaction::buy()
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->sum('total_price');
 
+        // CASH WITHDRAWAL (mengurangi bank, tapi bukan expense)
+        $cashWithdrawals = CashWithdrawal::whereBetween('withdrawal_date', [$startDate, $endDate])
+            ->sum('amount');
+
         $totalPengeluaranDanInvestasi = $totalPengeluaranOperasional + $pembelianEmas;
 
         // LABA/RUGI & SALDO
         $labaRugiOperasional = $totalPendapatanBankOcto - $totalPengeluaranDanInvestasi;
         $saldoBankOctoAkhir = BankBalance::getCurrentBalance();
+        $saldoCashAkhir = CashBalance::getCurrentBalance();
 
         return [
             'pendapatan' => [
@@ -101,23 +115,23 @@ class FinancialReportController extends Controller
                 'total_pendapatan_bank_octo' => $totalPendapatanBankOcto,
             ],
             'pengeluaran' => [
-                'biaya_ai' => $biayaAI,
-                'biaya_admin_bank' => $biayaAdminBank,
-                'biaya_buku' => $biayaBuku,
-                'biaya_domain_hosting' => $biayaDomainHosting,
-                'biaya_entertain' => $biayaEntertain,
-                'biaya_gaji_bonus' => $biayaGajiBonus,
-                'biaya_kopi_susu' => $biayaKopiSusu,
-                'biaya_lainnya' => $biayaLainnya,
-                'total_pengeluaran_operasional' => $totalPengeluaranOperasional,
+                'bank' => $pengeluaranBank,
+                'cash' => $pengeluaranCash,
+                'total_bank' => $totalPengeluaranBank,
+                'total_cash' => $totalPengeluaranCash,
+                'total_operasional' => $totalPengeluaranOperasional,
             ],
             'investasi' => [
                 'pembelian_emas' => $pembelianEmas,
                 'total_pengeluaran_dan_investasi' => $totalPengeluaranDanInvestasi,
             ],
+            'cash_management' => [
+                'cash_withdrawals' => $cashWithdrawals,
+            ],
             'hasil' => [
                 'laba_rugi_operasional' => $labaRugiOperasional,
                 'saldo_bank_octo_akhir' => $saldoBankOctoAkhir,
+                'saldo_cash_akhir' => $saldoCashAkhir,
             ]
         ];
     }
@@ -126,6 +140,7 @@ class FinancialReportController extends Controller
     {
         // ASET
         $kasBankOcto = BankBalance::getCurrentBalance();
+        $kasCash = CashBalance::getCurrentBalance();
 
         // Investasi Emas
         $totalBeliEmas = GoldTransaction::buy()->sum('grams');
@@ -136,7 +151,7 @@ class FinancialReportController extends Controller
         $rataRataHargaBeli = $totalBeliEmas > 0 ? $totalInvestasiEmas / $totalBeliEmas : 0;
         $nilaiInvestasiEmas = $sisaEmas * $rataRataHargaBeli;
 
-        $totalAset = $kasBankOcto + $nilaiInvestasiEmas;
+        $totalAset = $kasBankOcto + $kasCash + $nilaiInvestasiEmas;
 
         // PIUTANG
         $pembayaranBelumTransfer = Payment::where('is_transferred', false)->sum('amount');
@@ -151,6 +166,8 @@ class FinancialReportController extends Controller
         return [
             'aset' => [
                 'kas_bank_octo' => $kasBankOcto,
+                'kas_cash' => $kasCash,
+                'total_kas' => $kasBankOcto + $kasCash,
                 'investasi_emas' => [
                     'grams' => $sisaEmas,
                     'rata_rata_harga' => $rataRataHargaBeli,
@@ -183,9 +200,9 @@ class FinancialReportController extends Controller
         ];
     }
 
-    private function generateArusKasBank(string $startDate, string $endDate): array
+    private function generateArusKas(string $startDate, string $endDate): array
     {
-        // PEMASUKAN
+        // PEMASUKAN BANK
         $transferMasuk = BankTransfer::with('payment.project.client')
             ->whereBetween('transfer_date', [$startDate, $endDate])
             ->orderBy('transfer_date', 'desc')
@@ -196,10 +213,11 @@ class FinancialReportController extends Controller
             ->orderBy('transaction_date', 'desc')
             ->get();
 
-        $totalPemasukan = $transferMasuk->sum('transfer_amount') + $penjualanEmas->sum('total_price');
+        $totalPemasukanBank = $transferMasuk->sum('transfer_amount') + $penjualanEmas->sum('total_price');
 
-        // PENGELUARAN
-        $pengeluaranDetail = Expense::whereBetween('expense_date', [$startDate, $endDate])
+        // PENGELUARAN BANK
+        $pengeluaranBank = Expense::where('source', 'BANK')
+            ->whereBetween('expense_date', [$startDate, $endDate])
             ->orderBy('expense_date', 'desc')
             ->get();
 
@@ -208,31 +226,135 @@ class FinancialReportController extends Controller
             ->orderBy('transaction_date', 'desc')
             ->get();
 
-        $totalPengeluaran = $pengeluaranDetail->sum('amount') + $pembelianEmas->sum('total_price');
+        $cashWithdrawals = CashWithdrawal::whereBetween('withdrawal_date', [$startDate, $endDate])
+            ->orderBy('withdrawal_date', 'desc')
+            ->get();
+
+        $totalPengeluaranBank = $pengeluaranBank->sum('amount') + $pembelianEmas->sum('total_price') + $cashWithdrawals->sum('amount');
+
+        // ARUS KAS CASH
+        $pemasukanCash = $cashWithdrawals; // Cash masuk dari withdrawal bank
+        $pengeluaranCash = Expense::where('source', 'CASH')
+            ->whereBetween('expense_date', [$startDate, $endDate])
+            ->orderBy('expense_date', 'desc')
+            ->get();
+
+        $totalPemasukanCash = $cashWithdrawals->sum('amount');
+        $totalPengeluaranCash = $pengeluaranCash->sum('amount');
 
         // RINGKASAN
-        $netCashFlow = $totalPemasukan - $totalPengeluaran;
-        $saldoAwal = BankBalance::getCurrentBalance() - $netCashFlow; // Estimasi saldo awal
-        $saldoAkhir = BankBalance::getCurrentBalance();
+        $netCashFlowBank = $totalPemasukanBank - $totalPengeluaranBank;
+        $netCashFlowCash = $totalPemasukanCash - $totalPengeluaranCash;
+        $saldoBankAkhir = BankBalance::getCurrentBalance();
+        $saldoCashAkhir = CashBalance::getCurrentBalance();
 
         return [
-            'pemasukan' => [
-                'transfer_masuk' => $transferMasuk,
-                'penjualan_emas' => $penjualanEmas,
-                'total_pemasukan' => $totalPemasukan,
+            'bank' => [
+                'pemasukan' => [
+                    'transfer_masuk' => $transferMasuk,
+                    'penjualan_emas' => $penjualanEmas,
+                    'total' => $totalPemasukanBank,
+                ],
+                'pengeluaran' => [
+                    'expenses' => $pengeluaranBank,
+                    'pembelian_emas' => $pembelianEmas,
+                    'cash_withdrawals' => $cashWithdrawals,
+                    'total' => $totalPengeluaranBank,
+                ],
+                'net_flow' => $netCashFlowBank,
+                'saldo_akhir' => $saldoBankAkhir,
             ],
-            'pengeluaran' => [
-                'pengeluaran_detail' => $pengeluaranDetail,
-                'pembelian_emas' => $pembelianEmas,
-                'total_pengeluaran' => $totalPengeluaran,
-            ],
-            'ringkasan' => [
-                'saldo_awal_estimasi' => $saldoAwal,
-                'total_pemasukan' => $totalPemasukan,
-                'total_pengeluaran' => $totalPengeluaran,
-                'net_cash_flow' => $netCashFlow,
-                'saldo_akhir' => $saldoAkhir,
+            'cash' => [
+                'pemasukan' => [
+                    'withdrawals' => $pemasukanCash,
+                    'total' => $totalPemasukanCash,
+                ],
+                'pengeluaran' => [
+                    'expenses' => $pengeluaranCash,
+                    'total' => $totalPengeluaranCash,
+                ],
+                'net_flow' => $netCashFlowCash,
+                'saldo_akhir' => $saldoCashAkhir,
             ]
+        ];
+    }
+
+    private function generateLaporanPenjualan(string $startDate, string $endDate): array
+    {
+        // Project yang dibuat dalam periode
+        $projectsInPeriod = Project::with(['client', 'payments'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Pembayaran yang diterima dalam periode (terlepas kapan project dibuat)
+        $paymentsInPeriod = Payment::with(['project.client'])
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->orderBy('payment_date', 'desc')
+            ->get();
+
+        // Statistik Project
+        $totalProjects = $projectsInPeriod->count();
+        $totalNilaiProject = $projectsInPeriod->sum('total_value');
+        $totalDpProject = $projectsInPeriod->sum('dp_amount');
+
+        // Statistik by Type
+        $projectsByType = $projectsInPeriod->groupBy('type')->map(function ($projects, $type) {
+            return [
+                'count' => $projects->count(),
+                'total_value' => $projects->sum('total_value'),
+                'avg_value' => $projects->avg('total_value'),
+            ];
+        });
+
+        // Statistik by Status
+        $projectsByStatus = $projectsInPeriod->groupBy('status')->map(function ($projects) {
+            return [
+                'count' => $projects->count(),
+                'total_value' => $projects->sum('total_value'),
+            ];
+        });
+
+        // Statistik Pembayaran
+        $totalPayments = $paymentsInPeriod->count();
+        $totalNilaiPayments = $paymentsInPeriod->sum('amount');
+
+        $paymentsByType = $paymentsInPeriod->groupBy('payment_type')->map(function ($payments) {
+            return [
+                'count' => $payments->count(),
+                'total_amount' => $payments->sum('amount'),
+                'avg_amount' => $payments->avg('amount'),
+            ];
+        });
+
+        // Top Clients by Value
+        $topClients = $projectsInPeriod->groupBy('client.name')->map(function ($projects, $clientName) {
+            return [
+                'client_name' => $clientName,
+                'project_count' => $projects->count(),
+                'total_value' => $projects->sum('total_value'),
+                'avg_value' => $projects->avg('total_value'),
+            ];
+        })->sortByDesc('total_value')->take(5);
+
+        return [
+            'projects' => [
+                'list' => $projectsInPeriod,
+                'total_count' => $totalProjects,
+                'total_value' => $totalNilaiProject,
+                'total_dp' => $totalDpProject,
+                'avg_value' => $totalProjects > 0 ? $totalNilaiProject / $totalProjects : 0,
+                'by_type' => $projectsByType,
+                'by_status' => $projectsByStatus,
+            ],
+            'payments' => [
+                'list' => $paymentsInPeriod,
+                'total_count' => $totalPayments,
+                'total_amount' => $totalNilaiPayments,
+                'avg_amount' => $totalPayments > 0 ? $totalNilaiPayments / $totalPayments : 0,
+                'by_type' => $paymentsByType,
+            ],
+            'top_clients' => $topClients,
         ];
     }
 }

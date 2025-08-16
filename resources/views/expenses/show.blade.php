@@ -46,6 +46,17 @@
                             </div>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label text-muted fw-semibold">Sumber Dana</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-{{ $expense->source_icon }} text-purple me-2"></i>
+                                <span
+                                    class="badge bg-{{ $expense->source_color }} bg-opacity-10 text-{{ $expense->source_color }} border border-{{ $expense->source_color }} fs-6">
+                                    <i class="bi bi-{{ $expense->source_icon }} me-1"></i>
+                                    {{ $expense->source_label }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label text-muted fw-semibold">Tanggal Pengeluaran</label>
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-calendar3 text-purple me-2"></i>
@@ -153,6 +164,16 @@
                             <div class="d-flex justify-content-between">
                                 <span class="text-muted">ID Transaksi:</span>
                                 <strong>#{{ str_pad($expense->id, 4, '0', STR_PAD_LEFT) }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Sumber Dana:</span>
+                                <span
+                                    class="badge bg-{{ $expense->source_color }} bg-opacity-10 text-{{ $expense->source_color }} border border-{{ $expense->source_color }}">
+                                    <i class="bi bi-{{ $expense->source_icon }} me-1"></i>
+                                    {{ $expense->source_label }}
+                                </span>
                             </div>
                         </div>
                         <div class="col-12">

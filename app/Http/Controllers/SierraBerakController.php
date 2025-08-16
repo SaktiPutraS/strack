@@ -10,14 +10,18 @@ class SierraBerakController extends Controller
 {
     public function index(Request $request)
     {
+        // Ambil parameter bulan dan tahun dari request, default ke bulan/tahun saat ini
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
 
+        // Validasi input
         $month = max(1, min(12, (int)$month));
         $year = max(2020, min(2030, (int)$year));
 
+        // Buat objek Carbon untuk bulan yang dipilih
         $currentDate = Carbon::create($year, $month, 1);
 
+        // Ambil data catatan untuk bulan yang dipilih
         $records = SierraBerak::byMonth($year, $month)
             ->orderBy('tanggal')
             ->orderBy('waktu')
@@ -26,8 +30,10 @@ class SierraBerakController extends Controller
                 return $item->tanggal->format('Y-m-d');
             });
 
+        // Data untuk kalender
         $calendarData = $this->generateCalendarData($currentDate, $records);
 
+        // Statistik
         $stats = [
             'total_catatan_bulan_ini' => SierraBerak::byMonth($year, $month)->count(),
             'total_catatan_hari_ini' => SierraBerak::today()->count(),
@@ -96,9 +102,8 @@ class SierraBerakController extends Controller
         ]);
     }
 
-    public function getByDate(Request $request)
+    public function getByDate($date)
     {
-        $date = $request->input('date');
         $records = SierraBerak::byDate($date)
             ->orderBy('waktu')
             ->get();
@@ -111,8 +116,10 @@ class SierraBerakController extends Controller
         $startOfMonth = $currentDate->copy()->startOfMonth();
         $endOfMonth = $currentDate->copy()->endOfMonth();
 
+        // Mulai dari hari Senin pada minggu yang berisi tanggal 1
         $startDate = $startOfMonth->copy()->startOfWeek(Carbon::MONDAY);
 
+        // Akhiri pada hari Minggu pada minggu yang berisi tanggal terakhir
         $endDate = $endOfMonth->copy()->endOfWeek(Carbon::SUNDAY);
 
         $calendar = [];

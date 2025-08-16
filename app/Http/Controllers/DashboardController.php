@@ -9,6 +9,7 @@ use App\Models\Expense;
 use App\Models\BankTransfer;
 use App\Models\GoldTransaction;
 use App\Models\BankBalance;
+use App\Models\CashBalance; // NEW
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -46,8 +47,10 @@ class DashboardController extends Controller
         $totalPiutang = Project::whereIn('status', ['WAITING', 'PROGRESS'])
             ->sum(DB::raw('total_value - paid_amount'));
 
-        // Hitung saldo bank dan emas
-        $saldoOcto = BankBalance::getCurrentBalance();
+        // Hitung saldo bank dan cash - UPDATED
+        $saldoBank = BankBalance::getCurrentBalance();
+        $saldoCash = CashBalance::getCurrentBalance(); // NEW
+        $totalKas = $saldoBank + $saldoCash; // NEW
 
         $totalBeliEmas = GoldTransaction::buy()->sum('grams');
         $totalJualEmas = GoldTransaction::sell()->sum('grams');
@@ -116,16 +119,17 @@ class DashboardController extends Controller
             $weekNumber++;
         }
 
-        // Data untuk pie chart (komposisi aset) dengan nilai
+        // Data untuk pie chart (komposisi aset) dengan breakdown kas - UPDATED
         $pieData = [
             'labels' => [
                 'Piutang: ' . $formatCurrency($totalPiutang),
-                'Bank: ' . $formatCurrency($saldoOcto),
+                'Bank: ' . $formatCurrency($saldoBank),
+                'Cash: ' . $formatCurrency($saldoCash), // NEW
                 'Emas: ' . $formatCurrency($saldoEmas)
             ],
-            'data' => [$totalPiutang, $saldoOcto, $saldoEmas],
-            'colors' => ['#3B82F6', '#10B981', '#F59E0B'],
-            'total' => $totalPiutang + $saldoOcto + $saldoEmas
+            'data' => [$totalPiutang, $saldoBank, $saldoCash, $saldoEmas], // UPDATED
+            'colors' => ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'], // UPDATED colors
+            'total' => $totalPiutang + $totalKas + $saldoEmas // UPDATED
         ];
 
         return view('dashboard.index', [
@@ -134,7 +138,9 @@ class DashboardController extends Controller
             'totalPendapatan' => $totalPendapatan,
             'totalPengeluaran' => $totalPengeluaran,
             'totalPiutang' => $totalPiutang,
-            'saldoOcto' => $saldoOcto,
+            'saldoBank' => $saldoBank, // RENAMED from saldoOcto
+            'saldoCash' => $saldoCash, // NEW
+            'totalKas' => $totalKas, // NEW
             'saldoEmas' => $saldoEmas,
             'proyekDeadlineTermedekat' => $proyekDeadlineTermedekat,
             'formatCurrency' => $formatCurrency,

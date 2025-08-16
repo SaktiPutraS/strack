@@ -9,7 +9,7 @@
                     <h1 class="h2 fw-bold text-purple mb-1">
                         <i class="bi bi-pencil-square me-2"></i>Edit Pengeluaran
                     </h1>
-                    <p class="text-muted mb-0">{{ $expense->formatted_amount }} - {{ $expense->category_label }}</p>
+                    <p class="text-muted mb-0">{{ $expense->formatted_amount }} - {{ $expense->source_label }} - {{ $expense->category_label }}</p>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-2">
                     <a href="{{ route('expenses.show', $expense) }}" class="btn btn-outline-primary">
@@ -18,6 +18,40 @@
                     <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Kembali
                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance Info -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+            <div class="card luxury-card border-0 bg-gradient-primary text-white">
+                <div class="card-body text-center py-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                            <i class="bi bi-bank text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Saldo Bank Octo</h6>
+                            <h3 class="mb-0 fw-bold text-white" id="bankBalance">Rp {{ number_format($currentBankBalance, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="card luxury-card border-0 bg-gradient-success text-white">
+                <div class="card-body text-center py-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                            <i class="bi bi-wallet2 text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Saldo Cash</h6>
+                            <h3 class="mb-0 fw-bold text-white" id="cashBalance">Rp {{ number_format($currentCashBalance, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -54,6 +88,32 @@
                                 @enderror
                             </div>
 
+                            <!-- Source -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Sumber Dana <span class="text-danger">*</span>
+                                </label>
+                                <div class="d-flex gap-3 mt-2">
+                                    @foreach (\App\Models\Expense::SOURCES as $key => $label)
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="source" id="source_{{ $key }}"
+                                                value="{{ $key }}" {{ old('source', $expense->source) == $key ? 'checked' : '' }} required>
+                                            <label class="form-check-label fw-semibold" for="source_{{ $key }}">
+                                                <i class="bi bi-{{ $key == 'BANK' ? 'bank' : 'cash-coin' }} me-1"></i>
+                                                {{ $label }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @error('source')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted mt-1 d-block" id="balanceInfo">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <span id="selectedBalanceText"></span>
+                                </small>
+                            </div>
+
                             <!-- Amount -->
                             <div class="col-md-6">
                                 <label for="amount" class="form-label fw-semibold">
@@ -62,16 +122,19 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-danger bg-opacity-10 text-danger fw-bold">Rp</span>
                                     <input type="number" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount"
-                                        value="{{ old('amount', $expense->amount) }}" min="1000" placeholder="50000" required>
+                                        value="{{ old('amount', $expense->amount) }}" min="1" placeholder="0" required>
                                 </div>
                                 @error('amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Minimal Rp 1.000</div>
+                                <small class="text-muted" id="maxAmountInfo">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <span id="maxAmountText"></span>
+                                </small>
                             </div>
 
                             <!-- Category -->
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label for="category" class="form-label fw-semibold">
                                     Kategori <span class="text-danger">*</span>
                                 </label>
@@ -123,12 +186,15 @@
                                         <div class="fw-bold text-danger">{{ $expense->formatted_amount }}</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <small class="text-muted fw-semibold">Kategori Awal:</small>
-                                        <div class="fw-bold">{{ $expense->category_label }}</div>
+                                        <small class="text-muted fw-semibold">Sumber Awal:</small>
+                                        <div class="fw-bold">
+                                            <i class="bi bi-{{ $expense->source == 'BANK' ? 'bank' : 'cash-coin' }} me-1"></i>
+                                            {{ $expense->source_label }}
+                                        </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <small class="text-muted fw-semibold">Dibuat:</small>
-                                        <div class="fw-bold">{{ $expense->created_at->format('d M Y') }}</div>
+                                        <small class="text-muted fw-semibold">Kategori Awal:</small>
+                                        <div class="fw-bold">{{ $expense->category_label }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -152,7 +218,7 @@
                                 <a href="{{ route('expenses.index') }}" class="btn btn-secondary btn-lg">
                                     <i class="bi bi-x-circle me-2"></i>Batal
                                 </a>
-                                <button type="submit" class="btn btn-primary btn-lg">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                                     <i class="bi bi-check-circle me-2"></i>Update Pengeluaran
                                 </button>
                             </div>
@@ -190,40 +256,101 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // SweetAlert messages
-            @if (session('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: '{{ session('success') }}',
-                    confirmButtonColor: '#8B5CF6',
-                    timer: 3000,
-                    timerProgressBar: true
-                });
-            @endif
+            const sourceRadios = document.querySelectorAll('input[name="source"]');
+            const amountInput = document.getElementById('amount');
+            const selectedBalanceText = document.getElementById('selectedBalanceText');
+            const maxAmountText = document.getElementById('maxAmountText');
+            const submitBtn = document.getElementById('submitBtn');
 
-            @if (session('error'))
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal!',
-                    text: '{{ session('error') }}',
-                    confirmButtonColor: '#8B5CF6'
-                });
-            @endif
+            const bankBalance = {{ $currentBankBalance }};
+            const cashBalance = {{ $currentCashBalance }};
+            const originalAmount = {{ $expense->amount }};
+            const originalSource = '{{ $expense->source }}';
+
+            function formatCurrency(amount) {
+                return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+            }
+
+            function updateBalanceInfo() {
+                const selectedSource = document.querySelector('input[name="source"]:checked').value;
+                const isBank = selectedSource === 'BANK';
+                let currentBalance = isBank ? bankBalance : cashBalance;
+                const sourceName = isBank ? 'Bank Octo' : 'Cash';
+
+                // Add back original amount if same source
+                if (selectedSource === originalSource) {
+                    currentBalance += originalAmount;
+                }
+
+                selectedBalanceText.textContent = `Saldo ${sourceName}: ${formatCurrency(currentBalance)}`;
+                maxAmountText.textContent = `Maksimal: ${formatCurrency(currentBalance)}`;
+                amountInput.max = currentBalance;
+
+                validateAmount();
+            }
+
+            function validateAmount() {
+                const selectedSource = document.querySelector('input[name="source"]:checked').value;
+                const isBank = selectedSource === 'BANK';
+                let currentBalance = isBank ? bankBalance : cashBalance;
+
+                // Add back original amount if same source
+                if (selectedSource === originalSource) {
+                    currentBalance += originalAmount;
+                }
+
+                const amount = parseFloat(amountInput.value) || 0;
+
+                if (amount > currentBalance) {
+                    amountInput.classList.add('is-invalid');
+                    submitBtn.disabled = true;
+                } else {
+                    amountInput.classList.remove('is-invalid');
+                    submitBtn.disabled = false;
+                }
+            }
+
+            sourceRadios.forEach(radio => {
+                radio.addEventListener('change', updateBalanceInfo);
+            });
+
+            amountInput.addEventListener('input', validateAmount);
+            updateBalanceInfo();
 
             // Form validation
             document.getElementById('expense-form').addEventListener('submit', function(e) {
-                const amount = parseFloat(document.getElementById('amount').value) || 0;
+                const selectedSource = document.querySelector('input[name="source"]:checked').value;
+                const isBank = selectedSource === 'BANK';
+                let currentBalance = isBank ? bankBalance : cashBalance;
+                const sourceName = isBank ? 'Bank Octo' : 'Cash';
 
-                if (amount < 1000) {
+                // Add back original amount if same source
+                if (selectedSource === originalSource) {
+                    currentBalance += originalAmount;
+                }
+
+                const amount = parseFloat(amountInput.value) || 0;
+
+                if (amount <= 0) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'error',
                         title: 'Jumlah Tidak Valid',
-                        text: 'Jumlah pengeluaran minimal Rp 1.000',
+                        text: 'Masukkan jumlah pengeluaran yang valid!',
                         confirmButtonColor: '#8B5CF6'
                     });
-                    return false;
+                    return;
+                }
+
+                if (amount > currentBalance) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Saldo Tidak Cukup',
+                        text: `Saldo ${sourceName} tidak mencukupi untuk pengeluaran ini!`,
+                        confirmButtonColor: '#8B5CF6'
+                    });
+                    return;
                 }
 
                 const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -246,6 +373,11 @@
         .form-select:focus {
             border-color: #8B5CF6;
             box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+
+        .form-check-input:checked {
+            background-color: #8B5CF6;
+            border-color: #8B5CF6;
         }
 
         .luxury-card {
@@ -275,6 +407,14 @@
 
         .text-purple {
             color: #8B5CF6 !important;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7) !important;
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #10B981, #059669) !important;
         }
 
         @media (max-width: 768px) {

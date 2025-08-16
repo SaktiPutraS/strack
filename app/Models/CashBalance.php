@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class BankBalance extends Model
+class CashBalance extends Model
 {
     use HasFactory;
 
-    protected $table = 'bank_balance';
+    protected $table = 'cash_balance';
 
     protected $fillable = [
         'initial_balance',
@@ -64,19 +64,11 @@ class BankBalance extends Model
             ]);
         }
 
-        // Calculate balance: transfers in, bank expenses out, cash withdrawals out, gold buys out, gold sells in
-        $totalTransfers = BankTransfer::sum('transfer_amount');
-        $totalBankExpenses = Expense::where('source', 'BANK')->sum('amount'); // UPDATED: only bank expenses
-        $totalCashWithdrawals = CashWithdrawal::sum('amount'); // NEW: cash withdrawals reduce bank
-        $totalGoldBuys = GoldTransaction::buy()->sum('total_price');
-        $totalGoldSells = GoldTransaction::sell()->sum('total_price');
+        // Calculate cash balance - import classes at top
+        $totalWithdrawals = \App\Models\CashWithdrawal::sum('amount');
+        $totalCashExpenses = \App\Models\Expense::where('source', 'CASH')->sum('amount');
 
-        $newBalance = $record->initial_balance
-            + $totalTransfers
-            - $totalBankExpenses
-            - $totalCashWithdrawals // NEW: subtract cash withdrawals
-            - $totalGoldBuys
-            + $totalGoldSells;
+        $newBalance = $record->initial_balance + $totalWithdrawals - $totalCashExpenses;
 
         $record->update([
             'current_balance' => $newBalance,

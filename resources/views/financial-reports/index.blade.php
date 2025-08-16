@@ -18,9 +18,9 @@
         </div>
     </div>
 
-    <!-- Current Bank Balance -->
-    <div class="row mb-4">
-        <div class="col-12">
+    <!-- Current Balances -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
             <div class="card luxury-card border-0 bg-gradient-primary text-white">
                 <div class="card-body text-center py-3">
                     <div class="d-flex align-items-center justify-content-center">
@@ -28,8 +28,23 @@
                             <i class="bi bi-bank text-white"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0 text-white-50">Saldo Bank Octo Saat Ini</h6>
+                            <h6 class="mb-0 text-white-50">Saldo Bank Octo</h6>
                             <h3 class="mb-0 fw-bold text-white">{{ $formattedBankBalance }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="card luxury-card border-0 bg-gradient-success text-white">
+                <div class="card-body text-center py-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                            <i class="bi bi-wallet2 text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Saldo Cash</h6>
+                            <h3 class="mb-0 fw-bold text-white">{{ $formattedCashBalance }}</h3>
                         </div>
                     </div>
                 </div>
@@ -95,7 +110,12 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="arus-kas-tab" data-bs-toggle="pill" data-bs-target="#arus-kas" type="button" role="tab">
-                                <i class="bi bi-cash-stack me-2"></i>Arus Kas Bank
+                                <i class="bi bi-cash-stack me-2"></i>Arus Kas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="penjualan-tab" data-bs-toggle="pill" data-bs-target="#penjualan" type="button" role="tab">
+                                <i class="bi bi-graph-up-arrow me-2"></i>Laporan Penjualan
                             </button>
                         </li>
                     </ul>
@@ -144,11 +164,6 @@
                                             <td class="text-end fw-bold">Rp
                                                 {{ number_format($laporanLabaRugi['pendapatan']['hasil_penjualan_emas'], 0, ',', '.') }}</td>
                                         </tr>
-                                        <tr>
-                                            <td class="ps-4">+ Pendapatan Lain-lain</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pendapatan']['pendapatan_lain_lain'], 0, ',', '.') }}</td>
-                                        </tr>
                                         <tr class="border-top border-success">
                                             <td class="fw-bold text-success fs-5">= TOTAL PENDAPATAN</td>
                                             <td class="text-end fw-bold text-success fs-4">Rp
@@ -166,52 +181,64 @@
                                     </div>
                                     PENGELUARAN OPERASIONAL
                                 </h5>
+
+                                <!-- Pengeluaran Bank -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary mb-2">Pengeluaran Bank Octo</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                @forelse($laporanLabaRugi['pengeluaran']['bank'] as $category => $data)
+                                                    <tr>
+                                                        <td class="ps-3">- {{ \App\Models\Expense::CATEGORIES[$category] ?? $category }}</td>
+                                                        <td class="text-end fw-bold">Rp {{ number_format($data->total, 0, ',', '.') }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="2" class="text-center text-muted">Tidak ada pengeluaran bank</td>
+                                                    </tr>
+                                                @endforelse
+                                                <tr class="border-top border-primary">
+                                                    <td class="fw-bold text-primary">Subtotal Bank</td>
+                                                    <td class="text-end fw-bold text-primary">Rp
+                                                        {{ number_format($laporanLabaRugi['pengeluaran']['total_bank'], 0, ',', '.') }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Pengeluaran Cash -->
+                                    <div class="col-md-6">
+                                        <h6 class="text-success mb-2">Pengeluaran Cash</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                @forelse($laporanLabaRugi['pengeluaran']['cash'] as $category => $data)
+                                                    <tr>
+                                                        <td class="ps-3">- {{ \App\Models\Expense::CATEGORIES[$category] ?? $category }}</td>
+                                                        <td class="text-end fw-bold">Rp {{ number_format($data->total, 0, ',', '.') }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="2" class="text-center text-muted">Tidak ada pengeluaran cash</td>
+                                                    </tr>
+                                                @endforelse
+                                                <tr class="border-top border-success">
+                                                    <td class="fw-bold text-success">Subtotal Cash</td>
+                                                    <td class="text-end fw-bold text-success">Rp
+                                                        {{ number_format($laporanLabaRugi['pengeluaran']['total_cash'], 0, ',', '.') }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Total Pengeluaran -->
                                 <div class="table-responsive">
                                     <table class="table table-borderless">
-                                        <tr>
-                                            <td class="ps-4">- AI</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_ai'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Admin Bank</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_admin_bank'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Buku</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_buku'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Domain/Hosting</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_domain_hosting'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Entertain/Jajan/Traktir</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_entertain'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Gaji/Bonus</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_gaji_bonus'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Kopi/Susu</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_kopi_susu'], 0, ',', '.') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4">- Lainnya</td>
-                                            <td class="text-end fw-bold">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['biaya_lainnya'], 0, ',', '.') }}</td>
-                                        </tr>
                                         <tr class="border-top border-danger">
-                                            <td class="fw-bold text-danger fs-5">= TOTAL PENGELUARAN</td>
+                                            <td class="fw-bold text-danger fs-5">= TOTAL PENGELUARAN OPERASIONAL</td>
                                             <td class="text-end fw-bold text-danger fs-4">Rp
-                                                {{ number_format($laporanLabaRugi['pengeluaran']['total_pengeluaran_operasional'], 0, ',', '.') }}</td>
+                                                {{ number_format($laporanLabaRugi['pengeluaran']['total_operasional'], 0, ',', '.') }}</td>
                                         </tr>
                                     </table>
                                 </div>
@@ -241,6 +268,32 @@
                                 </div>
                             </div>
 
+                            <!-- CASH MANAGEMENT -->
+                            <div class="mb-4">
+                                <h5 class="text-info mb-3 d-flex align-items-center">
+                                    <div class="luxury-icon me-3">
+                                        <i class="bi bi-arrow-left-right text-info"></i>
+                                    </div>
+                                    CASH MANAGEMENT
+                                </h5>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="ps-4">- Penarikan Cash dari Bank</td>
+                                            <td class="text-end fw-bold">Rp
+                                                {{ number_format($laporanLabaRugi['cash_management']['cash_withdrawals'], 0, ',', '.') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 text-muted small">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                (Transfer internal, bukan pengeluaran)
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
                             <!-- HASIL -->
                             <div class="card luxury-card bg-light border-0">
                                 <div class="card-body p-4">
@@ -255,8 +308,13 @@
                                             </tr>
                                             <tr>
                                                 <td class="fw-bold fs-4">SALDO BANK OCTO AKHIR</td>
-                                                <td class="text-end fw-bold fs-3 text-primary">
-                                                    Rp {{ number_format($laporanLabaRugi['hasil']['saldo_bank_octo_akhir'], 0, ',', '.') }}
+                                                <td class="text-end fw-bold fs-3 text-primary">Rp
+                                                    {{ number_format($laporanLabaRugi['hasil']['saldo_bank_octo_akhir'], 0, ',', '.') }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold fs-4">SALDO CASH AKHIR</td>
+                                                <td class="text-end fw-bold fs-3 text-success">Rp
+                                                    {{ number_format($laporanLabaRugi['hasil']['saldo_cash_akhir'], 0, ',', '.') }}
                                                 </td>
                                             </tr>
                                         </table>
@@ -299,9 +357,20 @@
                                     <div class="table-responsive">
                                         <table class="table table-borderless">
                                             <tr>
-                                                <td class="ps-4">- Kas (Bank Octo)</td>
+                                                <td class="ps-4">- Kas Bank Octo</td>
                                                 <td class="text-end fw-bold">Rp
-                                                    {{ number_format($neracaSederhana['aset']['kas_bank_octo'], 0, ',', '.') }}</td>
+                                                    {{ number_format($neracaSederhana['aset']['kas_bank_octo'], 0, ',', '.') }}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="ps-4">- Kas Cash</td>
+                                                <td class="text-end fw-bold">Rp {{ number_format($neracaSederhana['aset']['kas_cash'], 0, ',', '.') }}
+                                                </td>
+                                            </tr>
+                                            <tr class="border-top border-secondary">
+                                                <td class="ps-4 fw-bold">Total Kas</td>
+                                                <td class="text-end fw-bold">Rp {{ number_format($neracaSederhana['aset']['total_kas'], 0, ',', '.') }}
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td class="ps-4">- Investasi Emas<br>
@@ -406,15 +475,16 @@
             </div>
         </div>
 
-        <!-- Tab 3: Arus Kas Bank Octo -->
+        <!-- Tab 3: Arus Kas -->
         <div class="tab-pane fade" id="arus-kas" role="tabpanel">
-            <div class="row">
-                <div class="col-12">
+            <div class="row g-4">
+                <!-- Arus Kas Bank -->
+                <div class="col-md-6">
                     <div class="card luxury-card border-0">
                         <div class="card-header bg-gradient-primary text-white border-0 p-4">
                             <div class="d-flex align-items-center">
                                 <div class="luxury-icon me-3 bg-white bg-opacity-25">
-                                    <i class="bi bi-cash-stack text-white"></i>
+                                    <i class="bi bi-bank text-white"></i>
                                 </div>
                                 <div>
                                     <h5 class="mb-0 fw-bold text-white">Arus Kas Bank Octo</h5>
@@ -424,202 +494,273 @@
                             </div>
                         </div>
                         <div class="card-body p-4">
-                            <!-- Ringkasan Arus Kas -->
+                            <!-- Pemasukan Bank -->
+                            <h6 class="text-success mb-2">PEMASUKAN</h6>
+                            @if ($arusKas['bank']['pemasukan']['transfer_masuk']->count() > 0)
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            @foreach ($arusKas['bank']['pemasukan']['transfer_masuk'] as $transfer)
+                                                <tr>
+                                                    <td>{{ $transfer->transfer_date->format('d M') }}</td>
+                                                    <td>{{ $transfer->payment->project->client->name }}</td>
+                                                    <td class="text-end text-success">{{ $transfer->formatted_transfer_amount }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+
+                            <!-- Pengeluaran Bank -->
+                            <h6 class="text-danger mb-2">PENGELUARAN</h6>
+                            @if ($arusKas['bank']['pengeluaran']['expenses']->count() > 0)
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            @foreach ($arusKas['bank']['pengeluaran']['expenses']->take(5) as $expense)
+                                                <tr>
+                                                    <td>{{ $expense->expense_date->format('d M') }}</td>
+                                                    <td>{{ $expense->category_label }}</td>
+                                                    <td class="text-end text-danger">{{ $expense->formatted_amount }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+
+                            <!-- Summary Bank -->
+                            <div class="card bg-light">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Net Flow:</span>
+                                        <span class="fw-bold {{ $arusKas['bank']['net_flow'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                            Rp {{ number_format($arusKas['bank']['net_flow'], 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Saldo Akhir:</span>
+                                        <span class="fw-bold text-primary">Rp {{ number_format($arusKas['bank']['saldo_akhir'], 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arus Kas Cash -->
+                <div class="col-md-6">
+                    <div class="card luxury-card border-0">
+                        <div class="card-header bg-gradient-success text-white border-0 p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                                    <i class="bi bi-wallet2 text-white"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold text-white">Arus Kas Cash</h5>
+                                    <p class="mb-0 text-white-50">{{ Carbon\Carbon::parse($startDate)->format('d M Y') }} -
+                                        {{ Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Pemasukan Cash -->
+                            <h6 class="text-success mb-2">PEMASUKAN</h6>
+                            @if ($arusKas['cash']['pemasukan']['withdrawals']->count() > 0)
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            @foreach ($arusKas['cash']['pemasukan']['withdrawals'] as $withdrawal)
+                                                <tr>
+                                                    <td>{{ $withdrawal->withdrawal_date->format('d M') }}</td>
+                                                    <td>Tarik Cash</td>
+                                                    <td class="text-end text-success">{{ $withdrawal->formatted_amount }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+
+                            <!-- Pengeluaran Cash -->
+                            <h6 class="text-danger mb-2">PENGELUARAN</h6>
+                            @if ($arusKas['cash']['pengeluaran']['expenses']->count() > 0)
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            @foreach ($arusKas['cash']['pengeluaran']['expenses']->take(5) as $expense)
+                                                <tr>
+                                                    <td>{{ $expense->expense_date->format('d M') }}</td>
+                                                    <td>{{ $expense->category_label }}</td>
+                                                    <td class="text-end text-danger">{{ $expense->formatted_amount }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+
+                            <!-- Summary Cash -->
+                            <div class="card bg-light">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Net Flow:</span>
+                                        <span class="fw-bold {{ $arusKas['cash']['net_flow'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                            Rp {{ number_format($arusKas['cash']['net_flow'], 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Saldo Akhir:</span>
+                                        <span class="fw-bold text-success">Rp {{ number_format($arusKas['cash']['saldo_akhir'], 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Laporan Penjualan -->
+        <div class="tab-pane fade" id="penjualan" role="tabpanel">
+            <div class="row g-4">
+                <!-- Statistik Project -->
+                <div class="col-12">
+                    <div class="card luxury-card border-0">
+                        <div class="card-header bg-gradient-warning text-white border-0 p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                                    <i class="bi bi-graph-up-arrow text-white"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold text-white">Laporan Penjualan Project</h5>
+                                    <p class="mb-0 text-white-50">{{ Carbon\Carbon::parse($startDate)->format('d M Y') }} -
+                                        {{ Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Summary Cards -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-3">
-                                    <div class="card luxury-card bg-light border-0">
+                                    <div class="card bg-primary bg-opacity-10 border-0">
                                         <div class="card-body text-center p-3">
-                                            <h5 class="text-muted mb-1">Saldo Awal (Est.)</h5>
-                                            <h4 class="text-primary mb-0">Rp
-                                                {{ number_format($arusKasBank['ringkasan']['saldo_awal_estimasi'], 0, ',', '.') }}</h4>
+                                            <h3 class="text-primary mb-1">{{ $laporanPenjualan['projects']['total_count'] }}</h3>
+                                            <p class="mb-0 text-muted">Total Project</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="card luxury-card bg-light border-0">
+                                    <div class="card bg-success bg-opacity-10 border-0">
                                         <div class="card-body text-center p-3">
-                                            <h5 class="text-success mb-1">Total Masuk</h5>
-                                            <h4 class="text-success mb-0">Rp
-                                                {{ number_format($arusKasBank['ringkasan']['total_pemasukan'], 0, ',', '.') }}</h4>
+                                            <h3 class="text-success mb-1">Rp
+                                                {{ number_format($laporanPenjualan['projects']['total_value'] / 1000000, 1) }}Jt</h3>
+                                            <p class="mb-0 text-muted">Total Nilai</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="card luxury-card bg-light border-0">
+                                    <div class="card bg-warning bg-opacity-10 border-0">
                                         <div class="card-body text-center p-3">
-                                            <h5 class="text-danger mb-1">Total Keluar</h5>
-                                            <h4 class="text-danger mb-0">Rp
-                                                {{ number_format($arusKasBank['ringkasan']['total_pengeluaran'], 0, ',', '.') }}</h4>
+                                            <h3 class="text-warning mb-1">{{ $laporanPenjualan['payments']['total_count'] }}</h3>
+                                            <p class="mb-0 text-muted">Total Pembayaran</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="card luxury-card bg-light border-0">
+                                    <div class="card bg-info bg-opacity-10 border-0">
                                         <div class="card-body text-center p-3">
-                                            <h5 class="text-primary mb-1">Saldo Akhir</h5>
-                                            <h4 class="text-primary mb-0">Rp {{ number_format($arusKasBank['ringkasan']['saldo_akhir'], 0, ',', '.') }}
-                                            </h4>
+                                            <h3 class="text-info mb-1">Rp {{ number_format($laporanPenjualan['projects']['avg_value'] / 1000000, 1) }}Jt
+                                            </h3>
+                                            <p class="mb-0 text-muted">Rata-rata Nilai</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="row g-4">
-                                <!-- PEMASUKAN -->
+                                <!-- Project by Type -->
                                 <div class="col-md-6">
-                                    <h5 class="text-success mb-3 d-flex align-items-center">
-                                        <div class="luxury-icon me-3">
-                                            <i class="bi bi-arrow-down-circle text-success"></i>
-                                        </div>
-                                        PEMASUKAN
-                                    </h5>
-
-                                    <!-- Transfer Masuk -->
-                                    @if ($arusKasBank['pemasukan']['transfer_masuk']->count() > 0)
-                                        <div class="mb-3">
-                                            <h6 class="text-success">Transfer dari Client</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead class="bg-light">
-                                                        <tr>
-                                                            <th>Tanggal</th>
-                                                            <th>Client</th>
-                                                            <th class="text-end">Jumlah</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($arusKasBank['pemasukan']['transfer_masuk'] as $transfer)
-                                                            <tr>
-                                                                <td>{{ $transfer->transfer_date->format('d M') }}</td>
-                                                                <td>{{ $transfer->payment->project->client->name }}</td>
-                                                                <td class="text-end fw-bold text-success">{{ $transfer->formatted_transfer_amount }}
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    <!-- Penjualan Emas -->
-                                    @if ($arusKasBank['pemasukan']['penjualan_emas']->count() > 0)
-                                        <div class="mb-3">
-                                            <h6 class="text-success">Penjualan Emas</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead class="bg-light">
-                                                        <tr>
-                                                            <th>Tanggal</th>
-                                                            <th>Gram</th>
-                                                            <th class="text-end">Jumlah</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($arusKasBank['pemasukan']['penjualan_emas'] as $gold)
-                                                            <tr>
-                                                                <td>{{ $gold->transaction_date->format('d M') }}</td>
-                                                                <td>{{ $gold->grams }} gram</td>
-                                                                <td class="text-end fw-bold text-success">{{ $gold->formatted_total_price }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    @if ($arusKasBank['pemasukan']['transfer_masuk']->count() == 0 && $arusKasBank['pemasukan']['penjualan_emas']->count() == 0)
-                                        <div class="text-center py-3">
-                                            <i class="bi bi-info-circle text-muted"></i>
-                                            <p class="text-muted mb-0">Tidak ada pemasukan dalam periode ini</p>
-                                        </div>
-                                    @endif
+                                    <h6 class="fw-bold mb-3">Project by Type</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th class="text-center">Count</th>
+                                                    <th class="text-end">Total Value</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($laporanPenjualan['projects']['by_type'] as $type => $data)
+                                                    <tr>
+                                                        <td>{{ $type }}</td>
+                                                        <td class="text-center">{{ $data['count'] }}</td>
+                                                        <td class="text-end">Rp {{ number_format($data['total_value'], 0, ',', '.') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
-                                <!-- PENGELUARAN -->
+                                <!-- Top Clients -->
                                 <div class="col-md-6">
-                                    <h5 class="text-danger mb-3 d-flex align-items-center">
-                                        <div class="luxury-icon me-3">
-                                            <i class="bi bi-arrow-up-circle text-danger"></i>
-                                        </div>
-                                        PENGELUARAN
-                                    </h5>
-
-                                    <!-- Pengeluaran Operasional -->
-                                    @if ($arusKasBank['pengeluaran']['pengeluaran_detail']->count() > 0)
-                                        <div class="mb-3">
-                                            <h6 class="text-danger">Pengeluaran Operasional</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead class="bg-light">
-                                                        <tr>
-                                                            <th>Tanggal</th>
-                                                            <th>Kategori</th>
-                                                            <th class="text-end">Jumlah</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($arusKasBank['pengeluaran']['pengeluaran_detail'] as $expense)
-                                                            <tr>
-                                                                <td>{{ $expense->expense_date->format('d M') }}</td>
-                                                                <td>{{ $expense->category_label }}</td>
-                                                                <td class="text-end fw-bold text-danger">{{ $expense->formatted_amount }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    <!-- Pembelian Emas -->
-                                    @if ($arusKasBank['pengeluaran']['pembelian_emas']->count() > 0)
-                                        <div class="mb-3">
-                                            <h6 class="text-danger">Pembelian Emas</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead class="bg-light">
-                                                        <tr>
-                                                            <th>Tanggal</th>
-                                                            <th>Gram</th>
-                                                            <th class="text-end">Jumlah</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($arusKasBank['pengeluaran']['pembelian_emas'] as $gold)
-                                                            <tr>
-                                                                <td>{{ $gold->transaction_date->format('d M') }}</td>
-                                                                <td>{{ $gold->grams }} gram</td>
-                                                                <td class="text-end fw-bold text-danger">{{ $gold->formatted_total_price }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    @if ($arusKasBank['pengeluaran']['pengeluaran_detail']->count() == 0 && $arusKasBank['pengeluaran']['pembelian_emas']->count() == 0)
-                                        <div class="text-center py-3">
-                                            <i class="bi bi-info-circle text-muted"></i>
-                                            <p class="text-muted mb-0">Tidak ada pengeluaran dalam periode ini</p>
-                                        </div>
-                                    @endif
+                                    <h6 class="fw-bold mb-3">Top Clients</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>Client</th>
+                                                    <th class="text-center">Projects</th>
+                                                    <th class="text-end">Total Value</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($laporanPenjualan['top_clients'] as $client)
+                                                    <tr>
+                                                        <td>{{ $client['client_name'] }}</td>
+                                                        <td class="text-center">{{ $client['project_count'] }}</td>
+                                                        <td class="text-end">Rp {{ number_format($client['total_value'], 0, ',', '.') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Net Cash Flow -->
-                            <div
-                                class="card luxury-card border-0 mt-4 {{ $arusKasBank['ringkasan']['net_cash_flow'] >= 0 ? 'bg-success' : 'bg-danger' }} bg-opacity-10">
-                                <div class="card-body p-4">
-                                    <div class="text-center">
-                                        <h5 class="mb-1">NET CASH FLOW</h5>
-                                        <h3 class="fw-bold {{ $arusKasBank['ringkasan']['net_cash_flow'] >= 0 ? 'text-success' : 'text-danger' }} mb-0">
-                                            Rp {{ number_format($arusKasBank['ringkasan']['net_cash_flow'], 0, ',', '.') }}
-                                        </h3>
-                                        <p class="text-muted mb-0">Selisih pemasukan dan pengeluaran</p>
-                                    </div>
+                            <!-- Recent Projects -->
+                            <div class="mt-4">
+                                <h6 class="fw-bold mb-3">Project Terbaru ({{ $laporanPenjualan['projects']['total_count'] }} project)</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>Tanggal</th>
+                                                <th>Project</th>
+                                                <th>Client</th>
+                                                <th>Type</th>
+                                                <th class="text-end">Nilai</th>
+                                                <th class="text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($laporanPenjualan['projects']['list']->take(10) as $project)
+                                                <tr>
+                                                    <td>{{ $project->created_at->format('d M Y') }}</td>
+                                                    <td class="fw-medium">{{ $project->title }}</td>
+                                                    <td>{{ $project->client->name }}</td>
+                                                    <td><span class="badge bg-secondary">{{ $project->type }}</span></td>
+                                                    <td class="text-end fw-bold">{{ $project->formatted_total_value }}</td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-{{ $project->status_color }}">{{ $project->status }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>

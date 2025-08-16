@@ -9,7 +9,7 @@
                     <h1 class="h2 fw-bold text-purple mb-1">
                         <i class="bi bi-credit-card me-2"></i>Pencatatan Pengeluaran
                     </h1>
-                    <p class="text-muted mb-0">Kelola semua pengeluaran operasional</p>
+                    <p class="text-muted mb-0">Kelola semua pengeluaran Bank & Cash</p>
                 </div>
                 <a href="{{ route('expenses.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-2"></i>Tambah Pengeluaran
@@ -18,9 +18,9 @@
         </div>
     </div>
 
-    <!-- Bank Balance Info -->
-    <div class="row mb-4">
-        <div class="col-12">
+    <!-- Balance Info -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
             <div class="card luxury-card border-0 bg-gradient-primary text-white">
                 <div class="card-body text-center py-3">
                     <div class="d-flex align-items-center justify-content-center">
@@ -28,8 +28,23 @@
                             <i class="bi bi-bank text-white"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0 text-white-50">Saldo Bank Octo Saat Ini</h6>
+                            <h6 class="mb-0 text-white-50">Saldo Bank Octo</h6>
                             <h3 class="mb-0 fw-bold text-white">{{ $formattedBankBalance }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="card luxury-card border-0 bg-gradient-success text-white">
+                <div class="card-body text-center py-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <div class="luxury-icon me-3 bg-white bg-opacity-25">
+                            <i class="bi bi-wallet2 text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Saldo Cash</h6>
+                            <h3 class="mb-0 fw-bold text-white">{{ $formattedCashBalance }}</h3>
                         </div>
                     </div>
                 </div>
@@ -89,8 +104,16 @@
                 </div>
 
                 <!-- Search & Filter -->
-                <form method="GET" class="d-flex flex-column flex-lg-row gap-2" style="min-width: 275px;">
+                <form method="GET" class="d-flex flex-column flex-lg-row gap-2" style="min-width: 350px;">
                     <input type="text" name="search" class="form-control" placeholder="Cari deskripsi..." value="{{ request('search') }}">
+                    <select name="source" class="form-select">
+                        <option value="">Semua Sumber</option>
+                        @foreach (\App\Models\Expense::SOURCES as $key => $label)
+                            <option value="{{ $key }}" {{ request('source') == $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
                     <select name="category" class="form-select">
                         <option value="">Semua Kategori</option>
                         @foreach (\App\Models\Expense::CATEGORIES as $key => $label)
@@ -102,7 +125,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search"></i>
                     </button>
-                    @if (request()->hasAny(['search', 'category', 'date_from', 'date_to']))
+                    @if (request()->hasAny(['search', 'source', 'category', 'date_from', 'date_to']))
                         <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i>
                         </a>
@@ -120,6 +143,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th class="px-4 py-3 border-0 fw-semibold text-dark">Tanggal</th>
+                                    <th class="px-4 py-3 border-0 fw-semibold text-dark">Sumber</th>
                                     <th class="px-4 py-3 border-0 fw-semibold text-dark">Kategori</th>
                                     <th class="px-4 py-3 border-0 fw-semibold text-dark">Deskripsi</th>
                                     <th class="px-4 py-3 border-0 fw-semibold text-dark text-end">Jumlah</th>
@@ -133,10 +157,16 @@
                                             <div class="fw-medium">{{ $expense->expense_date->format('d M Y') }}</div>
                                         </td>
                                         <td class="px-4 py-4">
+                                            <span class="badge bg-{{ $expense->source_color }} border border-{{ $expense->source_color }}">
+                                                <i class="bi bi-{{ $expense->source_icon }} me-1"></i>
+                                                {{ $expense->source_label }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-4">
                                             <span class="badge bg-secondary">{{ $expense->category_label }}</span>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <h6 class="mb-0 fw-bold text-dark">{{ $expense->description }}</h6>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ Str::limit($expense->description, 50) }}</h6>
                                         </td>
                                         <td class="px-4 py-4 text-end">
                                             <strong class="text-danger fs-5">{{ $expense->formatted_amount }}</strong>
@@ -157,8 +187,14 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="flex-grow-1">
-                                            <h6 class="fw-bold mb-1">{{ $expense->description }}</h6>
-                                            <small class="text-muted">{{ $expense->category_label }}</small>
+                                            <h6 class="fw-bold mb-1">{{ Str::limit($expense->description, 40) }}</h6>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="badge bg-{{ $expense->source_color }} border border-{{ $expense->source_color }}">
+                                                    <i class="bi bi-{{ $expense->source_icon }} me-1"></i>
+                                                    {{ $expense->source_label }}
+                                                </span>
+                                                <span class="badge bg-secondary">{{ $expense->category_label }}</span>
+                                            </div>
                                         </div>
                                         <div class="text-end">
                                             <strong class="text-danger">{{ $expense->formatted_amount }}</strong>
@@ -235,7 +271,7 @@
                         <i class="bi bi-wallet2 text-muted" style="font-size: 2.5rem;"></i>
                     </div>
                     <h5 class="fw-bold mb-2">Tidak ada pengeluaran ditemukan</h5>
-                    @if (request()->hasAny(['search', 'category']))
+                    @if (request()->hasAny(['search', 'source', 'category']))
                         <p class="text-muted mb-4">Coba ubah kriteria pencarian atau filter</p>
                         <a href="{{ route('expenses.index') }}" class="btn btn-outline-primary me-2">
                             <i class="bi bi-arrow-clockwise me-2"></i>Reset Filter
@@ -282,14 +318,6 @@
             const monthlyData = @json($monthlyExpensesByCategory ?? collect());
             const yearlyData = @json($yearlyExpensesByCategory ?? collect());
 
-            // Sort data from largest to smallest
-            const sortDataDescending = (data) => {
-                return Object.entries(data)
-                    .filter(([key, value]) => key !== "Saldo Awal")
-                    .sort((a, b) => b[1] - a[1]);
-            };
-
-
             // Shorten numbers (100k, 1.000k)
             const shortenNumber = (num) => {
                 if (num >= 1_000_000) {
@@ -306,10 +334,13 @@
                 '#EF4444', '#8B5A2B', '#84CC16', '#6366F1'
             ];
 
-            // Monthly Chart
+            // Monthly Chart by Category
             const monthlyCtx = document.getElementById('monthlyChart');
             if (monthlyCtx) {
-                const sortedMonthlyData = sortDataDescending(monthlyData);
+                const sortedMonthlyData = Object.entries(monthlyData)
+                    .filter(([key, value]) => key !== "Saldo Awal")
+                    .sort((a, b) => b[1] - a[1]);
+
                 new Chart(monthlyCtx, {
                     type: 'bar',
                     data: {
@@ -344,10 +375,13 @@
                 });
             }
 
-            // Yearly Chart
+            // Yearly Chart by Category
             const yearlyCtx = document.getElementById('yearlyChart');
             if (yearlyCtx) {
-                const sortedYearlyData = sortDataDescending(yearlyData);
+                const sortedYearlyData = Object.entries(yearlyData)
+                    .filter(([key, value]) => key !== "Saldo Awal")
+                    .sort((a, b) => b[1] - a[1]);
+
                 new Chart(yearlyCtx, {
                     type: 'bar',
                     data: {
@@ -469,6 +503,10 @@
 
         .bg-gradient-primary {
             background: linear-gradient(135deg, #8B5CF6, #A855F7) !important;
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #10B981, #059669) !important;
         }
     </style>
 @endpush

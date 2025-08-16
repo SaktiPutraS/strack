@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\BankBalance;
+use App\Models\CashBalance;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +27,11 @@ class ExpenseController extends Controller
             $query->byCategory($request->category);
         }
 
+        // Filter by source
+        if ($request->filled('source')) {
+            $query->bySource($request->source);
+        }
+
         // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('expense_date', '>=', $request->date_from);
@@ -35,23 +41,35 @@ class ExpenseController extends Controller
             $query->whereDate('expense_date', '<=', $request->date_to);
         }
 
-        $expenses = $query->orderBy('expense_date', 'desc')->paginate(5)->withQueryString();
+        $expenses = $query->orderBy('expense_date', 'desc')->paginate(15)->withQueryString();
 
-        // Data untuk grafik - Bulan ini
+        // Data untuk grafik - Bulan ini by Category
         $monthlyExpensesByCategory = Expense::selectRaw('category, SUM(amount) as total')
             ->whereYear('expense_date', Carbon::now()->year)
             ->whereMonth('expense_date', Carbon::now()->month)
             ->groupBy('category')
             ->get()
             ->mapWithKeys(function ($item) {
-                // Cek apakah category ada di CATEGORIES konstanta
                 $categoryLabel = isset(Expense::CATEGORIES[$item->category])
                     ? Expense::CATEGORIES[$item->category]
                     : $item->category;
                 return [$categoryLabel => $item->total];
             });
 
-        // Data untuk grafik - Tahun ini
+        // Data untuk grafik - Bulan ini by Source
+        $monthlyExpensesBySource = Expense::selectRaw('source, SUM(amount) as total')
+            ->whereYear('expense_date', Carbon::now()->year)
+            ->whereMonth('expense_date', Carbon::now()->month)
+            ->groupBy('source')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $sourceLabel = isset(Expense::SOURCES[$item->source])
+                    ? Expense::SOURCES[$item->source]
+                    : $item->source;
+                return [$sourceLabel => $item->total];
+            });
+
+        // Data untuk grafik - Tahun ini by Category
         $yearlyExpensesByCategory = Expense::selectRaw('category, SUM(amount) as total')
             ->whereYear('expense_date', Carbon::now()->year)
             ->groupBy('category')
@@ -64,22 +82,32 @@ class ExpenseController extends Controller
                 return [$categoryLabel => $item->total];
             });
 
-        // Tambahkan informasi saldo Bank Octo saat ini
+        // Current balances
         $currentBankBalance = BankBalance::getCurrentBalance();
+        $currentCashBalance = CashBalance::getCurrentBalance();
         $formattedBankBalance = 'Rp ' . number_format($currentBankBalance, 0, ',', '.');
+        $formattedCashBalance = 'Rp ' . number_format($currentCashBalance, 0, ',', '.');
 
         return view('expenses.index', compact(
             'expenses',
             'monthlyExpensesByCategory',
             'yearlyExpensesByCategory',
             'currentBankBalance',
-            'formattedBankBalance'
+            'currentCashBalance',
+            'formattedBankBalance',
+            'formattedCashBalance'
         ));
     }
 
     public function create(): View
     {
-        return view('expenses.create');
+        $currentBankBalance = BankBalance::getCurrentBalance();
+        $currentCashBalance = CashBalance::getCurrentBalance();
+
+        return view('expenses.create', compact(
+            'currentBankBalance',
+            'currentCashBalance'
+        ));
     }
 
     public function store(Request $request): RedirectResponse
@@ -88,13 +116,26 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date|before_or_equal:today',
             'amount' => 'required|numeric|min:1',
             'category' => 'required|in:' . implode(',', array_keys(Expense::CATEGORIES)),
+            'source' => 'required|in:' . implode(',', array_keys(Expense::SOURCES)),
             'description' => 'required|string|max:500',
         ]);
 
-        Expense::create($validated);
+        // Check balance based on source
+        if ($validated['source'] === Expense::SOURCE_BANK) {
+            $balance = BankBalance::getCurrentBalance();
+            $balanceType = 'Bank Octo';
+        } else {
+            $balance = CashBalance::getCurrentBalance();
+            $balanceType = 'Cash';
+        }
 
-        // Update bank balance
-        BankBalance::updateBalance();
+        if ($validated['amount'] > $balance) {
+            return back()->withErrors([
+                'amount' => "Saldo {$balanceType} tidak mencukupi untuk pengeluaran ini."
+            ])->withInput();
+        }
+
+        Expense::create($validated);
 
         return redirect()->route('expenses.index')
             ->with('success', 'Pengeluaran berhasil ditambahkan!');
@@ -107,7 +148,14 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense): View
     {
-        return view('expenses.edit', compact('expense'));
+        $currentBankBalance = BankBalance::getCurrentBalance();
+        $currentCashBalance = CashBalance::getCurrentBalance();
+
+        return view('expenses.edit', compact(
+            'expense',
+            'currentBankBalance',
+            'currentCashBalance'
+        ));
     }
 
     public function update(Request $request, Expense $expense): RedirectResponse
@@ -116,13 +164,32 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date|before_or_equal:today',
             'amount' => 'required|numeric|min:1',
             'category' => 'required|in:' . implode(',', array_keys(Expense::CATEGORIES)),
+            'source' => 'required|in:' . implode(',', array_keys(Expense::SOURCES)),
             'description' => 'required|string|max:500',
         ]);
 
-        $expense->update($validated);
+        // Check balance based on new source (add back current expense amount)
+        if ($validated['source'] === Expense::SOURCE_BANK) {
+            $balance = BankBalance::getCurrentBalance();
+            if ($expense->source === Expense::SOURCE_BANK) {
+                $balance += $expense->amount; // Add back current amount if same source
+            }
+            $balanceType = 'Bank Octo';
+        } else {
+            $balance = CashBalance::getCurrentBalance();
+            if ($expense->source === Expense::SOURCE_CASH) {
+                $balance += $expense->amount; // Add back current amount if same source
+            }
+            $balanceType = 'Cash';
+        }
 
-        // Update bank balance
-        BankBalance::updateBalance();
+        if ($validated['amount'] > $balance) {
+            return back()->withErrors([
+                'amount' => "Saldo {$balanceType} tidak mencukupi untuk pengeluaran ini."
+            ])->withInput();
+        }
+
+        $expense->update($validated);
 
         return redirect()->route('expenses.show', $expense)
             ->with('success', 'Pengeluaran berhasil diperbarui!');
@@ -132,10 +199,17 @@ class ExpenseController extends Controller
     {
         $expense->delete();
 
-        // Update bank balance
-        BankBalance::updateBalance();
-
         return redirect()->route('expenses.index')
             ->with('success', 'Pengeluaran berhasil dihapus!');
+    }
+
+    public function getBalances(): JsonResponse
+    {
+        return response()->json([
+            'bank_balance' => BankBalance::getCurrentBalance(),
+            'cash_balance' => CashBalance::getCurrentBalance(),
+            'formatted_bank_balance' => 'Rp ' . number_format(BankBalance::getCurrentBalance(), 0, ',', '.'),
+            'formatted_cash_balance' => 'Rp ' . number_format(CashBalance::getCurrentBalance(), 0, ',', '.'),
+        ]);
     }
 }

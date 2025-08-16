@@ -235,22 +235,31 @@
             }
 
             function loadRecordsForDate(date) {
-                fetch(`{{ route('sierra-berak.index') }}/date/${date}`)
+                fetch(`{{ url('sierra-berak/date') }}/${date}`)
                     .then(response => response.json())
-                    .then(records => {
-                        const recordsList = document.getElementById('recordsList');
-                        const existingRecords = document.getElementById('existingRecords');
 
-                        if (records.length > 0) {
-                            existingRecords.style.display = 'block';
-                            recordsList.innerHTML = records.map(record => `
+                function loadRecordsForDate(date) {
+                    console.log('Loading records for date:', date); // Debug log
+                    fetch(`{{ url('sierra-berak/date') }}/${date}`)
+                        .then(response => {
+                            console.log('Response status:', response.status); // Debug log
+                            return response.json();
+                        })
+                        .then(records => {
+                            console.log('Records received:', records); // Debug log
+                            const recordsList = document.getElementById('recordsList');
+                            const existingRecords = document.getElementById('existingRecords');
+
+                            if (records.length > 0) {
+                                existingRecords.style.display = 'block';
+                                recordsList.innerHTML = records.map(record => `
                         <div class="card luxury-card mb-2">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">
                                         <div class="d-flex align-items-center mb-1">
                                             <i class="bi bi-clock me-2 text-purple"></i>
-                                            <strong class="text-purple">${record.formatted_waktu}</strong>
+                                            <strong class="text-purple">${record.formatted_waktu || record.waktu.substring(0,5)}</strong>
                                         </div>
                                         <p class="mb-0 text-muted">${record.keterangan}</p>
                                     </div>
@@ -269,27 +278,33 @@
                         </div>
                     `).join('');
 
-                            // Add event listeners for edit and delete buttons
-                            recordsList.querySelectorAll('.edit-record').forEach(btn => {
-                                btn.addEventListener('click', () => editRecord(btn.dataset.recordId));
-                            });
+                                // Add event listeners for edit and delete buttons
+                                recordsList.querySelectorAll('.edit-record').forEach(btn => {
+                                    btn.addEventListener('click', () => editRecord(btn.dataset.recordId));
+                                });
 
-                            recordsList.querySelectorAll('.delete-record').forEach(btn => {
-                                btn.addEventListener('click', () => deleteRecord(btn.dataset.recordId));
+                                recordsList.querySelectorAll('.delete-record').forEach(btn => {
+                                    btn.addEventListener('click', () => deleteRecord(btn.dataset.recordId));
+                                });
+                            } else {
+                                existingRecords.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading records:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: 'Gagal memuat data catatan untuk tanggal ini'
                             });
-                        } else {
-                            existingRecords.style.display = 'none';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading records:', error);
-                    });
+                        });
+                }
             }
 
             function saveRecord() {
                 const formData = new FormData(recordForm);
                 const url = editingRecordId ?
-                    `{{ route('sierra-berak.index') }}/${editingRecordId}` :
+                    `{{ url('sierra-berak') }}/${editingRecordId}` :
                     '{{ route('sierra-berak.store') }}';
                 const method = editingRecordId ? 'PUT' : 'POST';
 
@@ -333,7 +348,7 @@
             }
 
             function editRecord(recordId) {
-                fetch(`{{ route('sierra-berak.index') }}/${recordId}`)
+                fetch(`{{ url('sierra-berak') }}/${recordId}`)
                     .then(response => response.json())
                     .then(record => {
                         editingRecordId = recordId;
@@ -366,7 +381,7 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        fetch(`{{ route('sierra-berak.index') }}/${recordId}`, {
+                        fetch(`{{ url('sierra-berak') }}/${recordId}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -382,7 +397,9 @@
                                         timer: 2000,
                                         showConfirmButton: false
                                     }).then(() => {
-                                        location.reload();
+                                        // Refresh the records for current date and reload page
+                                        loadRecordsForDate(selectedDate);
+                                        setTimeout(() => location.reload(), 1000);
                                     });
                                 }
                             })

@@ -649,6 +649,16 @@
                             </a>
                         </li>
                     @endif
+
+                    @if (session('role') === 'admin')
+                        {{-- Menu Sierra Berak - Admin --}}
+                        <li class="nav-item">
+                            <a href="{{ route('sierra-berak.index') }}"
+                                class="nav-link {{ request()->routeIs('sierra-berak.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar3 me-2"></i>Sierra Berak
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </nav>
             <!-- Footer -->

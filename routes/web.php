@@ -127,6 +127,16 @@ Route::middleware('simpleauth')->group(function () {
         Route::delete('/products/{product}', [UrfavController::class, 'destroy'])->name('destroy');
     });
 
+    // Sierra Berak Routes
+    Route::prefix('sierra-berak')->name('sierra-berak.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SierraBerakController::class, 'index'])->name('index');
+        Route::post('/', [App\Http\Controllers\SierraBerakController::class, 'store'])->name('store');
+        Route::get('/{id}', [App\Http\Controllers\SierraBerakController::class, 'show'])->name('show');
+        Route::put('/{id}', [App\Http\Controllers\SierraBerakController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\SierraBerakController::class, 'destroy'])->name('destroy');
+        Route::get('/date/{date}', [App\Http\Controllers\SierraBerakController::class, 'getByDate'])->name('get-by-date');
+    });
+
     Route::get('/price-list', function () {
         return view('price-list.index');
     })->name('price-list');

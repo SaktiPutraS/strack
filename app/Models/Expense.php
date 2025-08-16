@@ -26,19 +26,23 @@ class Expense extends Model
     // Updated Category constants
     const CATEGORIES = [
         // urutkan sesuai dengan yang ada di database
-        'AI' => 'AI',
-        'ADMIN_BANK' => 'Admin Bank',
-        'BUKU' => 'Buku',
+        'AI'            => 'AI',
+        'ADMIN_BANK'    => 'Admin Bank',
+        'BENSIN'        => 'Bensin',
+        'BUKU'          => 'Buku',
         'DOMAIN_HOSTING' => 'Domain/Hosting',
-        'ENTERTAIN' => 'Entertain/Jajan/Traktir',
-        'GAJI_BONUS' => 'Gaji/Bonus',
-        'KOPI_SUSU' => 'Kopi/Susu',
-        'INVENTARIS' => 'Inventaris',
-        'BENSIN' => 'Bensin',
-        'SIERRA' => 'Sierra',
-        'SKINCARE' => 'Skincare',
-        'SALDO_AWAL' => 'Saldo Awal',
-        'LAINNYA' => 'Lainnya',
+        'ENTERTAIN'     => 'Entertain/Jajan',
+        'GAJI_BONUS'    => 'Gaji/Bonus',
+        'INVENTARIS'    => 'Inventaris',
+        'LAINNYA'       => 'Lainnya',
+        'PERLENGKAPAN'  => 'Perlengkapan/Habis Pakai',
+        'PERALATAN'     => 'Peralatan',
+        'SALDO_AWAL'    => 'Saldo Awal',
+        'SEMBAKO'       => 'Sembako',
+        'SIERRA'        => 'Sierra',
+        'SKINCARE'      => 'Skincare/Sabun/Shampo',
+        'TRAKTIR'       => 'Traktir/Kado/Kondangan',
+        'UTILITAS'      => 'Internet/Air Satelit/Iuran',
     ];
 
     // Accessors

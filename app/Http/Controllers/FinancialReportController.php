@@ -19,8 +19,13 @@ class FinancialReportController extends Controller
 {
     public function index(Request $request): View
     {
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->toDateString());
+        // Get month and year from request, default to current month/year
+        $selectedMonth = $request->get('month', Carbon::now()->month);
+        $selectedYear = $request->get('year', Carbon::now()->year);
+
+        // Create start and end dates for the selected month/year
+        $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->toDateString();
 
         // A. Laporan Laba Rugi (Enhanced with Cash)
         $laporanLabaRugi = $this->generateLaporanLabaRugi($startDate, $endDate);
@@ -54,7 +59,9 @@ class FinancialReportController extends Controller
             'formattedBankBalance',
             'formattedCashBalance',
             'startDate',
-            'endDate'
+            'endDate',
+            'selectedMonth',
+            'selectedYear'
         ));
     }
 

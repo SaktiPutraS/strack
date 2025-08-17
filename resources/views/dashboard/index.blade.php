@@ -90,23 +90,23 @@
             </h5>
         </div>
 
-        <!-- Line Chart -->
-        <div class="col-12 col-lg-8">
+        <!-- Monthly Revenue Chart - NEW -->
+        <div class="col-12 col-lg-6">
             <div class="card luxury-card border-0 h-100">
                 <div class="card-header bg-white border-0 p-4">
                     <h5 class="fw-bold mb-0">
-                        <i class="bi bi-graph-up me-2 text-purple"></i>Pendapatan & Pengeluaran
+                        <i class="bi bi-graph-up-arrow me-2 text-purple"></i>Pendapatan per Bulan
                     </h5>
-                    <p class="text-muted mb-0">Akumulasi per minggu tahun ini (dimulai Juli 2025)</p>
+                    <p class="text-muted mb-0">Total nilai proyek tahun {{ now()->year }}</p>
                 </div>
                 <div class="card-body">
-                    <canvas id="lineChart" height="250"></canvas>
+                    <canvas id="monthlyRevenueChart" height="250"></canvas>
                 </div>
             </div>
         </div>
 
         <!-- Pie Chart -->
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-lg-6">
             <div class="card luxury-card border-0 h-100">
                 <div class="card-header bg-white border-0 p-4">
                     <h5 class="fw-bold mb-0">Asset</h5>
@@ -114,6 +114,23 @@
                 </div>
                 <div class="card-body position-relative">
                     <canvas id="pieChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Income vs Expense Chart -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card luxury-card border-0">
+                <div class="card-header bg-white border-0 p-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-graph-up me-2 text-purple"></i>Pendapatan & Pengeluaran Mingguan
+                    </h5>
+                    <p class="text-muted mb-0">Akumulasi per minggu tahun ini (dimulai Juli 2025)</p>
+                </div>
+                <div class="card-body">
+                    <canvas id="lineChart" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -244,6 +261,185 @@
                 });
             });
 
+            // Project cards click handler
+            const projectCards = document.querySelectorAll('.project-card');
+            projectCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    window.location.href = this.dataset.url;
+                });
+
+                card.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                });
+
+                card.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // NEW: Monthly Revenue Chart (Bar Chart)
+            const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+            const monthlyRevenueChart = new Chart(monthlyRevenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: @json(collect($monthlyRevenueData)->pluck('month')),
+                    datasets: [{
+                        label: 'Nilai Proyek',
+                        data: @json(collect($monthlyRevenueData)->pluck('project_value')),
+                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                        borderColor: '#8B5CF6',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const monthData = @json($monthlyRevenueData)[context.dataIndex];
+                                    return 'Total: ' + monthData.formatted_value;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000000) {
+                                        return 'Rp ' + (value / 1000000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000000) {
+                                        return 'Rp ' + (value / 1000000).toFixed(1) + 'Jt';
+                                    } else if (value >= 1000) {
+                                        return 'Rp ' + (value / 1000).toFixed(0) + 'Rb';
+                                    }
+                                    return 'Rp ' + value;
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(139, 92, 246, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Line Chart
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            const lineChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: @json(collect($weeklyData)->pluck('week')),
+                    datasets: [{
+                        label: 'Pendapatan',
+                        data: @json(collect($weeklyData)->pluck('income')),
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }, {
+                        label: 'Pengeluaran',
+                        data: @json(collect($weeklyData)->pluck('expense')),
+                        borderColor: '#EF4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    const weekData = @json($weeklyData)[index];
+                                    return weekData.start_date + ' - ' + weekData.end_date;
+                                },
+                                label: function(context) {
+                                    return context.dataset.label + ': Rp ' + context.parsed.y.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) {
+                                        return 'Rp ' + (value / 1000000).toFixed(1) + ' Jt';
+                                    }
+                                    return 'Rp ' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            const pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: @json($pieData['labels']),
+                    datasets: [{
+                        data: @json($pieData['data']),
+                        backgroundColor: @json($pieData['colors']),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label.split(':')[0] || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: Rp ${value.toLocaleString('id-ID')}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
             // Smooth animations on scroll (desktop only)
             if (window.innerWidth > 768 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 const cards = document.querySelectorAll('.luxury-card');
@@ -369,127 +565,103 @@
                 .project-card:hover::before {
                     width: 6px;
                 }
+
+                /* Luxury card styling */
+                .luxury-card {
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(16px);
+                    border: 1px solid rgba(139, 92, 246, 0.08);
+                    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+                    border-radius: 16px;
+                    transition: all 0.3s ease;
+                }
+
+                .luxury-card:hover {
+                    box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
+                    transform: translateY(-2px);
+                }
+
+                .luxury-icon {
+                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
+                    border-radius: 12px;
+                    width: 48px;
+                    height: 48px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+                }
+
+                .text-purple {
+                    color: #8B5CF6 !important;
+                }
+
+                .bg-purple-light {
+                    background-color: rgba(139, 92, 246, 0.1) !important;
+                }
+
+                .border-purple {
+                    border-color: rgba(139, 92, 246, 0.3) !important;
+                }
+
+                /* Chart container improvements */
+                .card-body canvas {
+                    max-height: 300px;
+                }
+
+                /* Monthly revenue chart specific styling */
+                #monthlyRevenueChart {
+                    padding: 10px;
+                }
+
+                /* Responsive chart adjustments */
+                @media (max-width: 768px) {
+                    .card-body canvas {
+                        max-height: 200px;
+                    }
+
+                    .luxury-card .card-header h5 {
+                        font-size: 1rem;
+                    }
+
+                    .luxury-card .card-header p {
+                        font-size: 0.85rem;
+                    }
+                }
+
+                /* Badge styling improvements */
+                .badge {
+                    padding: 0.5em 0.75em;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                    border-radius: 8px;
+                }
+
+                /* Icon size adjustment */
+                .fs-7 {
+                    font-size: 0.8rem;
+                }
+
+                /* Animation improvements */
+                .clickable-card:active,
+                .project-card:active {
+                    transform: scale(0.98);
+                }
+
+                /* Touch feedback */
+                @media (hover: none) and (pointer: coarse) {
+                    .stat-card:hover {
+                        transform: none !important;
+                        box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08) !important;
+                    }
+
+                    .luxury-card:hover {
+                        transform: none !important;
+                        box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08) !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
-
-            // Project cards click handler
-            const projectCards = document.querySelectorAll('.project-card');
-            projectCards.forEach(card => {
-                card.addEventListener('click', function() {
-                    window.location.href = this.dataset.url;
-                });
-
-                card.addEventListener('touchstart', function() {
-                    this.style.transform = 'scale(0.98)';
-                });
-
-                card.addEventListener('touchend', function() {
-                    this.style.transform = '';
-                });
-            });
-
-            // Line Chart
-            const lineCtx = document.getElementById('lineChart').getContext('2d');
-            const lineChart = new Chart(lineCtx, {
-                type: 'line',
-                data: {
-                    labels: @json(collect($weeklyData)->pluck('week')),
-                    datasets: [{
-                        label: 'Pendapatan',
-                        data: @json(collect($weeklyData)->pluck('income')),
-                        borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    }, {
-                        label: 'Pengeluaran',
-                        data: @json(collect($weeklyData)->pluck('expense')),
-                        borderColor: '#EF4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    const index = tooltipItems[0].dataIndex;
-                                    const weekData = @json($weeklyData)[index];
-                                    return weekData.start_date + ' - ' + weekData.end_date;
-                                },
-                                label: function(context) {
-                                    return context.dataset.label + ': Rp ' + context.parsed.y.toLocaleString('id-ID');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    if (value >= 1000000) {
-                                        return 'Rp ' + (value / 1000000).toFixed(1) + ' Jt';
-                                    }
-                                    return 'Rp ' + value;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Pie Chart
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            const pieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: @json($pieData['labels']),
-                    datasets: [{
-                        data: @json($pieData['data']),
-                        backgroundColor: @json($pieData['colors']),
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label.split(':')[0] || '';
-                                    const value = context.raw || 0;
-                                    return `${label}: Rp ${value.toLocaleString('id-ID')}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
         });
     </script>
 @endpush

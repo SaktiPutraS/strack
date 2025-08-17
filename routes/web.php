@@ -41,7 +41,8 @@ Route::middleware('simpleauth')->group(function () {
     // Dashboard
     Route::get('/dashboard-admin', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Projects
+    // Projects - Export route harus di atas resource route
+    Route::get('projects/export/excel', [ProjectController::class, 'exportExcel'])->name('projects.export.excel');
     Route::resource('projects', ProjectController::class);
     Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
     Route::patch('projects/{project}/testimoni', [ProjectController::class, 'updateTestimoni'])->name('projects.testimoni');
@@ -60,7 +61,8 @@ Route::middleware('simpleauth')->group(function () {
 
     // Financial Management Routes
     Route::prefix('financial')->group(function () {
-        // Expenses Management
+        // Expenses Management - Export route harus di atas resource
+        Route::get('expenses/export/excel', [ExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
         Route::resource('expenses', ExpenseController::class);
         Route::get('expenses/subcategories/{category}', [ExpenseController::class, 'getSubcategories'])->name('expenses.subcategories');
 

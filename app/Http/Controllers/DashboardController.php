@@ -9,7 +9,7 @@ use App\Models\Expense;
 use App\Models\BankTransfer;
 use App\Models\GoldTransaction;
 use App\Models\BankBalance;
-use App\Models\CashBalance; // NEW
+use App\Models\CashBalance;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -47,10 +47,10 @@ class DashboardController extends Controller
         $totalPiutang = Project::whereIn('status', ['WAITING', 'PROGRESS'])
             ->sum(DB::raw('total_value - paid_amount'));
 
-        // Hitung saldo bank dan cash - UPDATED
+        // Hitung saldo bank dan cash
         $saldoBank = BankBalance::getCurrentBalance();
-        $saldoCash = CashBalance::getCurrentBalance(); // NEW
-        $totalKas = $saldoBank + $saldoCash; // NEW
+        $saldoCash = CashBalance::getCurrentBalance();
+        $totalKas = $saldoBank + $saldoCash;
 
         $totalBeliEmas = GoldTransaction::buy()->sum('grams');
         $totalJualEmas = GoldTransaction::sell()->sum('grams');
@@ -114,22 +114,52 @@ class DashboardController extends Controller
                 'expense' => $expense
             ];
 
-            // Pindah ke minggu berikutnya
             $currentWeekStart = $currentWeekEnd->copy()->addDay();
             $weekNumber++;
         }
 
-        // Data untuk pie chart (komposisi aset) dengan breakdown kas - UPDATED
+        // NEW: Data untuk grafik pendapatan per bulan (total nilai proyek)
+        $monthlyRevenueData = [];
+        $monthNames = [
+            1 => 'Jan',
+            2 => 'Feb',
+            3 => 'Mar',
+            4 => 'Apr',
+            5 => 'Mei',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Ags',
+            9 => 'Sep',
+            10 => 'Okt',
+            11 => 'Nov',
+            12 => 'Des'
+        ];
+
+        for ($month = 1; $month <= 12; $month++) {
+            // Total nilai proyek yang dibuat pada bulan tersebut
+            $projectValue = Project::whereMonth('created_at', $month)
+                ->whereYear('created_at', $tahunIni)
+                ->sum('total_value');
+
+            $monthlyRevenueData[] = [
+                'month' => $monthNames[$month],
+                'month_number' => $month,
+                'project_value' => $projectValue,
+                'formatted_value' => $formatCurrency($projectValue)
+            ];
+        }
+
+        // Data untuk pie chart (komposisi aset) dengan breakdown kas
         $pieData = [
             'labels' => [
                 'Piutang: ' . $formatCurrency($totalPiutang),
                 'Bank: ' . $formatCurrency($saldoBank),
-                'Cash: ' . $formatCurrency($saldoCash), // NEW
+                'Cash: ' . $formatCurrency($saldoCash),
                 'Emas: ' . $formatCurrency($saldoEmas)
             ],
-            'data' => [$totalPiutang, $saldoBank, $saldoCash, $saldoEmas], // UPDATED
-            'colors' => ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'], // UPDATED colors
-            'total' => $totalPiutang + $totalKas + $saldoEmas // UPDATED
+            'data' => [$totalPiutang, $saldoBank, $saldoCash, $saldoEmas],
+            'colors' => ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'],
+            'total' => $totalPiutang + $totalKas + $saldoEmas
         ];
 
         return view('dashboard.index', [
@@ -138,14 +168,15 @@ class DashboardController extends Controller
             'totalPendapatan' => $totalPendapatan,
             'totalPengeluaran' => $totalPengeluaran,
             'totalPiutang' => $totalPiutang,
-            'saldoBank' => $saldoBank, // RENAMED from saldoOcto
-            'saldoCash' => $saldoCash, // NEW
-            'totalKas' => $totalKas, // NEW
+            'saldoBank' => $saldoBank,
+            'saldoCash' => $saldoCash,
+            'totalKas' => $totalKas,
             'saldoEmas' => $saldoEmas,
             'proyekDeadlineTermedekat' => $proyekDeadlineTermedekat,
             'formatCurrency' => $formatCurrency,
             'isMobile' => $isMobile,
             'weeklyData' => $weeklyData,
+            'monthlyRevenueData' => $monthlyRevenueData, // NEW
             'pieData' => $pieData,
         ]);
     }

@@ -67,16 +67,33 @@
                 <div class="card-body p-4">
                     <form method="GET" class="row g-3">
                         <div class="col-md-4">
-                            <label for="start_date" class="form-label fw-semibold">
-                                <i class="bi bi-calendar3 text-purple me-2"></i>Tanggal Mulai
+                            <label for="month" class="form-label fw-semibold">
+                                <i class="bi bi-calendar3 text-purple me-2"></i>Bulan
                             </label>
-                            <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate }}">
+                            <select name="month" id="month" class="form-select">
+                                <option value="1" {{ $selectedMonth == 1 ? 'selected' : '' }}>Januari</option>
+                                <option value="2" {{ $selectedMonth == 2 ? 'selected' : '' }}>Februari</option>
+                                <option value="3" {{ $selectedMonth == 3 ? 'selected' : '' }}>Maret</option>
+                                <option value="4" {{ $selectedMonth == 4 ? 'selected' : '' }}>April</option>
+                                <option value="5" {{ $selectedMonth == 5 ? 'selected' : '' }}>Mei</option>
+                                <option value="6" {{ $selectedMonth == 6 ? 'selected' : '' }}>Juni</option>
+                                <option value="7" {{ $selectedMonth == 7 ? 'selected' : '' }}>Juli</option>
+                                <option value="8" {{ $selectedMonth == 8 ? 'selected' : '' }}>Agustus</option>
+                                <option value="9" {{ $selectedMonth == 9 ? 'selected' : '' }}>September</option>
+                                <option value="10" {{ $selectedMonth == 10 ? 'selected' : '' }}>Oktober</option>
+                                <option value="11" {{ $selectedMonth == 11 ? 'selected' : '' }}>November</option>
+                                <option value="12" {{ $selectedMonth == 12 ? 'selected' : '' }}>Desember</option>
+                            </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="end_date" class="form-label fw-semibold">
-                                <i class="bi bi-calendar-check text-purple me-2"></i>Tanggal Akhir
+                            <label for="year" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-check text-purple me-2"></i>Tahun
                             </label>
-                            <input type="date" name="end_date" id="end_date" class="form-control" value="{{ $endDate }}">
+                            <select name="year" id="year" class="form-select">
+                                @for ($year = Carbon\Carbon::now()->year; $year >= Carbon\Carbon::now()->year - 5; $year--)
+                                    <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                @endfor
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">&nbsp;</label>
@@ -114,7 +131,8 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="penjualan-tab" data-bs-toggle="pill" data-bs-target="#penjualan" type="button" role="tab">
+                            <button class="nav-link" id="penjualan-tab" data-bs-toggle="pill" data-bs-target="#penjualan" type="button"
+                                role="tab">
                                 <i class="bi bi-graph-up-arrow me-2"></i>Laporan Penjualan
                             </button>
                         </li>
@@ -138,8 +156,9 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-0 fw-bold text-white">Laporan Laba Rugi</h5>
-                                    <p class="mb-0 text-white-50">{{ Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                                        {{ Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                                    <p class="mb-0 text-white-50">
+                                        {{ Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->locale('id')->isoFormat('MMMM Y') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -314,8 +333,7 @@
                                             <tr>
                                                 <td class="fw-bold fs-4">SALDO CASH AKHIR</td>
                                                 <td class="text-end fw-bold fs-3 text-success">Rp
-                                                    {{ number_format($laporanLabaRugi['hasil']['saldo_cash_akhir'], 0, ',', '.') }}
-                                                </td>
+                                                    {{ number_format($laporanLabaRugi['hasil']['saldo_cash_akhir'], 0, ',', '.') }}</td>
                                             </tr>
                                         </table>
                                     </div>
@@ -359,8 +377,7 @@
                                             <tr>
                                                 <td class="ps-4">- Kas Bank Octo</td>
                                                 <td class="text-end fw-bold">Rp
-                                                    {{ number_format($neracaSederhana['aset']['kas_bank_octo'], 0, ',', '.') }}
-                                                </td>
+                                                    {{ number_format($neracaSederhana['aset']['kas_bank_octo'], 0, ',', '.') }}</td>
                                             </tr>
                                             <tr>
                                                 <td class="ps-4">- Kas Cash</td>
@@ -488,8 +505,9 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-0 fw-bold text-white">Arus Kas Bank Octo</h5>
-                                    <p class="mb-0 text-white-50">{{ Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                                        {{ Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                                    <p class="mb-0 text-white-50">
+                                        {{ Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->locale('id')->isoFormat('MMMM Y') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -559,8 +577,9 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-0 fw-bold text-white">Arus Kas Cash</h5>
-                                    <p class="mb-0 text-white-50">{{ Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                                        {{ Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                                    <p class="mb-0 text-white-50">
+                                        {{ Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->locale('id')->isoFormat('MMMM Y') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -635,8 +654,9 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-0 fw-bold text-white">Laporan Penjualan Project</h5>
-                                    <p class="mb-0 text-white-50">{{ Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                                        {{ Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                                    <p class="mb-0 text-white-50">
+                                        {{ Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->locale('id')->isoFormat('MMMM Y') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -816,6 +836,20 @@
                     });
                 });
             });
+
+            // Auto-submit form when month or year changes
+            const monthSelect = document.getElementById('month');
+            const yearSelect = document.getElementById('year');
+
+            if (monthSelect && yearSelect) {
+                monthSelect.addEventListener('change', function() {
+                    this.closest('form').submit();
+                });
+
+                yearSelect.addEventListener('change', function() {
+                    this.closest('form').submit();
+                });
+            }
         });
     </script>
 
@@ -900,6 +934,38 @@
             background-color: rgba(139, 92, 246, 0.05);
             border-bottom: 1px solid rgba(139, 92, 246, 0.1);
             font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .table-sm td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .arus-kas-section {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .arus-kas-section::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .arus-kas-section::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .arus-kas-section::-webkit-scrollbar-thumb {
+            background: #8B5CF6;
+            border-radius: 10px;
+        }
+
+        .section-divider {
+            border-left: 4px solid rgba(139, 92, 246, 0.2);
+            margin: 1rem 0;
+            padding-left: 1rem;
         }
 
         @media (max-width: 768px) {

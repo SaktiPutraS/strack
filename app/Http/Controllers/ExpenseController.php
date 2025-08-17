@@ -10,6 +10,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseController extends Controller
 {
@@ -97,6 +103,199 @@ class ExpenseController extends Controller
             'formattedBankBalance',
             'formattedCashBalance'
         ));
+    }
+
+    /**
+     * Export expenses to Excel
+     */
+    public function exportExcel(Request $request): StreamedResponse
+    {
+        // Get filtered data based on request parameters
+        $query = Expense::query();
+
+        // Apply same filters as index method
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        if ($request->filled('category')) {
+            $query->byCategory($request->category);
+        }
+
+        if ($request->filled('source')) {
+            $query->bySource($request->source);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('expense_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('expense_date', '<=', $request->date_to);
+        }
+
+        $expenses = $query->orderBy('expense_date', 'desc')->get();
+
+        // Create spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Pengeluaran');
+
+        // Set headers
+        $headers = [
+            'A1' => 'No',
+            'B1' => 'Tanggal',
+            'C1' => 'Sumber',
+            'D1' => 'Kategori',
+            'E1' => 'Deskripsi',
+            'F1' => 'Jumlah',
+            'G1' => 'Bulan',
+            'H1' => 'Tahun',
+            'I1' => 'Hari'
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        // Style headers
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'EF4444']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000']
+                ]
+            ]
+        ];
+
+        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+
+        // Auto-size columns
+        foreach (range('A', 'I') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Set row height for header
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Add data
+        $row = 2;
+        foreach ($expenses as $index => $expense) {
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, $expense->expense_date->format('d/m/Y'));
+            $sheet->setCellValue('C' . $row, $expense->source_label);
+            $sheet->setCellValue('D' . $row, $expense->category_label);
+            $sheet->setCellValue('E' . $row, $expense->description);
+            $sheet->setCellValue('F' . $row, $expense->amount);
+            $sheet->setCellValue('G' . $row, $expense->expense_date->format('F')); // Full month name
+            $sheet->setCellValue('H' . $row, $expense->expense_date->format('Y'));
+            $sheet->setCellValue('I' . $row, $expense->expense_date->format('l')); // Full day name
+
+            // Format currency column
+            $sheet->getStyle('F' . $row)->getNumberFormat()->setFormatCode('#,##0');
+
+            // Color code source
+            $sourceColor = match ($expense->source) {
+                Expense::SOURCE_BANK => 'CCE5FF',
+                Expense::SOURCE_CASH => 'D4EDDA',
+                default => 'FFFFFF'
+            };
+
+            $sheet->getStyle('C' . $row)->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()->setRGB($sourceColor);
+
+            // Apply borders to data rows
+            $sheet->getStyle('A' . $row . ':I' . $row)->getBorders()
+                ->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+            $row++;
+        }
+
+        // Add summary at the bottom
+        $summaryRow = $row + 2;
+        $sheet->setCellValue('A' . $summaryRow, 'RINGKASAN:');
+        $sheet->getStyle('A' . $summaryRow)->getFont()->setBold(true);
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Total Transaksi:');
+        $sheet->setCellValue('B' . $summaryRow, $expenses->count());
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Total Pengeluaran:');
+        $sheet->setCellValue('B' . $summaryRow, $expenses->sum('amount'));
+        $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+
+        // Summary by source
+        $bankExpenses = $expenses->where('source', Expense::SOURCE_BANK)->sum('amount');
+        $cashExpenses = $expenses->where('source', Expense::SOURCE_CASH)->sum('amount');
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Pengeluaran Bank:');
+        $sheet->setCellValue('B' . $summaryRow, $bankExpenses);
+        $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Pengeluaran Cash:');
+        $sheet->setCellValue('B' . $summaryRow, $cashExpenses);
+        $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+
+        // Summary by category (top 5)
+        $topCategories = $expenses->groupBy('category')
+            ->map(function ($group) {
+                return [
+                    'label' => $group->first()->category_label,
+                    'total' => $group->sum('amount')
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(5);
+
+        $summaryRow += 2;
+        $sheet->setCellValue('A' . $summaryRow, 'TOP 5 KATEGORI:');
+        $sheet->getStyle('A' . $summaryRow)->getFont()->setBold(true);
+
+        foreach ($topCategories as $category) {
+            $summaryRow++;
+            $sheet->setCellValue('A' . $summaryRow, $category['label'] . ':');
+            $sheet->setCellValue('B' . $summaryRow, $category['total']);
+            $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+        }
+
+        // Generate filename with current date and filters
+        $filename = 'Data_Pengeluaran_' . date('Y-m-d');
+        if ($request->filled('source')) {
+            $filename .= '_' . $request->source;
+        }
+        if ($request->filled('category')) {
+            $filename .= '_' . substr($request->category, 0, 15);
+        }
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $filename .= '_' . $request->date_from . '_to_' . $request->date_to;
+        }
+        $filename .= '.xlsx';
+
+        // Return as download
+        return new StreamedResponse(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 
     public function create(): View

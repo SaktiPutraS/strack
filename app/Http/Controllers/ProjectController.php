@@ -12,6 +12,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProjectController extends Controller
 {
@@ -131,6 +137,243 @@ class ProjectController extends Controller
         ));
     }
 
+    /**
+     * Export projects to Excel
+     */
+    public function exportExcel(Request $request): StreamedResponse
+    {
+        // Get filtered data based on request parameters
+        $query = Project::with('client');
+
+        // Apply same filters as index method
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('testimoni')) {
+            if ($request->testimoni === 'true') {
+                $query->withTestimoni();
+            } elseif ($request->testimoni === 'false') {
+                $query->withoutTestimoni();
+            }
+        }
+
+        if ($request->filled('piutang') && $request->piutang == 'true') {
+            $query->whereRaw('total_value > paid_amount')
+                ->whereIn('status', ['WAITING', 'PROGRESS']);
+        }
+
+        if ($request->filled('month') && $request->month == 'current') {
+            $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort', 'created_at');
+        $sortOrder = in_array(strtolower($request->get('order', 'desc')), ['asc', 'desc'])
+            ? strtolower($request->get('order', 'desc'))
+            : 'desc';
+
+        switch ($sortBy) {
+            case 'client_id':
+                $query->join('clients', 'projects.client_id', '=', 'clients.id')
+                    ->orderBy('clients.name', $sortOrder)
+                    ->select('projects.*');
+                break;
+            case 'title':
+                $query->orderBy('title', $sortOrder);
+                break;
+            case 'deadline':
+                $query->orderBy('deadline', $sortOrder);
+                break;
+            case 'status':
+                $query->orderBy('status', $sortOrder);
+                break;
+            default:
+                $query->orderBy('created_at', $sortOrder);
+                break;
+        }
+
+        $projects = $query->get();
+
+        // Create spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Proyek');
+
+        // Set headers
+        $headers = [
+            'A1' => 'No',
+            'B1' => 'Nama Proyek',
+            'C1' => 'Klien',
+            'D1' => 'Tipe',
+            'E1' => 'Status',
+            'F1' => 'Total Nilai',
+            'G1' => 'DP',
+            'H1' => 'Terbayar',
+            'I1' => 'Sisa',
+            'J1' => 'Progress (%)',
+            'K1' => 'Deadline',
+            'L1' => 'Testimoni',
+            'M1' => 'Tanggal Dibuat',
+            'N1' => 'Deskripsi',
+            'O1' => 'Catatan'
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        // Style headers
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '8B5CF6']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000']
+                ]
+            ]
+        ];
+
+        $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
+
+        // Auto-size columns
+        foreach (range('A', 'O') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Set row height for header
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Add data
+        $row = 2;
+        foreach ($projects as $index => $project) {
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, $project->title);
+            $sheet->setCellValue('C' . $row, $project->client->name);
+            $sheet->setCellValue('D' . $row, $project->type);
+            $sheet->setCellValue('E' . $row, $project->status);
+            $sheet->setCellValue('F' . $row, $project->total_value);
+            $sheet->setCellValue('G' . $row, $project->dp_amount);
+            $sheet->setCellValue('H' . $row, $project->paid_amount);
+            $sheet->setCellValue('I' . $row, $project->remaining_amount);
+            $sheet->setCellValue('J' . $row, $project->progress_percentage);
+            $sheet->setCellValue('K' . $row, $project->deadline->format('d/m/Y'));
+            $sheet->setCellValue('L' . $row, $project->testimoni ? 'Sudah' : 'Belum');
+            $sheet->setCellValue('M' . $row, $project->created_at->format('d/m/Y H:i'));
+            $sheet->setCellValue('N' . $row, $project->description);
+            $sheet->setCellValue('O' . $row, $project->notes);
+
+            // Format currency columns
+            $sheet->getStyle('F' . $row . ':I' . $row)->getNumberFormat()
+                ->setFormatCode('#,##0');
+
+            // Color code status
+            $statusColor = match ($project->status) {
+                'WAITING' => 'FFF3CD',
+                'PROGRESS' => 'CCE5FF',
+                'FINISHED' => 'D4EDDA',
+                'CANCELLED' => 'F8D7DA',
+                default => 'FFFFFF'
+            };
+
+            $sheet->getStyle('E' . $row)->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()->setRGB($statusColor);
+
+            // Color code deadline
+            if ($project->is_overdue) {
+                $sheet->getStyle('K' . $row)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('F8D7DA');
+            } elseif ($project->is_deadline_near) {
+                $sheet->getStyle('K' . $row)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('FFF3CD');
+            }
+
+            // Apply borders to data rows
+            $sheet->getStyle('A' . $row . ':O' . $row)->getBorders()
+                ->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+            $row++;
+        }
+
+        // Add summary at the bottom
+        $summaryRow = $row + 2;
+        $sheet->setCellValue('A' . $summaryRow, 'RINGKASAN:');
+        $sheet->getStyle('A' . $summaryRow)->getFont()->setBold(true);
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Total Proyek:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->count());
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Menunggu:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->where('status', 'WAITING')->count());
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Progress:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->where('status', 'PROGRESS')->count());
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Selesai:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->where('status', 'FINISHED')->count());
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Dibatalkan:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->where('status', 'CANCELLED')->count());
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Total Nilai:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->sum('total_value'));
+        $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Total Terbayar:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->sum('paid_amount'));
+        $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+
+        $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Total Piutang:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->sum('remaining_amount'));
+        $sheet->getStyle('B' . $summaryRow)->getNumberFormat()->setFormatCode('#,##0');
+
+        // Generate filename with current date and filters
+        $filename = 'Data_Proyek_' . date('Y-m-d');
+        if ($request->filled('status')) {
+            $filename .= '_Status_' . $request->status;
+        }
+        if ($request->filled('search')) {
+            $filename .= '_Search_' . substr($request->search, 0, 20);
+        }
+        $filename .= '.xlsx';
+
+        // Return as download
+        return new StreamedResponse(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 
     public function create(): View
     {

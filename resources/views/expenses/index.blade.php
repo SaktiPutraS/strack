@@ -11,9 +11,15 @@
                     </h1>
                     <p class="text-muted mb-0">Kelola semua pengeluaran Bank & Cash</p>
                 </div>
-                <a href="{{ route('expenses.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-2"></i>Tambah Pengeluaran
-                </a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <!-- Export Button -->
+                    <button type="button" class="btn btn-outline-success" id="exportExcelBtn">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+                    </button>
+                    <a href="{{ route('expenses.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Tambah Pengeluaran
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -104,7 +110,7 @@
                 </div>
 
                 <!-- Search & Filter -->
-                <form method="GET" class="d-flex flex-column flex-lg-row gap-2" style="min-width: 350px;">
+                <form method="GET" class="d-flex flex-column flex-lg-row gap-2" id="searchForm" style="min-width: 350px;">
                     <input type="text" name="search" class="form-control" placeholder="Cari deskripsi..." value="{{ request('search') }}">
                     <select name="source" class="form-select">
                         <option value="">Semua Sumber</option>
@@ -122,6 +128,8 @@
                             </option>
                         @endforeach
                     </select>
+                    <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}" placeholder="Dari tanggal">
+                    <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}" placeholder="Sampai tanggal">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search"></i>
                     </button>
@@ -293,6 +301,45 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Export Excel functionality
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+            exportExcelBtn.addEventListener('click', function() {
+                // Show loading state
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Mengunduh...';
+                this.disabled = true;
+
+                // Get current filter parameters
+                const searchForm = document.getElementById('searchForm');
+                const formData = new FormData(searchForm);
+                const params = new URLSearchParams();
+
+                // Add all form parameters to export URL
+                for (let [key, value] of formData.entries()) {
+                    if (value) {
+                        params.append(key, value);
+                    }
+                }
+
+                // Create export URL
+                const exportUrl = '{{ route('expenses.export.excel') }}?' + params.toString();
+
+                // Create temporary link to download
+                const link = document.createElement('a');
+                link.href = exportUrl;
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Reset button state after delay
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }, 2000);
+            });
+
             // SweetAlert messages
             @if (session('success'))
                 Swal.fire({
@@ -447,6 +494,28 @@
     </script>
 
     <style>
+        /* Export button styling */
+        .btn-outline-success {
+            border-color: #10B981;
+            color: #10B981;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background-color: #10B981;
+            border-color: #10B981;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-outline-success:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
         .luxury-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(16px);
@@ -507,6 +576,30 @@
 
         .bg-gradient-success {
             background: linear-gradient(135deg, #10B981, #059669) !important;
+        }
+
+        .clickable-row,
+        .clickable-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-row:hover,
+        .clickable-card:hover {
+            background-color: rgba(139, 92, 246, 0.05) !important;
+        }
+
+        /* Date input styling */
+        input[type="date"] {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        input[type="date"]:focus {
+            border-color: #8B5CF6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
     </style>
 @endpush

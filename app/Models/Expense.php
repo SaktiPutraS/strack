@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Expense extends Model
 {
@@ -13,7 +14,7 @@ class Expense extends Model
         'expense_date',
         'amount',
         'category',
-        'source', // NEW FIELD
+        'source',
         'description',
     ];
 
@@ -89,6 +90,59 @@ class Expense extends Model
         };
     }
 
+    /**
+     * NEW: Get month name in Indonesian for export
+     */
+    public function getMonthNameAttribute(): string
+    {
+        return $this->expense_date->format('F Y');
+    }
+
+    /**
+     * NEW: Get day name in Indonesian for export
+     */
+    public function getDayNameAttribute(): string
+    {
+        return $this->expense_date->format('l');
+    }
+
+    /**
+     * NEW: Get quarter info for export
+     */
+    public function getQuarterAttribute(): string
+    {
+        $month = $this->expense_date->month;
+        $quarter = ceil($month / 3);
+        return "Q{$quarter} " . $this->expense_date->year;
+    }
+
+    /**
+     * NEW: Get export data array
+     */
+    public function getExportDataAttribute(): array
+    {
+        return [
+            'id' => $this->id,
+            'expense_date' => $this->expense_date->format('d/m/Y'),
+            'expense_date_iso' => $this->expense_date->format('Y-m-d'),
+            'source' => $this->source,
+            'source_label' => $this->source_label,
+            'category' => $this->category,
+            'category_label' => $this->category_label,
+            'description' => $this->description,
+            'amount' => $this->amount,
+            'formatted_amount' => $this->formatted_amount,
+            'month_name' => $this->month_name,
+            'day_name' => $this->day_name,
+            'quarter' => $this->quarter,
+            'year' => $this->expense_date->year,
+            'month' => $this->expense_date->month,
+            'day' => $this->expense_date->day,
+            'week_number' => $this->expense_date->weekOfYear,
+            'created_at' => $this->created_at->format('d/m/Y H:i'),
+        ];
+    }
+
     // Scopes
     public function scopeInPeriod($query, $startDate, $endDate)
     {
@@ -108,6 +162,50 @@ class Expense extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where('description', 'like', "%{$search}%");
+    }
+
+    /**
+     * NEW: Scope for current month
+     */
+    public function scopeCurrentMonth($query)
+    {
+        return $query->whereMonth('expense_date', Carbon::now()->month)
+            ->whereYear('expense_date', Carbon::now()->year);
+    }
+
+    /**
+     * NEW: Scope for current year
+     */
+    public function scopeCurrentYear($query)
+    {
+        return $query->whereYear('expense_date', Carbon::now()->year);
+    }
+
+    /**
+     * NEW: Scope for date range with better performance
+     */
+    public function scopeDateRange($query, $startDate, $endDate = null)
+    {
+        if ($endDate) {
+            return $query->whereBetween('expense_date', [$startDate, $endDate]);
+        }
+        return $query->whereDate('expense_date', $startDate);
+    }
+
+    /**
+     * NEW: Scope for export with optimized query
+     */
+    public function scopeForExport($query)
+    {
+        return $query->select([
+            'id',
+            'expense_date',
+            'amount',
+            'category',
+            'source',
+            'description',
+            'created_at'
+        ]);
     }
 
     // Boot method

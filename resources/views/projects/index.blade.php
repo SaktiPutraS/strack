@@ -12,9 +12,15 @@
                     </h1>
                     <p class="text-muted mb-0">Kelola semua proyek dan tracking progressnya</p>
                 </div>
-                <a href="{{ route('projects.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-2"></i>Proyek Baru
-                </a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <!-- Export Button -->
+                    <button type="button" class="btn btn-outline-success" id="exportExcelBtn">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+                    </button>
+                    <a href="{{ route('projects.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Proyek Baru
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -103,7 +109,7 @@
             </div>
         </div>
         <div class="card-body p-4 border-bottom">
-            <form method="GET" class="row g-3">
+            <form method="GET" class="row g-3" id="searchForm">
                 <div class="col-md-9">
                     <input type="text" name="search" class="form-control form-control-lg" value="{{ request('search') }}"
                         placeholder="Cari proyek, klien, atau deskripsi...">
@@ -125,6 +131,7 @@
                 <input type="hidden" name="status" value="{{ request('status') }}">
                 <input type="hidden" name="piutang" value="{{ request('piutang') }}">
                 <input type="hidden" name="testimoni" value="{{ request('testimoni') }}">
+                <input type="hidden" name="month" value="{{ request('month') }}">
             </form>
         </div>
 
@@ -427,6 +434,45 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Export Excel functionality
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+            exportExcelBtn.addEventListener('click', function() {
+                // Show loading state
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Mengunduh...';
+                this.disabled = true;
+
+                // Get current filter parameters
+                const searchForm = document.getElementById('searchForm');
+                const formData = new FormData(searchForm);
+                const params = new URLSearchParams();
+
+                // Add all form parameters to export URL
+                for (let [key, value] of formData.entries()) {
+                    if (value) {
+                        params.append(key, value);
+                    }
+                }
+
+                // Create export URL
+                const exportUrl = '{{ route('projects.export.excel') }}?' + params.toString();
+
+                // Create temporary link to download
+                const link = document.createElement('a');
+                link.href = exportUrl;
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Reset button state after delay
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }, 2000);
+            });
+
             // Clickable statistics cards
             const clickableCards = document.querySelectorAll('.clickable-card');
 
@@ -560,6 +606,28 @@
     </script>
 
     <style>
+        /* Export button styling */
+        .btn-outline-success {
+            border-color: #10B981;
+            color: #10B981;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background-color: #10B981;
+            border-color: #10B981;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-outline-success:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
         /* Stat card styling dengan border atas berwarna */
         .stat-card {
             background: rgba(255, 255, 255, 0.95);

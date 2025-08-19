@@ -330,6 +330,13 @@
                             </button>
                         @endif
 
+                        @if ($project->type === 'BTOOLS')
+                            <a href="{{ route('projects.print-invoice', $project) }}" target="_blank"
+                                class="btn btn-info d-flex align-items-center justify-content-center">
+                                <i class="bi bi-printer me-2"></i>Print Invoice
+                            </a>
+                        @endif
+
                         <a href="{{ $project->client->whatsapp_link }}" target="_blank"
                             class="btn btn-success d-flex align-items-center justify-content-center">
                             <i class="bi bi-whatsapp me-2"></i>Chat Client

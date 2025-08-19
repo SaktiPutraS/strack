@@ -635,4 +635,112 @@ class ProjectController extends Controller
             'payments' => $payments
         ]);
     }
+
+    /**
+     * Print Invoice untuk proyek Btools
+     */
+    public function printInvoice(Project $project): View
+    {
+        // Pastikan hanya tipe Btools yang bisa print invoice
+        if ($project->type !== 'BTOOLS') {
+            abort(403, 'Invoice hanya tersedia untuk proyek Btools');
+        }
+
+        // Generate nomor faktur
+        $invoiceNumber = $this->generateInvoiceNumber($project);
+
+        // Format terbilang
+        $terbilang = $this->numberToWords($project->total_value);
+
+        return view('projects.invoice', compact('project', 'invoiceNumber', 'terbilang'));
+    }
+
+    /**
+     * Generate nomor faktur berdasarkan tanggal dan urutan
+     */
+    private function generateInvoiceNumber(Project $project): string
+    {
+        $date = $project->deadline->format('ymd'); // Format: 250819
+
+        // Hitung berapa banyak project Btools yang sudah dibuat di tanggal yang sama
+        $count = Project::where('type', 'BTOOLS')
+            ->whereDate('deadline', $project->deadline->format('Y-m-d'))
+            ->where('id', '<=', $project->id)
+            ->count();
+
+        $sequence = str_pad($count, 3, '0', STR_PAD_LEFT);
+
+        return "INV-{$date}{$sequence}";
+    }
+
+    /**
+     * Convert number to words (Bahasa Indonesia)
+     */
+    private function numberToWords($number): string
+    {
+        $number = (int) $number;
+
+        if ($number == 0) return 'nol rupiah';
+
+        $units = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+        $teens = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas', 'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
+        $tens = ['', '', 'dua puluh', 'tiga puluh', 'empat puluh', 'lima puluh', 'enam puluh', 'tujuh puluh', 'delapan puluh', 'sembilan puluh'];
+        $thousands = ['', 'ribu', 'juta', 'miliar', 'triliun'];
+
+        function convertGroup($num, $units, $teens, $tens)
+        {
+            $result = '';
+
+            if ($num >= 100) {
+                if (intval($num / 100) == 1) {
+                    $result .= 'seratus ';
+                } else {
+                    $result .= $units[intval($num / 100)] . ' ratus ';
+                }
+                $num %= 100;
+            }
+
+            if ($num >= 20) {
+                $result .= $tens[intval($num / 10)] . ' ';
+                $num %= 10;
+            } elseif ($num >= 10) {
+                $result .= $teens[$num - 10] . ' ';
+                return $result;
+            }
+
+            if ($num > 0) {
+                if ($num == 1 && strpos($result, 'belas') === false) {
+                    $result .= 'satu ';
+                } else {
+                    $result .= $units[$num] . ' ';
+                }
+            }
+
+            return $result;
+        }
+
+        $result = '';
+        $groupIndex = 0;
+
+        while ($number > 0) {
+            $group = $number % 1000;
+
+            if ($group > 0) {
+                $groupWord = convertGroup($group, $units, $teens, $tens);
+
+                if ($groupIndex == 1 && $group == 1) {
+                    $groupWord = 'seribu ';
+                } else {
+                    $groupWord .= $thousands[$groupIndex] . ' ';
+                }
+
+                $result = $groupWord . $result;
+            }
+
+            $number = intval($number / 1000);
+            $groupIndex++;
+        }
+
+        return trim($result) . ' rupiah';
+    }
 }

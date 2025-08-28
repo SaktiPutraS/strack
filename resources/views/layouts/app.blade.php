@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <style>
-        /* Minimal Custom CSS - Focus on White Luxury Theme */
         :root {
             --bs-primary: #8B5CF6;
             --bs-primary-rgb: 139, 92, 246;
@@ -21,7 +20,6 @@
             --sidebar-width: 280px;
         }
 
-        /* Apple Typography */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
@@ -30,7 +28,6 @@
             transition: all 0.3s ease;
         }
 
-        /* PERBAIKAN UTAMA: Sidebar */
         .sidebar {
             width: var(--sidebar-width);
             max-width: 85vw;
@@ -54,7 +51,6 @@
             }
         }
 
-        /* White Luxury Cards */
         .luxury-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(16px);
@@ -68,7 +64,6 @@
             transform: translateY(-2px);
         }
 
-        /* Purple Accents on White */
         .btn-primary {
             background: linear-gradient(135deg, #8B5CF6, #A855F7);
             border: none;
@@ -81,7 +76,6 @@
             background: rgba(255, 255, 255, 0.9);
         }
 
-        /* Sidebar Navigation */
         .nav-link {
             color: #6B7280;
             border-radius: 12px;
@@ -96,7 +90,6 @@
             color: #8B5CF6;
         }
 
-        /* PERBAIKAN UTAMA: Toggle Button */
         .sidebar-toggle {
             position: fixed;
             top: 1.5rem;
@@ -119,7 +112,6 @@
             font-size: 1.5rem;
         }
 
-        /* Main Content */
         .main-content {
             margin-left: 0;
             padding-top: 50px;
@@ -138,7 +130,6 @@
             }
         }
 
-        /* Mobile Font Sizes */
         .fs-7 {
             font-size: 0.8rem;
         }
@@ -151,7 +142,6 @@
             font-size: 0.7rem;
         }
 
-        /* Luxury Purple Icons */
         .luxury-icon {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
             border-radius: 12px;
@@ -163,7 +153,6 @@
             box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
         }
 
-        /* PERBAIKAN UTAMA: Overlay */
         .sidebar-overlay {
             position: fixed;
             inset: 0;
@@ -180,13 +169,11 @@
             opacity: 1;
         }
 
-        /* Touch Feedback */
         .btn:active,
         .luxury-card:active {
             transform: scale(0.98);
         }
 
-        /* Custom Purple Colors */
         .text-purple {
             color: #8B5CF6;
         }
@@ -199,19 +186,16 @@
             border-color: rgba(139, 92, 246, 0.2);
         }
 
-        /* PERBAIKAN: Nonaktifkan scroll saat sidebar terbuka */
         body.sidebar-open {
             overflow: hidden;
             position: relative;
             width: 100%;
         }
 
-        /* PERBAIKAN: Dropdown menu animation */
         .nav-item .collapse {
             transition: height 0.3s ease;
         }
 
-        /* Styles khusus untuk Price List */
         .page-header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -499,9 +483,7 @@
 
 <body>
     <div class="d-flex">
-        <!-- Luxury White Sidebar -->
         <aside class="sidebar position-fixed top-0 start-0 vh-100 overflow-auto" id="sidebar">
-            <!-- Header -->
             <div class="p-4 border-bottom border-purple text-center">
                 @if (session('role') === 'admin')
                     <a href="{{ route('dashboard') }}" class="text-decoration-none">
@@ -616,9 +598,10 @@
                             </div>
                         </li>
 
-                        <li>
+                        {{-- Laporan --}}
+                        <li class="nav-item">
                             <a href="{{ route('financial-reports.index') }}"
-                                class="nav-link py-2 fs-7 {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
+                                class="nav-link{{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
                                 <i class="bi bi-graph-up me-2"></i>Laporan
                             </a>
                         </li>
@@ -630,7 +613,7 @@
                             </a>
                         </li>
 
-                        {{-- TAMBAHAN BARU: Menu Daftar Harga --}}
+                        {{-- Menu Daftar Harga --}}
                         <li class="nav-item">
                             <a href="{{ route('price-list') }}" class="nav-link {{ request()->routeIs('price-list') ? 'active' : '' }}">
                                 <i class="bi bi-currency-dollar me-2"></i>Daftar Harga

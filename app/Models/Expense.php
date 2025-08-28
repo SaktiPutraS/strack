@@ -48,6 +48,7 @@ class Expense extends Model
         'LAINNYA'       => 'Lainnya',
         'PERLENGKAPAN'  => 'Perlengkapan/Habis Pakai',
         'PERALATAN'     => 'Peralatan',
+        'OBAT'          => 'Obat/Multivitamin',
         'SALDO_AWAL'    => 'Saldo Awal',
         'SEMBAKO'       => 'Sembako',
         'SIERRA'        => 'Sierra',

@@ -161,8 +161,7 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-success bg-opacity-10 text-success fw-bold">Rp</span>
                                     <input type="number" class="form-control @error('total_value') is-invalid @enderror" id="total_value"
-                                        name="total_value" value="{{ old('total_value', $project->total_value) }}" min="0" step="1000"
-                                        required>
+                                        name="total_value" value="{{ old('total_value', $project->total_value) }}" min="0" required>
                                 </div>
                                 @error('total_value')
                                     <div class="invalid-feedback">{{ $message }}</div>

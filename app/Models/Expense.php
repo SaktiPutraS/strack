@@ -43,6 +43,7 @@ class Expense extends Model
         'DOMAIN_HOSTING' => 'Domain/Hosting',
         'ENTERTAIN'     => 'Entertain/Jajan',
         'GAJI_BONUS'    => 'Gaji/Bonus',
+        'HPP'          => 'HPP/Potongan Penjualan/Retur',
         'INVENTARIS'    => 'Inventaris',
         'KOPI_SUSU'     => 'Kopi/Susu',
         'LAINNYA'       => 'Lainnya',

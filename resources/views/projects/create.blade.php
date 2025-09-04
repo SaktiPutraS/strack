@@ -140,7 +140,7 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-success bg-opacity-10 text-success fw-bold">Rp</span>
                                     <input type="number" class="form-control @error('total_value') is-invalid @enderror" id="total_value"
-                                        name="total_value" value="{{ old('total_value') }}" min="0" step="1000" placeholder="0" required>
+                                        name="total_value" value="{{ old('total_value') }}" min="0" placeholder="0" required>
                                 </div>
                                 @error('total_value')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -155,7 +155,7 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-warning bg-opacity-10 text-warning fw-bold">Rp</span>
                                     <input type="number" class="form-control @error('dp_amount') is-invalid @enderror" id="dp_amount"
-                                        name="dp_amount" value="{{ old('dp_amount', 0) }}" min="0" step="1000" placeholder="0">
+                                        name="dp_amount" value="{{ old('dp_amount', 0) }}" min="0" placeholder="0">
                                 </div>
                                 @error('dp_amount')
                                     <div class="invalid-feedback">{{ $message }}</div>

@@ -107,7 +107,7 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-success bg-opacity-10 text-success fw-bold">Rp</span>
                                     <input type="number" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount"
-                                        value="{{ old('amount') }}" min="0" step="1000" placeholder="0" required>
+                                        value="{{ old('amount') }}" min="0" placeholder="0" required>
                                 </div>
                                 @error('amount')
                                     <div class="invalid-feedback">{{ $message }}</div>

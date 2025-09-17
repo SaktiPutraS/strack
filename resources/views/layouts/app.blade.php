@@ -600,8 +600,7 @@
 
                         {{-- Laporan --}}
                         <li class="nav-item">
-                            <a href="{{ route('financial-reports.index') }}"
-                                class="nav-link{{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
+                            <a href="{{ route('financial-reports.index') }}" class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
                                 <i class="bi bi-graph-up me-2"></i>Laporan
                             </a>
                         </li>

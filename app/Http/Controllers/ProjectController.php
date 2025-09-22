@@ -745,49 +745,76 @@ class ProjectController extends Controller
     }
 
     /**
-     * Get project deadlines for a specific month (untuk kalender)
+     * Get project deadlines for a specific month (untuk kalender) - FIXED VERSION
      */
     public function getMonthDeadlines($year, $month): JsonResponse
     {
         try {
+            // Validasi input
+            if (!is_numeric($year) || !is_numeric($month) || $month < 1 || $month > 12) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parameter tahun atau bulan tidak valid'
+                ], 400);
+            }
+
+            // FIXED: Pastikan filter tahun dan bulan benar-benar spesifik
             $projects = Project::with('client')
                 ->whereYear('deadline', $year)
                 ->whereMonth('deadline', $month)
                 ->whereIn('status', ['WAITING', 'PROGRESS'])
                 ->orderBy('deadline')
-                ->get()
-                ->groupBy(function ($project) {
-                    return $project->deadline->day;
-                })
-                ->map(function ($projects, $day) {
-                    return $projects->map(function ($project) {
-                        return [
-                            'id' => $project->id,
-                            'title' => $project->title,
-                            'client_name' => $project->client->name,
-                            'type' => $project->type,
-                            'status' => $project->status,
-                            'deadline' => $project->deadline->format('Y-m-d'),
-                            'deadline_formatted' => $project->deadline->format('d M Y'),
-                            'is_overdue' => $project->is_overdue,
-                            'is_deadline_near' => $project->is_deadline_near,
-                            'days_until_deadline' => $project->days_until_deadline,
-                            'status_color' => $project->status_color,
-                            'remaining_amount' => $project->remaining_amount,
-                            'formatted_remaining_amount' => $project->formatted_remaining_amount,
-                            'url' => route('projects.show', $project)
-                        ];
-                    });
+                ->get();
+
+            // Debug: Log data yang ditemukan
+            \Log::info("Getting deadlines for {$year}-{$month}", [
+                'count' => $projects->count(),
+                'projects' => $projects->pluck('title', 'deadline')->toArray()
+            ]);
+
+            // Group by day dengan validasi yang lebih ketat
+            $groupedProjects = $projects->groupBy(function ($project) {
+                return $project->deadline->day;
+            })->map(function ($dayProjects) {
+                return $dayProjects->map(function ($project) {
+                    return [
+                        'id' => $project->id,
+                        'title' => $project->title,
+                        'client_name' => $project->client->name,
+                        'type' => $project->type,
+                        'status' => $project->status,
+                        'deadline' => $project->deadline->format('Y-m-d'),
+                        'deadline_formatted' => $project->deadline->format('d M Y'),
+                        'is_overdue' => $project->is_overdue,
+                        'is_deadline_near' => $project->is_deadline_near,
+                        'days_until_deadline' => $project->days_until_deadline,
+                        'status_color' => $project->status_color,
+                        'remaining_amount' => $project->remaining_amount,
+                        'formatted_remaining_amount' => $project->formatted_remaining_amount,
+                        'url' => route('projects.show', $project)
+                    ];
                 });
+            });
 
             return response()->json([
                 'success' => true,
-                'deadlines' => $projects
+                'deadlines' => $groupedProjects,
+                'debug' => [
+                    'requested_year' => $year,
+                    'requested_month' => $month,
+                    'total_projects' => $projects->count()
+                ]
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error in getMonthDeadlines', [
+                'year' => $year,
+                'month' => $month,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memuat data deadline proyek'
+                'message' => 'Gagal memuat data deadline proyek: ' . $e->getMessage()
             ], 500);
         }
     }

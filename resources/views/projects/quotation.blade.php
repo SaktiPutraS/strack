@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{ $invoiceNumber }} - {{ $project->title }}</title>
+    <title>Quotation {{ $quotationNumber }} - {{ $project->title }}</title>
     <style>
         * {
             margin: 0;
@@ -15,21 +15,16 @@
         body {
             font-family: 'Arial', sans-serif;
             font-size: 14px;
-            /* Diperbesar dari 12px */
             line-height: 1.6;
-            /* Diperbesar dari 1.4 */
             color: #333;
             background: white;
         }
 
-        .invoice-container {
+        .quotation-container {
             max-width: 210mm;
-            /* A4 width */
             min-height: 297mm;
-            /* A4 height */
             margin: 0 auto;
             padding: 10mm;
-            /* Padding lebih besar untuk A4 */
             background: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
@@ -39,10 +34,8 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 30px;
-            /* Diperbesar dari 18px */
             border-bottom: 3px solid #0ea5e9;
             padding-bottom: 20px;
-            /* Diperbesar dari 12px */
         }
 
         .company-info {
@@ -51,97 +44,78 @@
 
         .company-logo {
             max-width: 250px;
-            /* Diperbesar dari 180px */
             height: auto;
             margin-bottom: 10px;
-            /* Diperbesar dari 6px */
         }
 
         .company-details {
             font-size: 12px;
-            /* Diperbesar dari 9px */
             color: #64748b;
             line-height: 1.5;
-            /* Diperbesar dari 1.3 */
         }
 
-        .invoice-title {
+        .quotation-title {
             text-align: right;
             flex: 1;
         }
 
-        .invoice-title h1 {
+        .quotation-title h1 {
             font-size: 32px;
-            /* Diperbesar dari 22px */
             color: #0ea5e9;
             font-weight: bold;
             margin-bottom: 8px;
-            /* Diperbesar dari 4px */
         }
 
-        .invoice-details {
+        .quotation-details {
             font-size: 14px;
-            /* Diperbesar dari 10px */
             color: #64748b;
         }
 
-        .billing-section {
+        .client-section {
             display: flex;
             justify-content: space-between;
             margin-bottom: 30px;
-            /* Diperbesar dari 18px */
         }
 
-        .bill-to,
-        .invoice-info {
+        .client-to,
+        .quotation-info {
             flex: 1;
             margin-right: 20px;
-            /* Diperbesar dari 15px */
         }
 
-        .bill-to h3,
-        .invoice-info h3 {
+        .client-to h3,
+        .quotation-info h3 {
             font-size: 16px;
-            /* Diperbesar dari 11px */
             color: #0ea5e9;
             margin-bottom: 10px;
-            /* Diperbesar dari 6px */
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 5px;
-            /* Diperbesar dari 3px */
         }
 
         .customer-info,
-        .invoice-data {
+        .quotation-data {
             font-size: 14px;
-            /* Diperbesar dari 10px */
             line-height: 1.6;
-            /* Diperbesar dari 1.4 */
         }
 
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
-            /* Diperbesar dari 18px */
+            margin-bottom: 30px;
             font-size: 14px;
-            /* Diperbesar dari 10px */
         }
 
         .items-table th {
             background-color: #0ea5e9;
             color: white;
             padding: 12px 8px;
-            /* Diperbesar dari 6px */
             text-align: left;
             font-weight: bold;
             font-size: 14px;
-            /* Diperbesar dari 10px */
         }
 
         .items-table td {
             padding: 15px 8px;
-            /* Diperbesar dari 8px 6px */
             border-bottom: 1px solid #e2e8f0;
             vertical-align: top;
         }
@@ -161,19 +135,15 @@
         .total-section {
             float: right;
             width: 350px;
-            /* Diperbesar dari 250px */
             margin-bottom: 20px;
-            /* Diperbesar dari 18px */
         }
 
         .total-row {
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            /* Diperbesar dari 6px 0 */
             border-bottom: 1px solid #e2e8f0;
             font-size: 14px;
-            /* Diperbesar dari 10px */
         }
 
         .total-row.final {
@@ -181,79 +151,66 @@
             border-bottom: 2px solid #0ea5e9;
             font-weight: bold;
             font-size: 18px;
-            /* Diperbesar dari 12px */
             margin-top: 15px;
-            /* Diperbesar dari 8px */
             padding: 15px 0;
-            /* Diperbesar dari 8px 0 */
         }
 
         .terbilang {
             clear: both;
             background-color: #f0f9ff;
             padding: 15px;
-            /* Diperbesar dari 8px */
             border-left: 4px solid #0ea5e9;
             margin-bottom: 30px;
-            /* Diperbesar dari 18px */
             font-style: italic;
             font-size: 14px;
-            /* Diperbesar dari 10px */
         }
 
-        .notes {
+        .terms {
             margin-bottom: 30px;
-            /* Diperbesar dari 18px */
             font-size: 14px;
-            /* Diperbesar dari 10px */
         }
 
-        .notes h4 {
+        .terms h4 {
             color: #0ea5e9;
             margin-bottom: 10px;
-            /* Diperbesar dari 6px */
             font-size: 16px;
-            /* Diperbesar dari 11px */
+        }
+
+        .terms ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            line-height: 1.8;
         }
 
         .signature-section {
             display: flex;
             justify-content: flex-end;
             margin-top: 40px;
-            /* Diperbesar dari 10px */
             margin-bottom: 30px;
-            /* Diperbesar dari 10px */
         }
 
         .signature-box {
             text-align: center;
             width: 200px;
-            /* Diperbesar dari 120px */
             position: relative;
         }
 
         .signature-box p {
             margin-bottom: 50px;
-            /* Diperbesar dari 35px */
             font-size: 14px;
-            /* Diperbesar dari 10px */
         }
 
         .signature-image {
             max-width: 130px;
-            /* Diperbesar dari 100px */
             height: auto;
             margin: 10px 0;
-            /* Diperbesar dari 8px 0 */
             position: relative;
             z-index: 1;
         }
 
-        /* Styling untuk stempel */
         .stamp-overlay {
             position: absolute;
             top: 20px;
-            /* Disesuaikan dari 13px */
             left: 50%;
             transform: translateX(-50%);
             z-index: 2;
@@ -262,7 +219,6 @@
 
         .stamp-image {
             max-width: 100px;
-            /* Diperbesar dari 80px */
             height: auto;
             filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
         }
@@ -270,43 +226,33 @@
         .signature-line {
             border-top: 1px solid #333;
             margin-top: 15px;
-            /* Diperbesar dari 8px */
             padding-top: 8px;
-            /* Diperbesar dari 4px */
             font-size: 14px;
-            /* Diperbesar dari 10px */
             font-weight: bold;
             position: relative;
             z-index: 3;
         }
 
-        .payment-info {
+        .validity-info {
             background-color: #f0f9ff;
             padding: 20px;
-            /* Diperbesar dari 12px */
             border-radius: 6px;
-            /* Diperbesar dari 4px */
             border-left: 4px solid #0369a1;
             font-size: 14px;
-            /* Diperbesar dari 10px */
             margin-top: 25px;
-            /* Diperbesar dari 15px */
         }
 
-        .payment-info h4 {
+        .validity-info h4 {
             color: #0369a1;
             margin-bottom: 10px;
-            /* Diperbesar dari 6px */
             font-size: 16px;
-            /* Diperbesar dari 11px */
         }
 
-        .payment-details {
+        .validity-details {
             line-height: 1.6;
-            /* Diperbesar dari 1.5 */
         }
 
-        .payment-details strong {
+        .validity-details strong {
             color: #0369a1;
         }
 
@@ -316,21 +262,17 @@
                 print-color-adjust: exact;
             }
 
-            .invoice-container {
+            .quotation-container {
                 box-shadow: none;
                 margin: 0;
                 padding: 0;
                 width: 210mm;
-                /* A4 width */
                 height: 297mm;
-                /* A4 height */
             }
 
             @page {
                 size: A4;
-                /* Ukuran A4 penuh */
                 margin: 15mm;
-                /* Margin print */
             }
         }
 
@@ -338,7 +280,6 @@
             font-weight: bold;
         }
 
-        /* Ocean blue theme colors */
         .ocean-blue {
             color: #0ea5e9;
         }
@@ -358,7 +299,7 @@
 </head>
 
 <body>
-    <div class="invoice-container">
+    <div class="quotation-container">
         <!-- Header -->
         <div class="header">
             <div class="company-info">
@@ -370,19 +311,19 @@
                     WhatsApp: 0857-1008-9494
                 </div>
             </div>
-            <div class="invoice-title">
-                <h1>INVOICE</h1>
-                <div class="invoice-details">
-                    <strong>{{ $invoiceNumber }}</strong><br>
-                    {{ $project->deadline->format('d F Y') }}
+            <div class="quotation-title">
+                <h1>QUOTATION</h1>
+                <div class="quotation-details">
+                    <strong>{{ $quotationNumber }}</strong><br>
+                    {{ $project->created_at->format('d F Y') }}
                 </div>
             </div>
         </div>
 
-        <!-- Billing Information -->
-        <div class="billing-section">
-            <div class="bill-to">
-                <h3>Bill To:</h3>
+        <!-- Client Information -->
+        <div class="client-section">
+            <div class="client-to">
+                <h3>To:</h3>
                 <div class="customer-info">
                     <strong>{{ $clientData['name'] }}</strong><br>
                     @if (!empty($clientData['address']))
@@ -394,12 +335,12 @@
                     @endif
                 </div>
             </div>
-            <div class="invoice-info">
-                <h3>Invoice Details:</h3>
-                <div class="invoice-data">
-                    <strong>Invoice Number:</strong> {{ $invoiceNumber }}<br>
-                    <strong>Invoice Date:</strong> {{ $project->deadline->format('d F Y') }}<br>
-                    <strong>Due Date:</strong> {{ $project->deadline->format('d F Y') }}
+            <div class="quotation-info">
+                <h3>Quotation Details:</h3>
+                <div class="quotation-data">
+                    <strong>Quotation Number:</strong> {{ $quotationNumber }}<br>
+                    <strong>Date:</strong> {{ $project->created_at->format('d F Y') }}<br>
+                    <strong>Valid Until:</strong> {{ $project->created_at->addDays(30)->format('d F Y') }}
                 </div>
             </div>
         </div>
@@ -454,9 +395,9 @@
             <strong>Terbilang:</strong> {{ ucfirst($terbilang) }}
         </div>
 
-        <!-- Notes -->
         @if ($project->notes)
-            <div class="notes">
+            <!-- Notes -->
+            <div class="terms">
                 <h4>Catatan Khusus:</h4>
                 <p>{{ $project->notes }}</p>
             </div>
@@ -484,14 +425,14 @@
             </div>
         </div>
 
-        <!-- Payment Information -->
-        <div class="payment-info">
-            <h4>Informasi Pembayaran</h4>
-            <div class="payment-details">
-                Pembayaran untuk invoice ini mohon di transfer ke:<br>
-                <strong>Bank BCA a.n Niki Dwi Maharani</strong><br>
-                <strong>No Rekening: 127-007-3758</strong><br><br>
-                Mohon konfirmasi pembayaran ke WhatsApp: 0857-1008-9494
+        <!-- Validity Information -->
+        <div class="validity-info">
+            <h4>Informasi Penting</h4>
+            <div class="validity-details">
+                Quotation ini berlaku hingga <strong>{{ $project->created_at->addDays(30)->format('d F Y') }}</strong><br>
+                Untuk konfirmasi dan diskusi lebih lanjut, silakan hubungi:<br>
+                <strong>WhatsApp: 0857-1008-9494</strong><br>
+                <strong>Email: admin@btools.id</strong>
             </div>
         </div>
     </div>

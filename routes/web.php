@@ -45,7 +45,10 @@ Route::middleware('simpleauth')->group(function () {
 
     // Projects - Export route harus di atas resource route
     Route::get('projects/export/excel', [ProjectController::class, 'exportExcel'])->name('projects.export.excel');
+    Route::get('projects/{project}/preview-invoice', [ProjectController::class, 'previewInvoice'])->name('projects.preview-invoice');
     Route::get('projects/{project}/print-invoice', [ProjectController::class, 'printInvoice'])->name('projects.print-invoice');
+    Route::get('projects/{project}/preview-quotation', [ProjectController::class, 'previewQuotation'])->name('projects.preview-quotation');
+    Route::get('projects/{project}/print-quotation', [ProjectController::class, 'printQuotation'])->name('projects.print-quotation');
     Route::resource('projects', ProjectController::class);
     Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
     Route::patch('projects/{project}/testimoni', [ProjectController::class, 'updateTestimoni'])->name('projects.testimoni');

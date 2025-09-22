@@ -106,7 +106,7 @@
                                 {{ !$day['is_current_month'] ? 'other-month' : '' }}
                                 {{ $day['is_today'] ? 'today' : '' }}
                                 {{ $day['is_weekend'] ? 'weekend' : '' }}"
-                                data-date="{{ $day['date']->format('Y-m-d') }}" data-bs-toggle="modal" data-bs-target="#recordModal">
+                                data-date="{{ $day['date']->format('Y-m-d') }}">
 
                                 <div class="day-number">{{ $day['date']->day }}</div>
 
@@ -138,10 +138,10 @@
 
     <!-- Modal untuk Add/Edit Record -->
     <div class="modal fade" id="recordModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content luxury-card border-0">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">
+                    <h5 class="modal-title fw-bold" id="modalTitle">
                         <i class="bi bi-plus-circle me-2 text-purple"></i>
                         Tambah Catatan
                     </h5>
@@ -190,7 +190,7 @@
             const recordModal = new bootstrap.Modal(document.getElementById('recordModal'));
             const recordForm = document.getElementById('recordForm');
             const saveBtn = document.getElementById('saveRecord');
-            const modalTitle = document.querySelector('#recordModal .modal-title');
+            const modalTitle = document.getElementById('modalTitle');
 
             let selectedDate = '';
             let editingRecordId = null;
@@ -199,19 +199,22 @@
             document.querySelectorAll('.calendar-day').forEach(day => {
                 day.addEventListener('click', function() {
                     selectedDate = this.dataset.date;
-                    document.getElementById('tanggal').value = selectedDate;
 
-                    // Reset form
+                    // Reset form dan state
                     resetForm();
 
-                    // Load existing records for this date
+                    // Set tanggal yang dipilih
+                    document.getElementById('tanggal').value = selectedDate;
+
+                    // Load existing records untuk tanggal ini
                     loadRecordsForDate(selectedDate);
 
+                    // Show modal
                     recordModal.show();
                 });
             });
 
-            // Save record
+            // Save record handler
             saveBtn.addEventListener('click', function() {
                 if (recordForm.checkValidity()) {
                     saveRecord();
@@ -225,7 +228,6 @@
                 editingRecordId = null;
                 modalTitle.innerHTML = '<i class="bi bi-plus-circle me-2 text-purple"></i>Tambah Catatan';
                 saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Simpan';
-                document.getElementById('tanggal').value = selectedDate;
 
                 // Set default time to current time
                 const now = new Date();
@@ -235,24 +237,36 @@
             }
 
             function loadRecordsForDate(date) {
+                console.log('Loading records for date:', date);
+
                 fetch(`{{ url('sierra-berak/date') }}/${date}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(records => {
+                        console.log('Records received:', records);
+                        displayExistingRecords(records);
+                    })
+                    .catch(error => {
+                        console.error('Error loading records:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Gagal memuat data catatan untuk tanggal ini'
+                        });
+                    });
+            }
 
-                function loadRecordsForDate(date) {
-                    console.log('Loading records for date:', date); // Debug log
-                    fetch(`{{ url('sierra-berak/date') }}/${date}`)
-                        .then(response => {
-                            console.log('Response status:', response.status); // Debug log
-                            return response.json();
-                        })
-                        .then(records => {
-                            console.log('Records received:', records); // Debug log
-                            const recordsList = document.getElementById('recordsList');
-                            const existingRecords = document.getElementById('existingRecords');
+            function displayExistingRecords(records) {
+                const recordsList = document.getElementById('recordsList');
+                const existingRecords = document.getElementById('existingRecords');
 
-                            if (records.length > 0) {
-                                existingRecords.style.display = 'block';
-                                recordsList.innerHTML = records.map(record => `
+                if (records.length > 0) {
+                    existingRecords.style.display = 'block';
+                    recordsList.innerHTML = records.map(record => `
                         <div class="card luxury-card mb-2">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -265,11 +279,13 @@
                                     </div>
                                     <div class="d-flex gap-1">
                                         <button class="btn btn-sm btn-outline-primary edit-record"
-                                                data-record-id="${record.id}">
+                                                data-record-id="${record.id}"
+                                                title="Edit catatan">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger delete-record"
-                                                data-record-id="${record.id}">
+                                                data-record-id="${record.id}"
+                                                title="Hapus catatan">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -278,51 +294,72 @@
                         </div>
                     `).join('');
 
-                                // Add event listeners for edit and delete buttons
-                                recordsList.querySelectorAll('.edit-record').forEach(btn => {
-                                    btn.addEventListener('click', () => editRecord(btn.dataset.recordId));
-                                });
-
-                                recordsList.querySelectorAll('.delete-record').forEach(btn => {
-                                    btn.addEventListener('click', () => deleteRecord(btn.dataset.recordId));
-                                });
-                            } else {
-                                existingRecords.style.display = 'none';
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error loading records:', error);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error!',
-                                text: 'Gagal memuat data catatan untuk tanggal ini'
-                            });
-                        });
+                    // Re-attach event listeners untuk button edit dan delete
+                    attachRecordEventListeners();
+                } else {
+                    existingRecords.style.display = 'none';
                 }
+            }
+
+            function attachRecordEventListeners() {
+                // Edit record event listeners
+                document.querySelectorAll('.edit-record').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        editRecord(this.dataset.recordId);
+                    });
+                });
+
+                // Delete record event listeners
+                document.querySelectorAll('.delete-record').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteRecord(this.dataset.recordId);
+                    });
+                });
             }
 
             function saveRecord() {
                 const formData = new FormData(recordForm);
+
+                // Convert FormData to regular object untuk JSON
+                const data = {};
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'record_id') { // Skip record_id dari form data
+                        data[key] = value;
+                    }
+                }
+
                 const url = editingRecordId ?
                     `{{ url('sierra-berak') }}/${editingRecordId}` :
                     '{{ route('sierra-berak.store') }}';
-                const method = editingRecordId ? 'PUT' : 'POST';
 
-                // Convert FormData to regular object for fetch
-                const data = {};
-                for (let [key, value] of formData.entries()) {
-                    data[key] = value;
+                const requestOptions = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(data)
+                };
+
+                // Jika editing, tambahkan _method untuk Laravel method spoofing
+                if (editingRecordId) {
+                    data._method = 'PUT';
+                    requestOptions.body = JSON.stringify(data);
                 }
 
-                fetch(url, {
-                        method: method,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify(data)
+                // Disable button saat loading
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Menyimpan...';
+
+                fetch(url, requestOptions)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
                     })
-                    .then(response => response.json())
                     .then(result => {
                         if (result.success) {
                             Swal.fire({
@@ -332,6 +369,8 @@
                                 timer: 2000,
                                 showConfirmButton: false
                             }).then(() => {
+                                recordModal.hide();
+                                // Reload halaman untuk update kalender
                                 location.reload();
                             });
                         } else {
@@ -339,40 +378,62 @@
                         }
                     })
                     .catch(error => {
+                        console.error('Error saving record:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error!',
                             text: error.message || 'Terjadi kesalahan saat menyimpan'
                         });
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = editingRecordId ?
+                            '<i class="bi bi-check-circle me-1"></i>Update' :
+                            '<i class="bi bi-check-circle me-1"></i>Simpan';
                     });
             }
 
             function editRecord(recordId) {
+                console.log('Editing record:', recordId);
+
                 fetch(`{{ url('sierra-berak') }}/${recordId}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
                     .then(record => {
+                        console.log('Record data for editing:', record);
+
                         editingRecordId = recordId;
 
+                        // Fill form dengan data record
                         document.getElementById('tanggal').value = record.tanggal;
-                        document.getElementById('waktu').value = record.waktu.substring(0, 5); // Remove seconds
+                        document.getElementById('waktu').value = record.waktu.substring(0, 5); // Remove seconds jika ada
                         document.getElementById('keterangan').value = record.keterangan;
 
+                        // Update UI untuk mode edit
                         modalTitle.innerHTML = '<i class="bi bi-pencil me-2 text-purple"></i>Edit Catatan';
                         saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Update';
                     })
                     .catch(error => {
+                        console.error('Error loading record for edit:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error!',
-                            text: 'Gagal memuat data catatan'
+                            text: 'Gagal memuat data catatan untuk diedit'
                         });
                     });
             }
 
             function deleteRecord(recordId) {
+                console.log('Deleting record:', recordId);
+
                 Swal.fire({
                     title: 'Hapus Catatan?',
-                    text: 'Apakah Anda yakin ingin menghapus catatan ini?',
+                    text: 'Apakah Anda yakin ingin menghapus catatan ini? Tindakan ini tidak dapat dibatalkan.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -387,7 +448,12 @@
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                                 }
                             })
-                            .then(response => response.json())
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();
+                            })
                             .then(result => {
                                 if (result.success) {
                                     Swal.fire({
@@ -397,22 +463,41 @@
                                         timer: 2000,
                                         showConfirmButton: false
                                     }).then(() => {
-                                        // Refresh the records for current date and reload page
+                                        // Refresh records list untuk tanggal yang sama
                                         loadRecordsForDate(selectedDate);
+                                        // Reload halaman setelah delay singkat
                                         setTimeout(() => location.reload(), 1000);
                                     });
+                                } else {
+                                    throw new Error(result.message || 'Gagal menghapus catatan');
                                 }
                             })
                             .catch(error => {
+                                console.error('Error deleting record:', error);
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Error!',
-                                    text: 'Gagal menghapus catatan'
+                                    text: error.message || 'Gagal menghapus catatan'
                                 });
                             });
                     }
                 });
             }
+
+            // Reset form ketika modal ditutup
+            document.getElementById('recordModal').addEventListener('hidden.bs.modal', function() {
+                resetForm();
+                selectedDate = '';
+                document.getElementById('existingRecords').style.display = 'none';
+            });
+
+            // Form submit handler (untuk Enter key)
+            recordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (recordForm.checkValidity()) {
+                    saveRecord();
+                }
+            });
         });
     </script>
 
@@ -461,6 +546,7 @@
 
         .calendar-day:hover {
             background: rgba(139, 92, 246, 0.05);
+            transform: scale(1.02);
         }
 
         .calendar-day.other-month {
@@ -534,6 +620,30 @@
             color: #8B5CF6 !important;
         }
 
+        /* Button styles untuk record actions */
+        .edit-record,
+        .delete-record {
+            transition: all 0.2s ease;
+        }
+
+        .edit-record:hover {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+
+        .delete-record:hover {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        /* Loading state */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         /* Responsive Calendar */
         @media (max-width: 768px) {
             .calendar-day {
@@ -559,6 +669,10 @@
             .records-indicator .badge {
                 font-size: 0.6rem;
                 padding: 2px 6px;
+            }
+
+            .modal-dialog {
+                margin: 1rem;
             }
         }
 
@@ -589,12 +703,6 @@
             }
         }
 
-        /* Loading animation */
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
         /* Smooth transitions */
         .calendar-day,
         .luxury-card,
@@ -608,19 +716,10 @@
             outline-offset: 2px;
         }
 
-        /* Print styles */
-        @media print {
-
-            .modal,
-            .btn,
-            .card-header {
-                display: none !important;
-            }
-
-            .calendar-day {
-                border: 1px solid #000 !important;
-                page-break-inside: avoid;
-            }
+        /* Record card hover effect */
+        .luxury-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.15);
         }
     </style>
 @endpush

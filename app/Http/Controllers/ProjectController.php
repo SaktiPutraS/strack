@@ -639,20 +639,38 @@ class ProjectController extends Controller
     /**
      * Print Invoice untuk proyek Btools
      */
-    public function printInvoice(Project $project): View
+    public function printInvoice(Request $request, Project $project): View
     {
         // Pastikan hanya tipe Btools yang bisa print invoice
         if ($project->type !== 'BTOOLS') {
             abort(403, 'Invoice hanya tersedia untuk proyek Btools');
         }
 
-        // Generate nomor faktur
+        // Generate nomor invoice
         $invoiceNumber = $this->generateInvoiceNumber($project);
 
         // Format terbilang
         $terbilang = $this->numberToWords($project->total_value);
 
-        return view('projects.invoice', compact('project', 'invoiceNumber', 'terbilang'));
+        // Ambil data client dari request untuk print, atau gunakan default dari database
+        $clientData = [
+            'name' => $request->get('client_name', $project->client->name),
+            'address' => $request->get('client_address', $project->client->address),
+            'phone' => $request->get('client_phone', $project->client->phone),
+            'email' => $request->get('client_email', $project->client->email),
+        ];
+
+        // Ambil data qty dan hitung unit price
+        $qty = max(1, intval($request->get('qty', 1))); // Minimal 1
+        $unitPrice = $project->total_value / $qty;
+
+        $itemData = [
+            'qty' => $qty,
+            'unit_price' => $unitPrice,
+            'total' => $project->total_value
+        ];
+
+        return view('projects.invoice', compact('project', 'invoiceNumber', 'terbilang', 'clientData', 'itemData'));
     }
 
     /**
@@ -766,12 +784,6 @@ class ProjectController extends Controller
                 ->orderBy('deadline')
                 ->get();
 
-            // Debug: Log data yang ditemukan
-            \Log::info("Getting deadlines for {$year}-{$month}", [
-                'count' => $projects->count(),
-                'projects' => $projects->pluck('title', 'deadline')->toArray()
-            ]);
-
             // Group by day dengan validasi yang lebih ketat
             $groupedProjects = $projects->groupBy(function ($project) {
                 return $project->deadline->day;
@@ -806,16 +818,97 @@ class ProjectController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error in getMonthDeadlines', [
-                'year' => $year,
-                'month' => $month,
-                'error' => $e->getMessage()
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat data deadline proyek: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Preview Invoice untuk proyek Btools - untuk edit informasi sebelum print
+     */
+    public function previewInvoice(Project $project): View
+    {
+        // Pastikan hanya tipe Btools yang bisa print invoice
+        if ($project->type !== 'BTOOLS') {
+            abort(403, 'Invoice hanya tersedia untuk proyek Btools');
+        }
+
+        // Generate nomor invoice
+        $invoiceNumber = $this->generateInvoiceNumber($project);
+
+        return view('projects.invoice-preview', compact('project', 'invoiceNumber'));
+    }
+
+    /**
+     * Preview Quotation untuk proyek Btools - untuk edit informasi sebelum print
+     */
+    public function previewQuotation(Project $project): View
+    {
+        // Pastikan hanya tipe Btools yang bisa print quotation
+        if ($project->type !== 'BTOOLS') {
+            abort(403, 'Quotation hanya tersedia untuk proyek Btools');
+        }
+
+        // Generate nomor quotation
+        $quotationNumber = $this->generateQuotationNumber($project);
+
+        return view('projects.quotation-preview', compact('project', 'quotationNumber'));
+    }
+
+    /**
+     * Print Quotation untuk proyek Btools
+     */
+    public function printQuotation(Request $request, Project $project): View
+    {
+        // Pastikan hanya tipe Btools yang bisa print quotation
+        if ($project->type !== 'BTOOLS') {
+            abort(403, 'Quotation hanya tersedia untuk proyek Btools');
+        }
+
+        // Generate nomor quotation
+        $quotationNumber = $this->generateQuotationNumber($project);
+
+        // Format terbilang
+        $terbilang = $this->numberToWords($project->total_value);
+
+        // Ambil data client dari request untuk print, atau gunakan default dari database
+        $clientData = [
+            'name' => $request->get('client_name', $project->client->name),
+            'address' => $request->get('client_address', $project->client->address),
+            'phone' => $request->get('client_phone', $project->client->phone),
+            'email' => $request->get('client_email', $project->client->email),
+        ];
+
+        // Ambil data qty dan hitung unit price
+        $qty = max(1, intval($request->get('qty', 1))); // Minimal 1
+        $unitPrice = $project->total_value / $qty;
+
+        $itemData = [
+            'qty' => $qty,
+            'unit_price' => $unitPrice,
+            'total' => $project->total_value
+        ];
+
+        return view('projects.quotation', compact('project', 'quotationNumber', 'terbilang', 'clientData', 'itemData'));
+    }
+
+    /**
+     * Generate nomor quotation berdasarkan tanggal dan urutan
+     */
+    private function generateQuotationNumber(Project $project): string
+    {
+        $date = $project->created_at->format('ymd'); // Format: 250819
+
+        // Hitung berapa banyak project Btools yang sudah dibuat di tanggal yang sama
+        $count = Project::where('type', 'BTOOLS')
+            ->whereDate('created_at', $project->created_at->format('Y-m-d'))
+            ->where('id', '<=', $project->id)
+            ->count();
+
+        $sequence = str_pad($count, 3, '0', STR_PAD_LEFT);
+
+        return "QUO-{$date}{$sequence}";
     }
 }

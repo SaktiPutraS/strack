@@ -331,7 +331,12 @@
                         @endif
 
                         @if ($project->type === 'BTOOLS')
-                            <a href="{{ route('projects.print-invoice', $project) }}" target="_blank"
+                            <a href="{{ route('projects.preview-quotation', $project) }}"
+                                class="btn btn-warning d-flex align-items-center justify-content-center">
+                                <i class="bi bi-file-text me-2"></i>Print Quotation
+                            </a>
+
+                            <a href="{{ route('projects.preview-invoice', $project) }}"
                                 class="btn btn-info d-flex align-items-center justify-content-center">
                                 <i class="bi bi-printer me-2"></i>Print Invoice
                             </a>

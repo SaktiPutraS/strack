@@ -24,7 +24,7 @@
             </div>
         </div>
     </div>
-
+    {{-- TEST --}}
     <!-- Project Status & Cash Balance Cards -->
     <div class="row g-3 mb-4">
         <div class="col-12">
@@ -636,8 +636,8 @@
                                         </p>
                                         ${project.remaining_amount > 0 ?
                                             `<p class="text-muted small mb-0">
-                                                    <i class="bi bi-currency-dollar me-1"></i>Sisa: ${project.formatted_remaining_amount}
-                                                </p>` : ''
+                                                        <i class="bi bi-currency-dollar me-1"></i>Sisa: ${project.formatted_remaining_amount}
+                                                    </p>` : ''
                                         }
                                     </div>
                                     <div class="text-end">

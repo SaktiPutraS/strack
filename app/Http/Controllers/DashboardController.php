@@ -19,6 +19,7 @@ use App\Models\TaskAssignment;
 
 class DashboardController extends Controller
 {
+
     public function index(Request $request)
     {
         if (!session('role') || session('role') !== 'admin') {
@@ -59,14 +60,6 @@ class DashboardController extends Controller
         $totalInvestasiEmas = GoldTransaction::buy()->sum('total_price');
         $hargaRataRataEmas = $totalBeliEmas > 0 ? $totalInvestasiEmas / $totalBeliEmas : 0;
         $saldoEmas = $sisaEmas * $hargaRataRataEmas;
-
-        // Deadline proyek terdekat
-        $proyekDeadlineTermedekat = Project::with('client')
-            ->whereIn('status', ['WAITING', 'PROGRESS'])
-            ->where('deadline', '>=', Carbon::now())
-            ->orderBy('deadline')
-            ->limit($isMobile ? 3 : 5)
-            ->get();
 
         // Format nilai untuk tampilan mobile
         $formatCurrency = function ($amount) {
@@ -118,7 +111,7 @@ class DashboardController extends Controller
             $weekNumber++;
         }
 
-        // NEW: Data untuk grafik pendapatan per bulan (total nilai proyek)
+        // Data untuk grafik pendapatan per bulan (total nilai proyek)
         $monthlyRevenueData = [];
         $monthNames = [
             1 => 'Jan',
@@ -136,7 +129,6 @@ class DashboardController extends Controller
         ];
 
         for ($month = 1; $month <= 12; $month++) {
-            // Total nilai proyek yang dibuat pada bulan tersebut
             $projectValue = Project::whereMonth('created_at', $month)
                 ->whereYear('created_at', $tahunIni)
                 ->sum('total_value');
@@ -162,6 +154,35 @@ class DashboardController extends Controller
             'total' => $totalPiutang + $totalKas + $saldoEmas
         ];
 
+        // Data kalender catatan untuk bulan ini
+        $currentMonth = Carbon::now();
+        $calendarData = [
+            'currentMonth' => $currentMonth->format('F Y'),
+            'currentYear' => $currentMonth->year,
+            'currentMonthNumber' => $currentMonth->month,
+            'firstDayOfMonth' => $currentMonth->copy()->startOfMonth(),
+            'lastDayOfMonth' => $currentMonth->copy()->endOfMonth(),
+            'today' => Carbon::today(),
+        ];
+
+        // Ambil catatan untuk bulan ini
+        $userId = session('role');
+        $calendarNotes = \App\Models\CalendarNote::getNotesForMonth(
+            $userId,
+            $calendarData['currentYear'],
+            $calendarData['currentMonthNumber']
+        );
+
+        // NEW: Ambil project deadlines untuk bulan ini
+        $projectDeadlines = Project::with('client')
+            ->whereYear('deadline', $calendarData['currentYear'])
+            ->whereMonth('deadline', $calendarData['currentMonthNumber'])
+            ->whereIn('status', ['WAITING', 'PROGRESS'])
+            ->get()
+            ->groupBy(function ($project) {
+                return $project->deadline->day;
+            });
+
         return view('dashboard.index', [
             'proyekMenunggu' => $proyekMenunggu,
             'proyekProgress' => $proyekProgress,
@@ -172,12 +193,14 @@ class DashboardController extends Controller
             'saldoCash' => $saldoCash,
             'totalKas' => $totalKas,
             'saldoEmas' => $saldoEmas,
-            'proyekDeadlineTermedekat' => $proyekDeadlineTermedekat,
             'formatCurrency' => $formatCurrency,
             'isMobile' => $isMobile,
             'weeklyData' => $weeklyData,
-            'monthlyRevenueData' => $monthlyRevenueData, // NEW
+            'monthlyRevenueData' => $monthlyRevenueData,
             'pieData' => $pieData,
+            'calendarData' => $calendarData,
+            'calendarNotes' => $calendarNotes,
+            'projectDeadlines' => $projectDeadlines, // NEW
         ]);
     }
 

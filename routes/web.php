@@ -9,12 +9,14 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\BankTransferController;
-use App\Http\Controllers\CashWithdrawalController; // NEW
+use App\Http\Controllers\CashWithdrawalController;
 use App\Http\Controllers\GoldTransactionController;
 use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UrfavController;
+use App\Http\Controllers\CalendarNoteController;
 use Illuminate\Support\Facades\Route;
+
 
 
 /*
@@ -146,6 +148,14 @@ Route::middleware('simpleauth')->group(function () {
         Route::put('/{id}', [App\Http\Controllers\SierraBerakController::class, 'update'])->name('update');
         Route::delete('/{id}', [App\Http\Controllers\SierraBerakController::class, 'destroy'])->name('destroy');
     });
+
+    // Calendar Notes Routes
+    Route::get('/calendar-notes/month/{year}/{month}', [CalendarNoteController::class, 'getMonthNotes'])->name('calendar-notes.month');
+    Route::post('/calendar-notes', [CalendarNoteController::class, 'store'])->name('calendar-notes.store');
+    Route::put('/calendar-notes/{id}', [CalendarNoteController::class, 'update'])->name('calendar-notes.update');
+    Route::delete('/calendar-notes/{id}', [CalendarNoteController::class, 'destroy'])->name('calendar-notes.destroy');
+
+    Route::get('/projects/deadlines/month/{year}/{month}', [ProjectController::class, 'getMonthDeadlines'])->name('projects.deadlines.month');
 
     Route::get('/price-list', function () {
         return view('price-list.index');

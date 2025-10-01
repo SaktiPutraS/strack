@@ -520,8 +520,7 @@
                                 request()->routeIs('expenses.*') ||
                                 request()->routeIs('bank-transfers.*') ||
                                 request()->routeIs('cash-withdrawals.*') ||
-                                request()->routeIs('gold.*') ||
-                                request()->routeIs('financial-reports.*')
+                                request()->routeIs('gold.*')
                                     ? 'active'
                                     : '' }}"
                                 data-bs-toggle="collapse" data-bs-target="#financialMenu">
@@ -600,7 +599,8 @@
 
                         {{-- Laporan --}}
                         <li class="nav-item">
-                            <a href="{{ route('financial-reports.index') }}" class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
+                            <a href="{{ route('financial-reports.index') }}"
+                                class="nav-link {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
                                 <i class="bi bi-graph-up me-2"></i>Laporan
                             </a>
                         </li>

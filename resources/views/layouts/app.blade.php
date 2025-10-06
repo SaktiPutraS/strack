@@ -513,7 +513,6 @@
                         </li>
 
                         <!-- Kelompok Keuangan -->
-                        <!-- Kelompok Keuangan -->
                         <li class="nav-item dropdown">
                             <a href="#"
                                 class="nav-link dropdown-toggle {{ request()->routeIs('payments.*') ||
@@ -530,8 +529,7 @@
                             request()->routeIs('expenses.*') ||
                             request()->routeIs('bank-transfers.*') ||
                             request()->routeIs('cash-withdrawals.*') ||
-                            request()->routeIs('gold.*') ||
-                            request()->routeIs('financial-reports.*')
+                            request()->routeIs('gold.*')
                                 ? 'show'
                                 : '' }}"
                                 id="financialMenu">
@@ -597,12 +595,32 @@
                             </div>
                         </li>
 
+
                         {{-- Laporan --}}
                         <li class="nav-item">
                             <a href="{{ route('financial-reports.index') }}"
                                 class="nav-link {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
                                 <i class="bi bi-graph-up me-2"></i>Laporan
                             </a>
+                        </li>
+
+
+                        {{-- Saktify Menu --}}
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('prospects.*') ? 'active' : '' }}"
+                                data-bs-toggle="collapse" data-bs-target="#saktifyMenu">
+                                <i class="bi bi-stars me-2"></i>Saktify
+                            </a>
+                            <div class="collapse ms-3 {{ request()->routeIs('prospects.*') ? 'show' : '' }}" id="saktifyMenu">
+                                <ul class="nav nav-pills flex-column">
+                                    <li>
+                                        <a href="{{ route('prospects.index') }}"
+                                            class="nav-link py-2 fs-7 {{ request()->routeIs('prospects.*') ? 'active' : '' }}">
+                                            <i class="bi bi-people me-2"></i>Manajemen Prospek
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </li>
 
                         {{-- Tasks --}}

@@ -15,9 +15,8 @@ use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UrfavController;
 use App\Http\Controllers\CalendarNoteController;
+use App\Http\Controllers\ProspectController;
 use Illuminate\Support\Facades\Route;
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +41,9 @@ Route::middleware('simpleauth')->group(function () {
 
     // Dashboard
     Route::get('/dashboard-admin', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Prospects Management (Saktify)
+    Route::resource('prospects', ProspectController::class);
 
     // Projects - Export route harus di atas resource route
     Route::get('projects/export/excel', [ProjectController::class, 'exportExcel'])->name('projects.export.excel');

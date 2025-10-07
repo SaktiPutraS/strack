@@ -13,6 +13,10 @@
                     <p class="text-muted mb-0">Kelola data calon customer dan tracking status penawaran</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
+                    <!-- BUTTON TIPS CHAT - TAMBAHKAN INI -->
+                    <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#tipsModal">
+                        <i class="bi bi-lightbulb me-2"></i>Tips Chat
+                    </button>
                     <a href="{{ route('prospects.create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>Tambah Prospek
                     </a>
@@ -384,11 +388,196 @@
             @endif
         </div>
     </div>
+
+    <!-- Modal Tips Chat -->
+    <div class="modal fade" id="tipsModal" tabindex="-1" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-purple">
+                    <h5 class="modal-title fw-bold text-white" id="tipsModalLabel">
+                        <i class="bi bi-lightbulb-fill me-2"></i>Panduan Chat Prospek
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+
+                    <!-- Chat Awal -->
+                    <div class="tips-section mb-4">
+                        <div class="tips-header">
+                            <h6 class="fw-bold text-purple mb-3">
+                                <i class="bi bi-chat-dots-fill me-2"></i>Chat Awal
+                            </h6>
+                        </div>
+                        <div class="tips-content">
+                            <div class="chat-bubble chat-bubble-primary">
+                                <p class="mb-0">Pagi kak, dengan <strong>[Nama Studio Foto]</strong> ya?</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary mt-2 copy-btn" data-text="Pagi kak, dengan [Nama Studio Foto] ya?">
+                                <i class="bi bi-clipboard me-1"></i>Salin
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Chat Lanjutan -->
+                    <div class="tips-section mb-4">
+                        <div class="tips-header">
+                            <h6 class="fw-bold text-success mb-3">
+                                <i class="bi bi-chat-right-text-fill me-2"></i>Chat Lanjutan
+                            </h6>
+                        </div>
+                        <div class="tips-content">
+                            <div class="chat-bubble chat-bubble-success">
+                                <p class="mb-2">Perkenalkan saya Sakti dari Saktify.</p>
+                                <p class="mb-2">Saya ingin menawarkan layanan pembuatan website yang dirancang khusus untuk bisnis studio foto.</p>
+                                <p class="mb-2">Jika kakak ingin melihat portofolio hasil pekerjaan saya, bisa membuka situs:<br>
+                                    <strong>photostudio.saktify.com</strong>
+                                </p>
+                                <p class="mb-0">Atau cukup ketik di Google: <strong>photostudio saktify</strong>.</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-success mt-2 copy-btn"
+                                data-text="Perkenalkan saya Sakti dari Saktify.
+Saya ingin menawarkan layanan pembuatan website yang dirancang khusus untuk bisnis studio foto.
+
+Jika kakak ingin melihat portofolio hasil pekerjaan saya, bisa membuka situs:
+photostudio.saktify.com
+
+Atau cukup ketik di Google: photostudio saktify.">
+                                <i class="bi bi-clipboard me-1"></i>Salin
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Jika Dibalas -->
+                    <div class="tips-section mb-4">
+                        <div class="tips-header">
+                            <h6 class="fw-bold text-info mb-3">
+                                <i class="bi bi-check-circle-fill me-2"></i>Jika DIBALAS (Respon Positif / Tertarik)
+                            </h6>
+                        </div>
+                        <div class="tips-content">
+                            <div class="chat-bubble chat-bubble-info">
+                                <p class="mb-2">Terima kasih kak sudah merespons.</p>
+                                <p class="mb-2">Agar saya bisa bantu dengan lebih tepat, apakah kakak berkenan jika kita jadwalkan meeting singkat via
+                                    Zoom (sekitar 10–15 menit) untuk membahas kebutuhan website studio kakak?</p>
+                                <p class="mb-0">Saya bisa menyesuaikan jadwal sesuai waktu luang kakak.</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-info mt-2 copy-btn"
+                                data-text="Terima kasih kak sudah merespons.
+Agar saya bisa bantu dengan lebih tepat, apakah kakak berkenan jika kita jadwalkan meeting singkat via Zoom (sekitar 10–15 menit) untuk membahas kebutuhan website studio kakak?
+
+Saya bisa menyesuaikan jadwal sesuai waktu luang kakak.">
+                                <i class="bi bi-clipboard me-1"></i>Salin
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Jika Tidak Dibalas -->
+                    <div class="tips-section">
+                        <div class="tips-header">
+                            <h6 class="fw-bold text-warning mb-3">
+                                <i class="bi bi-clock-history me-2"></i>Jika TIDAK DIBALAS (Follow-Up Setelah 3–5 Hari)
+                            </h6>
+                        </div>
+                        <div class="tips-content">
+                            <div class="chat-bubble chat-bubble-warning">
+                                <p class="mb-2">Halo kak, saya Sakti dari Saktify.</p>
+                                <p class="mb-2">Ingin menindaklanjuti pesan saya sebelumnya mengenai pembuatan website untuk studio foto.</p>
+                                <p class="mb-2">Jika kakak belum memiliki website, saya bisa bantu buatkan contoh tampilan awal (demo) tanpa biaya,
+                                    agar kakak bisa melihat hasilnya terlebih dahulu.</p>
+                                <p class="mb-0">Apakah kakak tertarik untuk saya bantu buatkan contoh tersebut?</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-warning mt-2 copy-btn"
+                                data-text="Halo kak, saya Sakti dari Saktify.
+Ingin menindaklanjuti pesan saya sebelumnya mengenai pembuatan website untuk studio foto.
+
+Jika kakak belum memiliki website, saya bisa bantu buatkan contoh tampilan awal (demo) tanpa biaya, agar kakak bisa melihat hasilnya terlebih dahulu.
+
+Apakah kakak tertarik untuk saya bantu buatkan contoh tersebut?">
+                                <i class="bi bi-clipboard me-1"></i>Salin
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
+
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Copy button functionality
+            const copyButtons = document.querySelectorAll('.copy-btn');
+
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const textToCopy = this.getAttribute('data-text');
+
+                    // Create temporary textarea
+                    const textarea = document.createElement('textarea');
+                    textarea.value = textToCopy;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+
+                    // Select and copy
+                    textarea.select();
+                    textarea.setSelectionRange(0, 99999); // For mobile devices
+
+                    try {
+                        document.execCommand('copy');
+
+                        // Success feedback
+                        const originalHTML = this.innerHTML;
+                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Tersalin!';
+                        this.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info',
+                            'btn-outline-warning');
+                        this.classList.add('btn-success');
+
+                        setTimeout(() => {
+                            this.innerHTML = originalHTML;
+                            this.classList.remove('btn-success');
+
+                            // Restore original color class
+                            if (textToCopy.includes('Pagi kak')) {
+                                this.classList.add('btn-outline-primary');
+                            } else if (textToCopy.includes('Perkenalkan')) {
+                                this.classList.add('btn-outline-success');
+                            } else if (textToCopy.includes('Terima kasih')) {
+                                this.classList.add('btn-outline-info');
+                            } else {
+                                this.classList.add('btn-outline-warning');
+                            }
+                        }, 2000);
+
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: 'Gagal menyalin teks',
+                            confirmButtonColor: '#8B5CF6'
+                        });
+                    }
+
+                    // Remove temporary textarea
+                    document.body.removeChild(textarea);
+                });
+            });
+
             // Clickable statistics cards
             const clickableCards = document.querySelectorAll('.clickable-card');
 
@@ -467,6 +656,73 @@
     </script>
 
     <style>
+        /* Modal styling */
+        .bg-gradient-purple {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7);
+        }
+
+        .tips-section {
+            padding: 1rem;
+            background: rgba(139, 92, 246, 0.02);
+            border-radius: 12px;
+        }
+
+        .chat-bubble {
+            background: white;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-bubble p {
+            line-height: 1.6;
+        }
+
+        .chat-bubble-primary {
+            border-left-color: #0D6EFD;
+            background: linear-gradient(135deg, #ffffff, #f8f9ff);
+        }
+
+        .chat-bubble-success {
+            border-left-color: #10B981;
+            background: linear-gradient(135deg, #ffffff, #f0fdf4);
+        }
+
+        .chat-bubble-info {
+            border-left-color: #06B6D4;
+            background: linear-gradient(135deg, #ffffff, #ecfeff);
+        }
+
+        .chat-bubble-warning {
+            border-left-color: #FFC107;
+            background: linear-gradient(135deg, #ffffff, #fffbeb);
+        }
+
+        .copy-btn {
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
         .stat-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);

@@ -247,12 +247,43 @@ class DashboardController extends Controller
         // Get next pending task
         $nextTask = $assignments->where('status', 'pending')->first();
 
+        // NEW: Data kalender catatan untuk bulan ini
+        $currentMonth = Carbon::now();
+        $calendarData = [
+            'currentMonth' => $currentMonth->format('F Y'),
+            'currentYear' => $currentMonth->year,
+            'currentMonthNumber' => $currentMonth->month,
+            'firstDayOfMonth' => $currentMonth->copy()->startOfMonth(),
+            'lastDayOfMonth' => $currentMonth->copy()->endOfMonth(),
+            'today' => Carbon::today(),
+        ];
+
+        // Ambil catatan untuk bulan ini
+        $calendarNotes = \App\Models\CalendarNote::getNotesForMonth(
+            $userId,
+            $calendarData['currentYear'],
+            $calendarData['currentMonthNumber']
+        );
+
+        // NEW: Ambil project deadlines untuk bulan ini (semua proyek, tidak hanya milik user)
+        $projectDeadlines = Project::with('client')
+            ->whereYear('deadline', $calendarData['currentYear'])
+            ->whereMonth('deadline', $calendarData['currentMonthNumber'])
+            ->whereIn('status', ['WAITING', 'PROGRESS'])
+            ->get()
+            ->groupBy(function ($project) {
+                return $project->deadline->day;
+            });
+
         return view('dashboard.index-user', [
             'isMobile' => $isMobile,
             'todayStats' => $todayStats,
             'progressPercentage' => $progressPercentage,
             'todayTasks' => $assignments,
             'nextTask' => $nextTask,
+            'calendarData' => $calendarData, // NEW
+            'calendarNotes' => $calendarNotes, // NEW
+            'projectDeadlines' => $projectDeadlines, // NEW
         ]);
     }
 }

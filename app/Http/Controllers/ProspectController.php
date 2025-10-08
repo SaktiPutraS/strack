@@ -30,7 +30,10 @@ class ProspectController extends Controller
         // Sorting
         $sortField = $request->get('sort', 'created_at');
         $sortOrder = $request->get('order', 'desc');
-        $query->orderBy($sortField, $sortOrder, 'desc');
+        // Validasi arah sortir agar aman dari input yang tidak valid
+        if (!in_array($sortOrder, ['asc', 'desc'])) {
+            $sortOrder = 'desc'; // Setel ke default jika input tidak valid
+        }
 
         $prospects = $query->paginate(15)->withQueryString();
 

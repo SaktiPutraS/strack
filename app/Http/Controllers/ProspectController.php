@@ -30,7 +30,7 @@ class ProspectController extends Controller
         // Sorting
         $sortField = $request->get('sort', 'created_at');
         $sortOrder = $request->get('order', 'desc');
-        $query->orderBy($sortField, $sortOrder);
+        $query->orderBy($sortField, $sortOrder, 'desc');
 
         $prospects = $query->paginate(15)->withQueryString();
 

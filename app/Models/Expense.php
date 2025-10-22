@@ -25,6 +25,9 @@ class Expense extends Model
         'updated_at' => 'datetime',
     ];
 
+    // Static property untuk tracking perubahan
+    protected static $originalValues = [];
+
     // Source constants
     const SOURCE_BANK = 'BANK';
     const SOURCE_CASH = 'CASH';
@@ -212,25 +215,81 @@ class Expense extends Model
         ]);
     }
 
-    // Boot method
+    // Boot method - SOLUSI FINAL (MENGGUNAKAN STATIC TRACKING)
     protected static function boot()
     {
         parent::boot();
 
-        // Auto update balances when expense created/updated/deleted
+        // Simpan nilai LAMA sebelum update
+        static::updating(function ($expense) {
+            // Simpan ke static property dengan key berdasarkan ID
+            self::$originalValues[$expense->id] = [
+                'source' => $expense->getOriginal('source'),
+                'amount' => $expense->getOriginal('amount'),
+            ];
+        });
+
+        // Handle create dan update
         static::saved(function ($expense) {
+            // Cek apakah ada nilai original yang tersimpan (berarti ini update)
+            if (isset(self::$originalValues[$expense->id])) {
+                $oldValues = self::$originalValues[$expense->id];
+                $oldSource = $oldValues['source'];
+                $newSource = $expense->source;
+
+                // Cek apakah source berubah
+                $sourceChanged = $oldSource !== $newSource;
+
+                if ($sourceChanged) {
+                    // Source berubah - update KEDUA balance
+
+                    // 1. Update balance source LAMA (mengembalikan saldo)
+                    if ($oldSource === self::SOURCE_BANK) {
+                        BankBalance::updateBalance();
+                    } else {
+                        CashBalance::updateBalance();
+                    }
+
+                    // 2. Update balance source BARU (mengurangi saldo)
+                    if ($newSource === self::SOURCE_BANK) {
+                        BankBalance::updateBalance();
+                    } else {
+                        CashBalance::updateBalance();
+                    }
+                } else {
+                    // Source tidak berubah, hanya amount yang mungkin berubah
+                    // Cukup update balance source yang sama
+                    if ($expense->source === self::SOURCE_BANK) {
+                        BankBalance::updateBalance();
+                    } else {
+                        CashBalance::updateBalance();
+                    }
+                }
+
+                // Hapus dari tracking setelah diproses
+                unset(self::$originalValues[$expense->id]);
+            } else {
+                // Ini adalah CREATE (insert baru)
+                if ($expense->source === self::SOURCE_BANK) {
+                    BankBalance::updateBalance();
+                } else {
+                    CashBalance::updateBalance();
+                }
+            }
+        });
+
+        // Handle delete
+        static::deleted(function ($expense) {
+            // Kembalikan saldo saat expense dihapus
             if ($expense->source === self::SOURCE_BANK) {
                 BankBalance::updateBalance();
             } else {
                 CashBalance::updateBalance();
             }
-        });
 
-        static::deleted(function ($expense) {
-            if ($expense->source === self::SOURCE_BANK) {
-                BankBalance::updateBalance();
-            } else {
-                CashBalance::updateBalance();
+            // Cleanup tracking jika ada
+            if (isset(self::$originalValues[$expense->id])) {
+                unset(self::$originalValues[$expense->id]);
             }
         });
     }

@@ -81,7 +81,7 @@ class Client extends Model
         if (substr($phone, 0, 1) === '0') {
             $phone = '62' . substr($phone, 1);
         }
-        return "https://wa.me/{$phone}";
+        return "https://api.whatsapp.com/send?phone={$phone}";
     }
 
     /**

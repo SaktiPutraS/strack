@@ -57,6 +57,6 @@ class Prospect extends Model
         if (substr($number, 0, 1) === '0') {
             $number = '62' . substr($number, 1);
         }
-        return 'https://wa.me/' . $number;
+        return 'https://api.whatsapp.com/send?phone=' . $number;
     }
 }

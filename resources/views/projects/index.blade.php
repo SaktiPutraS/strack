@@ -354,49 +354,113 @@
                     </div>
                 </div>
 
-                <!-- Enhanced Pagination -->
+                <!-- Enhanced Pagination dengan Page Selector -->
                 @if (method_exists($projects, 'links'))
                     <div class="card-footer bg-light border-0 p-4">
                         <div style="display: none;">
                             {{ $projects->links() }}
                         </div>
 
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <p class="text-muted mb-0">
+                        <div class="row align-items-center g-3">
+                            <!-- Info Text -->
+                            <div class="col-12 col-md-4">
+                                <p class="text-muted mb-0 text-center text-md-start">
                                     Menampilkan <strong>{{ $projects->firstItem() }}-{{ $projects->lastItem() }}</strong>
                                     dari <strong>{{ $projects->total() }}</strong> proyek
                                 </p>
                             </div>
-                            <div class="col-md-6">
-                                <nav class="d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+
+                            <!-- Page Selector (Mobile & Desktop) -->
+                            <div class="col-12 col-md-4">
+                                <div class="d-flex justify-content-center align-items-center gap-2">
+                                    <label class="text-muted mb-0 small">Halaman:</label>
+                                    <select class="form-select form-select-sm" id="pageSelector" style="width: auto; min-width: 80px;">
+                                        @for ($i = 1; $i <= $projects->lastPage(); $i++)
+                                            <option value="{{ $i }}" {{ $projects->currentPage() == $i ? 'selected' : '' }}>
+                                                {{ $i }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                    <span class="text-muted small">dari {{ $projects->lastPage() }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Navigation Buttons -->
+                            <div class="col-12 col-md-4">
+                                <nav class="d-flex justify-content-center justify-content-md-end">
                                     <ul class="pagination mb-0">
+                                        <!-- First Page -->
+                                        @if ($projects->currentPage() > 1)
+                                            <li class="page-item d-none d-md-inline-block">
+                                                <a class="page-link" href="{{ $projects->url(1) }}" title="Halaman Pertama">
+                                                    <i class="bi bi-chevron-double-left"></i>
+                                                </a>
+                                            </li>
+                                        @endif
+
+                                        <!-- Previous Page -->
                                         @if ($projects->onFirstPage())
                                             <li class="page-item disabled">
                                                 <span class="page-link"><i class="bi bi-chevron-left"></i></span>
                                             </li>
                                         @else
                                             <li class="page-item">
-                                                <a class="page-link" href="{{ $projects->previousPageUrl() }}">
+                                                <a class="page-link" href="{{ $projects->previousPageUrl() }}" title="Halaman Sebelumnya">
                                                     <i class="bi bi-chevron-left"></i>
                                                 </a>
                                             </li>
                                         @endif
 
-                                        <!-- Show current page info -->
-                                        <li class="page-item active">
+                                        <!-- Current Page Info (Mobile Only) -->
+                                        <li class="page-item active d-md-none">
                                             <span class="page-link">{{ $projects->currentPage() }} / {{ $projects->lastPage() }}</span>
                                         </li>
 
+                                        <!-- Page Numbers (Desktop Only) -->
+                                        <div class="d-none d-md-flex">
+                                            @php
+                                                $start = max(1, $projects->currentPage() - 2);
+                                                $end = min($projects->lastPage(), $projects->currentPage() + 2);
+                                            @endphp
+
+                                            @if ($start > 1)
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            @endif
+
+                                            @for ($i = $start; $i <= $end; $i++)
+                                                <li class="page-item {{ $projects->currentPage() == $i ? 'active' : '' }}">
+                                                    <a class="page-link" href="{{ $projects->url($i) }}">{{ $i }}</a>
+                                                </li>
+                                            @endfor
+
+                                            @if ($end < $projects->lastPage())
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            @endif
+                                        </div>
+
+                                        <!-- Next Page -->
                                         @if ($projects->hasMorePages())
                                             <li class="page-item">
-                                                <a class="page-link" href="{{ $projects->nextPageUrl() }}">
+                                                <a class="page-link" href="{{ $projects->nextPageUrl() }}" title="Halaman Selanjutnya">
                                                     <i class="bi bi-chevron-right"></i>
                                                 </a>
                                             </li>
                                         @else
                                             <li class="page-item disabled">
                                                 <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                                            </li>
+                                        @endif
+
+                                        <!-- Last Page -->
+                                        @if ($projects->currentPage() < $projects->lastPage())
+                                            <li class="page-item d-none d-md-inline-block">
+                                                <a class="page-link" href="{{ $projects->url($projects->lastPage()) }}" title="Halaman Terakhir">
+                                                    <i class="bi bi-chevron-double-right"></i>
+                                                </a>
                                             </li>
                                         @endif
                                     </ul>
@@ -557,7 +621,7 @@
                 });
             });
 
-            // PERBAIKAN: Search handling tanpa auto-submit bermasalah
+            // Search handling
             const searchInput = document.querySelector('input[name="search"]');
             const searchForm = document.querySelector('form');
             const searchBtn = searchForm.querySelector('button[type="submit"]');
@@ -601,6 +665,64 @@
                         totalPiutangElement.textContent = formatCurrency(amount);
                     }
                 }
+            }
+
+            // ===== ENHANCED PAGINATION FUNCTIONALITY =====
+
+            // Page Selector Dropdown
+            const pageSelector = document.getElementById('pageSelector');
+            if (pageSelector) {
+                pageSelector.addEventListener('change', function() {
+                    const selectedPage = this.value;
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('page', selectedPage);
+
+                    // Smooth scroll to top
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+
+                    // Navigate after a short delay
+                    setTimeout(() => {
+                        window.location.href = currentUrl.toString();
+                    }, 200);
+                });
+            }
+
+            // Jump to Page functionality
+            const jumpToPageBtn = document.getElementById('jumpToPageBtn');
+            const jumpToPageInput = document.getElementById('jumpToPage');
+
+            if (jumpToPageBtn && jumpToPageInput) {
+                jumpToPageBtn.addEventListener('click', function() {
+                    const pageNumber = parseInt(jumpToPageInput.value);
+                    const maxPage = parseInt(jumpToPageInput.getAttribute('max'));
+                    const minPage = parseInt(jumpToPageInput.getAttribute('min'));
+
+                    if (pageNumber >= minPage && pageNumber <= maxPage) {
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('page', pageNumber);
+
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        setTimeout(() => {
+                            window.location.href = currentUrl.toString();
+                        }, 200);
+                    } else {
+                        alert(`Masukkan nomor halaman antara ${minPage} dan ${maxPage}`);
+                    }
+                });
+
+                // Allow Enter key to jump
+                jumpToPageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        jumpToPageBtn.click();
+                    }
+                });
             }
         });
     </script>
@@ -741,15 +863,76 @@
             letter-spacing: 0.5px;
         }
 
-        /* Pagination */
+        /* Enhanced Pagination Styles */
+        #pageSelector {
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #8B5CF6;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+
+        #pageSelector:focus {
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+
+        #pageSelector:hover {
+            border-color: #8B5CF6;
+        }
+
+        /* Page number buttons */
         .pagination .page-link {
             color: #8B5CF6;
             border: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+
+        .pagination .page-link:hover {
+            background-color: rgba(139, 92, 246, 0.1);
+            border-color: #8B5CF6;
+            color: #8B5CF6;
         }
 
         .pagination .page-item.active .page-link {
             background-color: #8B5CF6;
             border-color: #8B5CF6;
+            color: white;
+            font-weight: 600;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #9CA3AF;
+            border-color: #E5E7EB;
+        }
+
+        /* Jump to page input */
+        #jumpToPage {
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        #jumpToPage:focus {
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+
+        .btn-outline-purple {
+            border-color: #8B5CF6;
+            color: #8B5CF6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-purple:hover {
+            background-color: #8B5CF6;
+            border-color: #8B5CF6;
+            color: white;
         }
 
         /* Button */
@@ -839,6 +1022,15 @@
             .project-card:hover {
                 transform: none !important;
             }
+
+            .pagination .page-link {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.9rem;
+            }
+
+            #pageSelector {
+                font-size: 0.9rem;
+            }
         }
 
         /* Touch feedback */
@@ -846,6 +1038,23 @@
         .project-row:active,
         .project-card:active {
             transform: scale(0.98);
+        }
+
+        /* Animation for page change */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-footer {
+            animation: fadeIn 0.3s ease;
         }
     </style>
 @endpush

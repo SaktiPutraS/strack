@@ -67,6 +67,11 @@ Route::middleware('simpleauth')->group(function () {
     Route::resource('payments', PaymentController::class);
     Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');
 
+    // Expenses Analysis - harus di atas resource
+    Route::get('expenses/analysis', [ExpenseController::class, 'analysis'])->name('expenses.analysis');
+    Route::get('expenses/export/excel', [ExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
+    Route::resource('expenses', ExpenseController::class);
+
     // Financial Management Routes
     Route::prefix('financial')->group(function () {
         // Expenses Management - Export route harus di atas resource

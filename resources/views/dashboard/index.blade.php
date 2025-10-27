@@ -24,9 +24,9 @@
             </div>
         </div>
     </div>
-    {{-- TEST --}}
+
     <!-- Project Status & Cash Balance Cards -->
-    <div class="row g-3 mb-4">
+    <div class="row g-2 g-md-3 mb-4">
         <div class="col-12">
             <h5 class="text-uppercase text-muted fw-bold mb-3 fs-6">
                 <i class="bi bi-kanban me-2 text-purple"></i>Status Proyek & Saldo Kas
@@ -58,12 +58,12 @@
         </div>
 
         <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-primary h-100">
+            <div class="card luxury-card stat-card stat-card-danger h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-bank text-primary fs-4"></i>
+                        <i class="bi bi-bank text-danger fs-4"></i>
                     </div>
-                    <h3 class="fw-bold text-primary mb-1 fs-6">{{ number_format($saldoBank, 0, ',', '.') }}</h3>
+                    <h3 class="fw-bold text-danger mb-1 fs-6">{{ number_format($saldoBank, 0, ',', '.') }}</h3>
                     <small class="text-muted fw-semibold">Bank Octo</small>
                 </div>
             </div>
@@ -83,53 +83,120 @@
     </div>
 
     <!-- Financial Summary -->
-    <div class="row g-3 mb-4">
+    <div class="row g-2 g-md-3 mb-4">
         <div class="col-12">
             <h5 class="text-uppercase text-muted fw-bold mb-3 fs-6">
                 <i class="bi bi-bar-chart me-2 text-purple"></i>Statistik Keuangan
             </h5>
         </div>
 
+        <!-- Asset Overview Card -->
+        <div class="col-12 col-lg-6">
+            <div class="card luxury-card border-0 h-100">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
+                    <h5 class="fw-bold mb-1">
+                        <i class="bi bi-wallet2 me-2 text-purple"></i>Total Asset
+                    </h5>
+                    <h3 class="mb-0 text-purple fw-bold">{{ number_format($pieData['total'], 0, ',', '.') }}</h3>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="row g-2 g-md-3">
+                        <!-- Bank Octo -->
+                        <div class="col-6">
+                            <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
+                                style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.05), rgba(220, 38, 38, 0.1)); border-color: rgba(220, 38, 38, 0.2) !important;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="asset-icon rounded-circle p-1 p-md-2" style="background: rgba(220, 38, 38, 0.15);">
+                                        <i class="bi bi-bank text-danger"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-1 asset-label">Bank Octo</p>
+                                <h6 class="fw-bold mb-1 text-danger asset-value">{{ number_format($saldoBank, 0, ',', '.') }}</h6>
+                                <small class="text-muted asset-percent">{{ round(($saldoBank / $pieData['total']) * 100, 1) }}%</small>
+                            </div>
+                        </div>
+
+                        <!-- Cash -->
+                        <div class="col-6">
+                            <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
+                                style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.1)); border-color: rgba(16, 185, 129, 0.2) !important;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="asset-icon rounded-circle p-1 p-md-2" style="background: rgba(16, 185, 129, 0.15);">
+                                        <i class="bi bi-cash-coin text-success"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-1 asset-label">Cash</p>
+                                <h6 class="fw-bold mb-1 text-success asset-value">{{ number_format($saldoCash, 0, ',', '.') }}</h6>
+                                <small class="text-muted asset-percent">{{ round(($saldoCash / $pieData['total']) * 100, 1) }}%</small>
+                            </div>
+                        </div>
+
+                        <!-- Piutang -->
+                        <div class="col-6">
+                            <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
+                                style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(139, 92, 246, 0.1)); border-color: rgba(139, 92, 246, 0.2) !important;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="asset-icon rounded-circle p-1 p-md-2" style="background: rgba(139, 92, 246, 0.15);">
+                                        <i class="bi bi-receipt text-purple"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-1 asset-label">Piutang</p>
+                                <h6 class="fw-bold mb-1 text-purple asset-value">{{ number_format($totalPiutang, 0, ',', '.') }}</h6>
+                                <small class="text-muted asset-percent">{{ round(($totalPiutang / $pieData['total']) * 100, 1) }}%</small>
+                            </div>
+                        </div>
+
+                        <!-- Emas -->
+                        <div class="col-6">
+                            <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
+                                style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.1)); border-color: rgba(245, 158, 11, 0.2) !important;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="asset-icon rounded-circle p-1 p-md-2" style="background: rgba(245, 158, 11, 0.15);">
+                                        <i class="bi bi-gem text-warning"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-1 asset-label">Emas</p>
+                                <h6 class="fw-bold mb-1 text-warning asset-value">{{ number_format($saldoEmas, 0, ',', '.') }}</h6>
+                                <small class="text-muted asset-percent">{{ round(($saldoEmas / $pieData['total']) * 100, 1) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie Chart (Hidden on mobile) -->
+                    <div class="mt-3 mt-md-4 pt-3 border-top d-none d-lg-block">
+                        <canvas id="pieChart" height="160"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Monthly Revenue Chart -->
         <div class="col-12 col-lg-6">
             <div class="card luxury-card border-0 h-100">
-                <div class="card-header bg-white border-0 p-4">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
                     <h5 class="fw-bold mb-0">
                         <i class="bi bi-graph-up-arrow me-2 text-purple"></i>Pendapatan per Bulan
                     </h5>
                     <p class="text-muted mb-0">Total nilai proyek tahun {{ now()->year }}</p>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3 p-md-4">
                     <canvas id="monthlyRevenueChart" height="250"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pie Chart -->
-        <div class="col-12 col-lg-6">
-            <div class="card luxury-card border-0 h-100">
-                <div class="card-header bg-white border-0 p-4">
-                    <h5 class="fw-bold mb-0">Asset</h5>
-                    <p class="text-muted mb-0">Total: <strong>Rp. {{ number_format($pieData['total']) }}</strong></p>
-                </div>
-                <div class="card-body position-relative">
-                    <canvas id="pieChart" height="250"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Weekly Income vs Expense Chart -->
-    <div class="row g-3 mb-4">
+    <div class="row g-2 g-md-3 mb-4">
         <div class="col-12">
             <div class="card luxury-card border-0">
-                <div class="card-header bg-white border-0 p-4">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
                     <h5 class="fw-bold mb-0">
                         <i class="bi bi-graph-up me-2 text-purple"></i>Pendapatan & Pengeluaran Mingguan
                     </h5>
                     <p class="text-muted mb-0">Akumulasi per minggu tahun ini (dimulai Juli 2025)</p>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3 p-md-4">
                     <canvas id="lineChart" height="300"></canvas>
                 </div>
             </div>
@@ -140,7 +207,7 @@
     <div class="row">
         <div class="col-12">
             <div class="card luxury-card border-0">
-                <div class="card-header bg-white border-0 p-4">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
                     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
                         <div>
                             <h4 class="fw-bold mb-1">
@@ -180,19 +247,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-4">
-                    <div class="calendar-container">
-                        <div class="calendar-header">
-                            <div class="calendar-day-header">Min</div>
-                            <div class="calendar-day-header">Sen</div>
-                            <div class="calendar-day-header">Sel</div>
-                            <div class="calendar-day-header">Rab</div>
-                            <div class="calendar-day-header">Kam</div>
-                            <div class="calendar-day-header">Jum</div>
-                            <div class="calendar-day-header">Sab</div>
-                        </div>
-                        <div class="calendar-body" id="calendarBody">
-                            <!-- Calendar days will be populated by JavaScript -->
+                <div class="card-body p-3 p-md-4">
+                    <div class="calendar-wrapper">
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <div class="calendar-day-header">Min</div>
+                                <div class="calendar-day-header">Sen</div>
+                                <div class="calendar-day-header">Sel</div>
+                                <div class="calendar-day-header">Rab</div>
+                                <div class="calendar-day-header">Kam</div>
+                                <div class="calendar-day-header">Jum</div>
+                                <div class="calendar-day-header">Sab</div>
+                            </div>
+                            <div class="calendar-body" id="calendarBody">
+                                <!-- Calendar days will be populated by JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -202,51 +271,71 @@
 
     <!-- Enhanced Modal for Notes and Project Details -->
     <div class="modal fade" id="calendarModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title" id="calendarModalTitle">Detail Tanggal</h5>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content luxury-card border-0">
+                <div class="modal-header border-0 p-4 pb-0">
+                    <h5 class="modal-title fw-bold text-purple" id="modalTitle">
+                        <i class="bi bi-calendar3 me-2"></i><span id="modalDate"></span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <!-- Project Deadlines Section -->
-                    <div id="projectDeadlinesSection" style="display: none;">
-                        <h6 class="fw-bold text-primary mb-3">
-                            <i class="bi bi-calendar-event me-2"></i>Deadline Proyek
-                        </h6>
-                        <div id="projectDeadlinesList"></div>
-                        <hr class="my-4">
-                    </div>
-
-                    <!-- Personal Notes Section -->
-                    <h6 class="fw-bold text-success mb-3">
-                        <i class="bi bi-sticky me-2"></i>Catatan Pribadi
-                    </h6>
-                    <form id="noteForm">
-                        <input type="hidden" id="noteId">
-                        <input type="hidden" id="noteDate">
-
-                        <div class="mb-3">
-                            <label for="noteTitle" class="form-label fw-semibold">Judul Catatan</label>
-                            <input type="text" class="form-control" id="noteTitle" placeholder="Masukkan judul catatan...">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="noteContent" class="form-label fw-semibold">Isi Catatan</label>
-                            <textarea class="form-control" id="noteContent" rows="4" placeholder="Tulis catatan Anda di sini..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <div class="w-100 d-flex justify-content-between">
-                        <button type="button" class="btn btn-danger" id="deleteNoteBtn" style="display: none;">
-                            <i class="bi bi-trash me-1"></i>Hapus Catatan
-                        </button>
-                        <div class="ms-auto">
-                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">Tutup</button>
-                            <button type="button" class="btn btn-success" id="saveNoteBtn">
-                                <i class="bi bi-save me-1"></i>Simpan Catatan
+                <div class="modal-body p-4">
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-pills mb-4" id="modalTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="notes-tab" data-bs-toggle="pill" data-bs-target="#notes-content" type="button"
+                                role="tab">
+                                <i class="bi bi-journal-text me-1"></i>Catatan Pribadi
                             </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="projects-tab" data-bs-toggle="pill" data-bs-target="#projects-content" type="button"
+                                role="tab">
+                                <i class="bi bi-folder me-1"></i>Deadline Proyek
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="modalTabContent">
+                        <!-- Notes Tab -->
+                        <div class="tab-pane fade show active" id="notes-content" role="tabpanel">
+                            <div id="notesList">
+                                <!-- Notes will be loaded here -->
+                            </div>
+
+                            <!-- Add/Edit Note Form -->
+                            <div class="card border-0 bg-light mt-3">
+                                <div class="card-body">
+                                    <form id="noteForm">
+                                        <input type="hidden" id="noteId" name="noteId">
+                                        <input type="hidden" id="noteDate" name="date">
+                                        <div class="mb-3">
+                                            <label for="noteTitle" class="form-label fw-semibold">Judul Catatan</label>
+                                            <input type="text" class="form-control" id="noteTitle" name="title" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="noteDescription" class="form-label fw-semibold">Deskripsi</label>
+                                            <textarea class="form-control" id="noteDescription" name="description" rows="3"></textarea>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-save me-1"></i><span id="submitBtnText">Simpan Catatan</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" id="cancelEditBtn" style="display: none;">
+                                                <i class="bi bi-x-circle me-1"></i>Batal Edit
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Projects Tab -->
+                        <div class="tab-pane fade" id="projects-content" role="tabpanel">
+                            <div id="projectsList">
+                                <!-- Projects will be loaded here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -258,747 +347,966 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Clickable cards navigation
-            const clickableCards = document.querySelectorAll('.clickable-card');
-
-            clickableCards.forEach(card => {
-                card.style.cursor = 'pointer';
-
-                // Touch feedback for mobile
-                card.addEventListener('touchstart', function() {
-                    this.style.transform = 'scale(0.98)';
-                    this.style.transition = 'transform 0.1s ease';
-                }, {
-                    passive: true
-                });
-
-                card.addEventListener('touchend', function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.transition = 'transform 0.2s ease';
-                }, {
-                    passive: true
-                });
-
-                // Click handler
-                card.addEventListener('click', function() {
-                    const filter = this.getAttribute('data-filter');
-                    if (filter) {
-                        // Add loading state
-                        this.style.opacity = '0.7';
-
-                        // Navigate
-                        setTimeout(() => {
-                            window.location.href = `{{ route('projects.index') }}?${filter}`;
-                        }, 100);
-                    }
-                });
-
-                // Hover effect for desktop
-                card.addEventListener('mouseenter', function() {
-                    if (window.innerWidth > 768) {
-                        this.style.transform = 'translateY(-4px)';
-                    }
-                });
-
-                card.addEventListener('mouseleave', function() {
-                    if (window.innerWidth > 768) {
-                        this.style.transform = 'translateY(0)';
-                    }
-                });
-            });
-
-            // Charts initialization (Monthly Revenue Chart)
-            const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
-            const monthlyRevenueChart = new Chart(monthlyRevenueCtx, {
-                type: 'bar',
-                data: {
-                    labels: @json(collect($monthlyRevenueData)->pluck('month')),
-                    datasets: [{
-                        label: 'Nilai Proyek',
-                        data: @json(collect($monthlyRevenueData)->pluck('project_value')),
-                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                        borderColor: '#8B5CF6',
-                        borderWidth: 2,
-                        borderRadius: 8,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const monthData = @json($monthlyRevenueData)[context.dataIndex];
-                                    return 'Total: ' + monthData.formatted_value;
-                                }
-                            }
-                        }
+            // ===== Pie Chart - Komposisi Asset =====
+            const pieCtx = document.getElementById('pieChart')?.getContext('2d');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {!! json_encode($pieData['labels']) !!},
+                        datasets: [{
+                            data: {!! json_encode($pieData['data']) !!},
+                            backgroundColor: {!! json_encode($pieData['colors']) !!},
+                            borderWidth: 0,
+                            hoverOffset: 8
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    if (value >= 1000000000) {
-                                        return 'Rp ' + (value / 1000000000).toFixed(1) + 'M';
-                                    } else if (value >= 1000000) {
-                                        return 'Rp ' + (value / 1000000).toFixed(1) + 'Jt';
-                                    } else if (value >= 1000) {
-                                        return 'Rp ' + (value / 1000).toFixed(0) + 'Rb';
-                                    }
-                                    return 'Rp ' + value;
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 11,
+                                        family: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif'
+                                    },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    color: '#6B7280'
                                 }
                             },
-                            grid: {
-                                color: 'rgba(139, 92, 246, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Line Chart
-            const lineCtx = document.getElementById('lineChart').getContext('2d');
-            const lineChart = new Chart(lineCtx, {
-                type: 'line',
-                data: {
-                    labels: @json(collect($weeklyData)->pluck('week')),
-                    datasets: [{
-                        label: 'Pendapatan',
-                        data: @json(collect($weeklyData)->pluck('income')),
-                        borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    }, {
-                        label: 'Pengeluaran',
-                        data: @json(collect($weeklyData)->pluck('expense')),
-                        borderColor: '#EF4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    const index = tooltipItems[0].dataIndex;
-                                    const weekData = @json($weeklyData)[index];
-                                    return weekData.start_date + ' - ' + weekData.end_date;
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
                                 },
-                                label: function(context) {
-                                    return context.dataset.label + ': Rp ' + context.parsed.y.toLocaleString('id-ID');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    if (value >= 1000000) {
-                                        return 'Rp ' + (value / 1000000).toFixed(1) + ' Jt';
-                                    }
-                                    return 'Rp ' + value;
-                                }
+                                bodyFont: {
+                                    size: 12
+                                },
+                                cornerRadius: 8,
+                                displayColors: true
                             }
                         }
                     }
-                }
-            });
+                });
+            }
 
-            // Pie Chart
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            const pieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: @json($pieData['labels']),
-                    datasets: [{
-                        data: @json($pieData['data']),
-                        backgroundColor: @json($pieData['colors']),
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: {
+            // ===== Monthly Revenue Chart =====
+            const monthlyRevenueData = @json($monthlyRevenueData);
+            const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart')?.getContext('2d');
+
+            if (monthlyRevenueCtx) {
+                const gradient = monthlyRevenueCtx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+                gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
+
+                new Chart(monthlyRevenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: monthlyRevenueData.map(d => d.month),
+                        datasets: [{
+                            label: 'Nilai Proyek',
+                            data: monthlyRevenueData.map(d => d.project_value),
+                            borderColor: '#8B5CF6',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#8B5CF6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
                                     size: 12
+                                },
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                                    }
                                 }
                             }
                         },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label.split(':')[0] || '';
-                                    const value = context.raw || 0;
-                                    return `${label}: Rp ${value.toLocaleString('id-ID')}`;
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(139, 92, 246, 0.08)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return 'Rp ' + (value / 1000000).toFixed(0) + 'Jt';
+                                        }
+                                        return 'Rp ' + value.toLocaleString('id-ID');
+                                    },
+                                    color: '#6B7280',
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#6B7280',
+                                    font: {
+                                        size: 11
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
 
-            // Enhanced Calendar functionality with project deadlines
-            let currentCalendarDate = new Date({{ $calendarData['currentYear'] }}, {{ $calendarData['currentMonthNumber'] - 1 }}, 1);
-            let calendarNotes = @json($calendarNotes ?? []);
-            let projectDeadlines = @json($projectDeadlines ?? []);
+            // ===== Line Chart - Weekly Income vs Expense =====
+            const weeklyData = @json($weeklyData);
+            const lineCtx = document.getElementById('lineChart')?.getContext('2d');
 
-            function showSuccessToast(message) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: message,
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                } else {
-                    alert(message);
+            if (lineCtx) {
+                const incomeGradient = lineCtx.createLinearGradient(0, 0, 0, 300);
+                incomeGradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+                incomeGradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+
+                const expenseGradient = lineCtx.createLinearGradient(0, 0, 0, 300);
+                expenseGradient.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+                expenseGradient.addColorStop(1, 'rgba(239, 68, 68, 0.05)');
+
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: weeklyData.map(d => d.week),
+                        datasets: [{
+                                label: 'Pendapatan',
+                                data: weeklyData.map(d => d.income),
+                                borderColor: '#10B981',
+                                backgroundColor: incomeGradient,
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#10B981',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            },
+                            {
+                                label: 'Pengeluaran',
+                                data: weeklyData.map(d => d.expense),
+                                borderColor: '#EF4444',
+                                backgroundColor: expenseGradient,
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#EF4444',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 12,
+                                        family: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif'
+                                    },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    color: '#6B7280'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 12
+                                },
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': Rp ' + context.parsed.y
+                                            .toLocaleString('id-ID');
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(139, 92, 246, 0.08)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return 'Rp ' + (value / 1000000).toFixed(0) + 'Jt';
+                                        }
+                                        return 'Rp ' + value.toLocaleString('id-ID');
+                                    },
+                                    color: '#6B7280',
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#6B7280',
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Calendar state
+            let currentDate = new Date({{ $calendarData['currentYear'] }}, {{ $calendarData['currentMonthNumber'] }} - 1, 1);
+
+            // Parse calendar data from Laravel
+            let calendarNotesRaw = @json($calendarNotes);
+            let projectDeadlinesRaw = @json($projectDeadlines);
+
+            // Convert to proper format
+            let calendarNotes = [];
+            if (calendarNotesRaw) {
+                if (Array.isArray(calendarNotesRaw)) {
+                    calendarNotes = calendarNotesRaw;
+                } else if (typeof calendarNotesRaw === 'object') {
+                    calendarNotes = Object.values(calendarNotesRaw);
                 }
             }
 
+            let projectDeadlines = {};
+            if (projectDeadlinesRaw && typeof projectDeadlinesRaw === 'object') {
+                projectDeadlines = projectDeadlinesRaw;
+            }
+
+            const calendarBody = document.getElementById('calendarBody');
+            const calendarTitle = document.getElementById('calendarTitle');
+            const prevMonthBtn = document.getElementById('prevMonth');
+            const nextMonthBtn = document.getElementById('nextMonth');
+            const calendarModal = new bootstrap.Modal(document.getElementById('calendarModal'));
+
+            // Month names in Indonesian
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            // Render calendar function with project deadline handling
             function renderCalendar() {
-                const calendarBody = document.getElementById('calendarBody');
-                const calendarTitle = document.getElementById('calendarTitle');
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
 
-                // Update title
-                const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-                ];
-                calendarTitle.textContent = `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
+                calendarTitle.textContent = `${monthNames[month]} ${year}`;
 
-                // Clear calendar body
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const startingDayOfWeek = firstDay.getDay();
+                const monthLength = lastDay.getDate();
+
                 calendarBody.innerHTML = '';
 
-                // Get first day of month and number of days
-                const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
-                const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
-                const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday
-                const daysInMonth = lastDay.getDate();
-
-                // Add empty cells for days before the first day of month
-                for (let i = 0; i < firstDayOfWeek; i++) {
-                    const emptyCell = document.createElement('div');
-                    emptyCell.className = 'calendar-day empty';
-                    calendarBody.appendChild(emptyCell);
+                // Add empty cells for days before month starts
+                for (let i = 0; i < startingDayOfWeek; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'calendar-day other-month';
+                    calendarBody.appendChild(emptyDay);
                 }
 
                 // Add days of month
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dayCell = document.createElement('div');
-                    dayCell.className = 'calendar-day';
-                    dayCell.dataset.date =
-                        `${currentCalendarDate.getFullYear()}-${String(currentCalendarDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-                    // Check if it's today
-                    const today = new Date();
-                    if (currentCalendarDate.getFullYear() === today.getFullYear() &&
-                        currentCalendarDate.getMonth() === today.getMonth() &&
-                        day === today.getDate()) {
-                        dayCell.classList.add('today');
+                for (let day = 1; day <= monthLength; day++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'calendar-day';
+
+                    const currentDay = new Date(year, month, day);
+                    currentDay.setHours(0, 0, 0, 0);
+
+                    if (currentDay.getTime() === today.getTime()) {
+                        dayElement.classList.add('today');
                     }
 
-                    let dayContent = `<span class="day-number">${day}</span>`;
-                    let hasContent = false;
+                    // Check for notes
+                    const dayNotes = calendarNotes.filter(note => {
+                        const noteDate = new Date(note.date);
+                        noteDate.setHours(0, 0, 0, 0);
+                        return noteDate.getTime() === currentDay.getTime();
+                    });
 
                     // Check for project deadlines
-                    if (projectDeadlines[day]) {
-                        hasContent = true;
-                        dayCell.classList.add('has-deadline');
+                    const dayProjects = projectDeadlines[day] || [];
 
-                        const deadlines = Array.isArray(projectDeadlines[day]) ? projectDeadlines[day] : [projectDeadlines[day]];
-                        const firstDeadline = deadlines[0];
-
-                        // Determine deadline status for styling
-                        if (firstDeadline.is_overdue) {
-                            dayCell.classList.add('deadline-overdue');
-                        } else if (firstDeadline.is_deadline_near) {
-                            dayCell.classList.add('deadline-near');
-                        } else {
-                            dayCell.classList.add('deadline-normal');
-                        }
-
-                        dayContent += `<div class="deadline-indicator">
-                            <i class="bi bi-calendar-event"></i>
-                        </div>`;
-
-                        if (deadlines.length === 1) {
-                            dayContent += `<div class="deadline-preview">${firstDeadline.title}</div>`;
-                        } else {
-                            dayContent += `<div class="deadline-preview">${deadlines.length} proyek</div>`;
-                        }
-                    }
-
-                    // Check for personal notes
-                    if (calendarNotes[day]) {
-                        hasContent = true;
-                        dayCell.classList.add('has-note');
-                        dayContent += `<div class="note-indicator">
-                            <i class="bi bi-sticky-fill"></i>
-                        </div>`;
-
-                        if (!projectDeadlines[day]) {
-                            dayContent += `<div class="note-preview">${calendarNotes[day].title}</div>`;
-                        }
-                    }
-
-                    dayCell.innerHTML = dayContent;
-
-                    // Add click event
-                    dayCell.addEventListener('click', function() {
-                        openCalendarModal(this.dataset.date, calendarNotes[day] || null, projectDeadlines[day] || null);
+                    // Determine if there are overdue projects
+                    const hasOverdueProjects = dayProjects.some(project => {
+                        const deadline = new Date(project.deadline);
+                        deadline.setHours(0, 0, 0, 0);
+                        return deadline.getTime() < today.getTime();
                     });
 
-                    calendarBody.appendChild(dayCell);
+                    // Determine if there are upcoming projects (within 3 days)
+                    const hasUpcomingProjects = dayProjects.some(project => {
+                        const deadline = new Date(project.deadline);
+                        deadline.setHours(0, 0, 0, 0);
+                        const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 *
+                            60 * 24));
+                        return daysUntil >= 0 && daysUntil <= 3;
+                    });
+
+                    const hasNotes = dayNotes.length > 0;
+                    const hasProjects = dayProjects.length > 0;
+
+                    if (hasNotes || hasProjects) {
+                        dayElement.classList.add('has-event');
+                    }
+
+                    dayElement.innerHTML = `
+                <span class="day-number">${day}</span>
+                ${hasNotes ? `<div class="note-preview bg-success"><i class="bi bi-journal-text"></i> ${dayNotes.length}</div>` : ''}
+                ${hasOverdueProjects ? `<div class="deadline-preview bg-danger"><i class="bi bi-exclamation-triangle"></i> ${dayProjects.length}</div>` : ''}
+                ${!hasOverdueProjects && hasUpcomingProjects ? `<div class="deadline-preview bg-warning"><i class="bi bi-calendar-event"></i> ${dayProjects.length}</div>` : ''}
+                ${!hasOverdueProjects && !hasUpcomingProjects && hasProjects ? `<div class="deadline-preview bg-primary"><i class="bi bi-calendar-event"></i> ${dayProjects.length}</div>` : ''}
+            `;
+
+                    dayElement.addEventListener('click', () => openDayModal(year, month, day));
+                    calendarBody.appendChild(dayElement);
                 }
             }
 
-            function openCalendarModal(date, note = null, deadlines = null) {
-                const modal = new bootstrap.Modal(document.getElementById('calendarModal'));
-                const modalTitle = document.getElementById('calendarModalTitle');
-                const noteId = document.getElementById('noteId');
-                const noteDate = document.getElementById('noteDate');
-                const noteTitle = document.getElementById('noteTitle');
-                const noteContent = document.getElementById('noteContent');
-                const deleteBtn = document.getElementById('deleteNoteBtn');
-                const projectSection = document.getElementById('projectDeadlinesSection');
-                const projectList = document.getElementById('projectDeadlinesList');
+            // Open day modal function with project handling
+            function openDayModal(year, month, day) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const displayDate = `${day} ${monthNames[month]} ${year}`;
 
-                // Format date for display
-                const dateObj = new Date(date + 'T00:00:00');
-                const formattedDate = dateObj.toLocaleDateString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                document.getElementById('modalDate').textContent = displayDate;
+                document.getElementById('noteDate').value = dateStr;
 
-                modalTitle.textContent = formattedDate;
-                noteDate.value = date;
+                // Filter notes and projects for this day
+                const dayNotes = calendarNotes.filter(note => note.date === dateStr);
+                const dayProjects = projectDeadlines[day] || [];
 
-                // Handle project deadlines
-                if (deadlines) {
-                    projectSection.style.display = 'block';
-                    projectList.innerHTML = '';
-
-                    const deadlinesArray = Array.isArray(deadlines) ? deadlines : [deadlines];
-                    deadlinesArray.forEach(project => {
-                        const statusColor = project.is_overdue ? 'danger' : (project.is_deadline_near ? 'warning' : 'primary');
-                        const statusText = project.is_overdue ? 'Terlewat' : (project.is_deadline_near ? 'Mendekat' : 'Normal');
-
-                        const projectCard = document.createElement('div');
-                        projectCard.className = 'card mb-2 border-start border-4 border-' + statusColor;
-                        projectCard.innerHTML = `
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1">${project.title}</h6>
-                                        <p class="text-muted small mb-1">
-                                            <i class="bi bi-building me-1"></i>${project.client_name}
-                                        </p>
-                                        <p class="text-muted small mb-1">
-                                            <i class="bi bi-tag me-1"></i>${project.type} • ${project.status}
-                                        </p>
-                                        ${project.remaining_amount > 0 ?
-                                            `<p class="text-muted small mb-0">
-                                                        <i class="bi bi-currency-dollar me-1"></i>Sisa: ${project.formatted_remaining_amount}
-                                                    </p>` : ''
-                                        }
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-${statusColor} bg-opacity-10 text-${statusColor} border border-${statusColor} rounded-pill">
-                                            ${statusText}
-                                        </span>
-                                        <div class="mt-2">
-                                            <a href="${project.url}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                                <i class="bi bi-arrow-up-right-square me-1"></i>Detail
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
+                // Populate notes list
+                const notesList = document.getElementById('notesList');
+                if (dayNotes.length === 0) {
+                    notesList.innerHTML =
+                        '<p class="text-muted text-center py-3"><i class="bi bi-journal-x me-2"></i>Belum ada catatan</p>';
+                } else {
+                    notesList.innerHTML = dayNotes.map(note => `
+                <div class="card mb-2 border-0 bg-light">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">${note.title}</h6>
+                                ${note.description ? `<p class="text-muted mb-0 small">${note.description}</p>` : ''}
                             </div>
-                        `;
-                        projectList.appendChild(projectCard);
-                    });
-                } else {
-                    projectSection.style.display = 'none';
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editNote(${note.id}, '${note.title}', '${note.description || ''}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteNote(${note.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
                 }
 
-                // Handle personal notes
-                if (note) {
-                    noteId.value = note.id;
-                    noteTitle.value = note.title;
-                    noteContent.value = note.content || '';
-                    deleteBtn.style.display = 'block';
+                // Populate projects list
+                const projectsList = document.getElementById('projectsList');
+                if (dayProjects.length === 0) {
+                    projectsList.innerHTML =
+                        '<p class="text-muted text-center py-3"><i class="bi bi-folder-x me-2"></i>Tidak ada deadline proyek</p>';
                 } else {
-                    noteId.value = '';
-                    noteTitle.value = '';
-                    noteContent.value = '';
-                    deleteBtn.style.display = 'none';
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    projectsList.innerHTML = dayProjects.map(project => {
+                        const deadline = new Date(project.deadline);
+                        deadline.setHours(0, 0, 0, 0);
+                        const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 *
+                            60 * 24));
+
+                        let badgeClass = 'bg-primary';
+                        let badgeText = 'Normal';
+                        let statusIcon = 'calendar-event';
+
+                        if (daysUntil < 0) {
+                            badgeClass = 'bg-danger';
+                            badgeText = 'Terlewat';
+                            statusIcon = 'exclamation-triangle';
+                        } else if (daysUntil <= 3) {
+                            badgeClass = 'bg-warning';
+                            badgeText = 'Mendekat';
+                            statusIcon = 'clock';
+                        }
+
+                        return `
+                    <div class="card mb-2 border-0 bg-light">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <i class="bi bi-${statusIcon} text-${badgeClass.replace('bg-', '')}"></i>
+                                        <h6 class="mb-0 fw-bold">${project.project_name}</h6>
+                                    </div>
+                                    <p class="text-muted mb-1 small">
+                                        <i class="bi bi-building me-1"></i>${project.client.company_name}
+                                    </p>
+                                </div>
+                                <span class="badge ${badgeClass}">${badgeText}</span>
+                            </div>
+                            <div class="d-flex gap-2 small text-muted">
+                                <span><i class="bi bi-calendar3 me-1"></i>${new Date(project.deadline).toLocaleDateString('id-ID')}</span>
+                                <span><i class="bi bi-tag me-1"></i>Rp ${parseInt(project.total_value).toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                    }).join('');
                 }
 
-                modal.show();
+                // Reset form
+                resetNoteForm();
+
+                // Show modal
+                calendarModal.show();
             }
 
-            function saveNote() {
-                const noteId = document.getElementById('noteId').value;
-                const noteDate = document.getElementById('noteDate').value;
-                const noteTitle = document.getElementById('noteTitle').value;
-                const noteContent = document.getElementById('noteContent').value;
+            // Note form handling
+            const noteForm = document.getElementById('noteForm');
+            const noteIdInput = document.getElementById('noteId');
+            const noteTitleInput = document.getElementById('noteTitle');
+            const noteDescriptionInput = document.getElementById('noteDescription');
+            const submitBtnText = document.getElementById('submitBtnText');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
 
-                if (!noteTitle.trim()) {
-                    alert('Judul catatan harus diisi!');
-                    return;
-                }
+            noteForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const noteId = noteIdInput.value;
+                const date = document.getElementById('noteDate').value;
+                const title = noteTitleInput.value;
+                const description = noteDescriptionInput.value;
 
                 const url = noteId ? `/calendar-notes/${noteId}` : '/calendar-notes';
                 const method = noteId ? 'PUT' : 'POST';
 
-                const data = {
-                    date: noteDate,
-                    title: noteTitle,
-                    content: noteContent,
-                    _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                };
-
-                if (noteId) {
-                    data._method = 'PUT';
-                }
-
                 fetch(url, {
-                        method: 'POST',
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': data._token
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify({
+                            date,
+                            title,
+                            description
+                        })
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Update calendar notes data
-                            const day = new Date(noteDate).getDate();
-                            calendarNotes[day] = data.note;
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: data.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
 
-                            // Re-render calendar
-                            renderCalendar();
-
-                            // Close modal
-                            bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
-
-                            // Show success message
-                            showSuccessToast(data.message);
-                        } else {
-                            alert('Terjadi kesalahan: ' + data.message);
+                            // Refresh calendar data
+                            loadCalendarData();
+                            resetNoteForm();
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan saat menyimpan catatan');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat menyimpan catatan'
+                        });
                     });
+            });
+
+            window.editNote = function(id, title, description) {
+                noteIdInput.value = id;
+                noteTitleInput.value = title;
+                noteDescriptionInput.value = description || '';
+                submitBtnText.textContent = 'Update Catatan';
+                cancelEditBtn.style.display = 'inline-block';
+
+                // Switch to notes tab
+                const notesTab = new bootstrap.Tab(document.getElementById('notes-tab'));
+                notesTab.show();
+            };
+
+            window.deleteNote = function(id) {
+                Swal.fire({
+                    title: 'Hapus Catatan?',
+                    text: 'Catatan yang dihapus tidak dapat dikembalikan!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(`/calendar-notes/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                        .content
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus!',
+                                        text: data.message,
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+
+                                    // Refresh calendar data
+                                    loadCalendarData();
+                                }
+                            });
+                    }
+                });
+            };
+
+            function resetNoteForm() {
+                noteForm.reset();
+                noteIdInput.value = '';
+                submitBtnText.textContent = 'Simpan Catatan';
+                cancelEditBtn.style.display = 'none';
             }
 
-            function deleteNote() {
-                const noteId = document.getElementById('noteId').value;
+            cancelEditBtn.addEventListener('click', resetNoteForm);
 
-                if (!noteId) return;
+            // Load calendar data function with project deadlines
+            function loadCalendarData() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
 
-                if (!confirm('Apakah Anda yakin ingin menghapus catatan ini?')) {
-                    return;
-                }
-
-                fetch(`/calendar-notes/${noteId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Remove from calendar notes data
-                            const noteDate = document.getElementById('noteDate').value;
-                            const day = new Date(noteDate).getDate();
-                            delete calendarNotes[day];
-
-                            // Re-render calendar
-                            renderCalendar();
-
-                            // Close modal
-                            bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
-
-                            // Show success message
-                            showSuccessToast(data.message);
-                        } else {
-                            alert('Terjadi kesalahan: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan saat menghapus catatan');
-                    });
-            }
-
-            function loadCalendarData(year, month) {
                 // Load notes
-                fetch(`/calendar-notes/month/${year}/${month}`, {
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
-                    })
+                fetch(`/calendar-notes/month/${year}/${month}`)
                     .then(response => response.json())
                     .then(data => {
                         calendarNotes = data.notes || [];
-                        return loadProjectDeadlines(year, month);
-                    })
-                    .then(() => {
                         renderCalendar();
-                    })
-                    .catch(error => {
-                        console.error('Error loading calendar data:', error);
-                        renderCalendar();
-                    });
-            }
 
-            function loadProjectDeadlines(year, month) {
-                return fetch(`/projects/deadlines/month/${year}/${month}`, {
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        // After rendering calendar with notes, reload the current modal if open
+                        const modalElement = document.getElementById('calendarModal');
+                        if (modalElement.classList.contains('show')) {
+                            const dateInput = document.getElementById('noteDate');
+                            if (dateInput.value) {
+                                const dateParts = dateInput.value.split('-');
+                                openDayModal(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(
+                                    dateParts[2]));
+                            }
                         }
-                    })
+                    });
+
+                // Load project deadlines
+                fetch(`/projects/deadlines/month/${year}/${month}`)
                     .then(response => response.json())
                     .then(data => {
-                        projectDeadlines = data.deadlines || [];
-                    })
-                    .catch(error => {
-                        console.error('Error loading project deadlines:', error);
-                        projectDeadlines = [];
+                        projectDeadlines = data.deadlines || {};
+                        renderCalendar();
                     });
             }
 
-            // Event listeners
-            document.getElementById('prevMonth').addEventListener('click', function() {
-                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-                loadCalendarData(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1);
+            // Navigation buttons
+            prevMonthBtn.addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                loadCalendarData();
             });
 
-            document.getElementById('nextMonth').addEventListener('click', function() {
-                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-                loadCalendarData(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1);
+            nextMonthBtn.addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                loadCalendarData();
             });
-
-            document.getElementById('saveNoteBtn').addEventListener('click', saveNote);
-            document.getElementById('deleteNoteBtn').addEventListener('click', deleteNote);
 
             // Initial render
             renderCalendar();
 
-            // Add enhanced CSS styles
+            // Clickable project cards - redirect to projects page with filter
+            const clickableCards = document.querySelectorAll('.clickable-card');
+            clickableCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    if (filter) {
+                        window.location.href = '/projects?' + filter;
+                    }
+                });
+            });
+
+            // Add custom styles
             const style = document.createElement('style');
             style.textContent = `
-                /* Enhanced Calendar Styles */
-                .calendar-container {
-                    max-width: 100%;
+                /* Prevent horizontal overflow */
+                body {
+                    overflow-x: hidden;
+                }
+
+                .container-fluid {
+                    overflow-x: hidden;
+                    max-width: 100vw;
+                }
+
+                .row {
+                    margin-left: 0;
+                    margin-right: 0;
+                }
+
+                /* Mobile specific fixes */
+                @media (max-width: 768px) {
+                    .container-fluid {
+                        padding-left: 0.75rem;
+                        padding-right: 0.75rem;
+                    }
+
+                    .card {
+                        margin-bottom: 0.5rem;
+                    }
+
+                    /* Reduce card padding on mobile */
+                    .stat-card .card-body {
+                        padding: 0.75rem !important;
+                    }
+
+                    .luxury-card {
+                        margin-bottom: 0;
+                    }
+                }
+
+                /* Asset Detail Cards - Responsive */
+                .asset-detail-card {
+                    transition: all 0.3s ease;
+                    min-height: 120px;
+                }
+
+                .asset-detail-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                }
+
+                .asset-icon {
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .asset-icon i {
+                    font-size: 1.1rem;
+                }
+
+                .asset-label {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                }
+
+                .asset-value {
+                    font-size: 0.95rem;
+                }
+
+                .asset-percent {
+                    font-size: 0.7rem;
+                }
+
+                /* Mobile Responsive */
+                @media (max-width: 768px) {
+                    .asset-detail-card {
+                        min-height: 95px;
+                    }
+
+                    .asset-icon {
+                        width: 28px;
+                        height: 28px;
+                    }
+
+                    .asset-icon i {
+                        font-size: 0.9rem;
+                    }
+
+                    .asset-label {
+                        font-size: 0.7rem;
+                    }
+
+                    .asset-value {
+                        font-size: 0.8rem;
+                    }
+
+                    .asset-percent {
+                        font-size: 0.65rem;
+                    }
+
+                    .luxury-card:hover {
+                        transform: none !important;
+                    }
+
+                    .asset-detail-card:hover {
+                        transform: none;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .asset-detail-card {
+                        min-height: 85px;
+                    }
+
+                    .asset-value {
+                        font-size: 0.75rem;
+                    }
+                }
+
+                /* Calendar Styles */
+                .calendar-wrapper {
+                    width: 100%;
                     overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+                }
+
+                .calendar-wrapper::-webkit-scrollbar {
+                    height: 6px;
+                }
+
+                .calendar-wrapper::-webkit-scrollbar-track {
+                    background: rgba(139, 92, 246, 0.05);
+                    border-radius: 10px;
+                }
+
+                .calendar-wrapper::-webkit-scrollbar-thumb {
+                    background: rgba(139, 92, 246, 0.3);
+                    border-radius: 10px;
+                }
+
+                .calendar-wrapper::-webkit-scrollbar-thumb:hover {
+                    background: rgba(139, 92, 246, 0.5);
+                }
+
+                .calendar-container {
+                    width: 100%;
+                    min-width: 100%;
+                }
+
+                @media (max-width: 768px) {
+                    .calendar-wrapper {
+                        overflow-x: auto;
+                        margin: 0 -0.75rem;
+                        padding: 0 0.75rem;
+                        position: relative;
+                    }
+
+                    .calendar-container {
+                        min-width: 650px;
+                    }
+
+                    /* Scroll indicator */
+                    .calendar-wrapper::before {
+                        content: '← Scroll →';
+                        position: absolute;
+                        top: 10px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #8B5CF6, #A855F7);
+                        color: white;
+                        padding: 6px 14px;
+                        border-radius: 20px;
+                        font-size: 0.65rem;
+                        font-weight: 600;
+                        z-index: 10;
+                        animation: fadeOutScroll 4s forwards;
+                        pointer-events: none;
+                        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+                    }
+
+                    @keyframes fadeOutScroll {
+                        0%, 60% { opacity: 1; }
+                        100% { opacity: 0; display: none; }
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .calendar-container {
+                        min-width: 550px;
+                    }
+                }
+
+                .calendar-container {
+                    width: 100%;
                 }
 
                 .calendar-header {
                     display: grid;
                     grid-template-columns: repeat(7, 1fr);
-                    gap: 1px;
-                    margin-bottom: 1px;
-                    background: rgba(139, 92, 246, 0.1);
-                    border-radius: 8px 8px 0 0;
-                    overflow: hidden;
+                    gap: 8px;
+                    margin-bottom: 12px;
                 }
 
                 .calendar-day-header {
-                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
-                    color: #374151;
-                    font-weight: 600;
                     text-align: center;
+                    font-weight: 600;
+                    color: #8B5CF6;
                     padding: 12px 8px;
-                    font-size: 0.875rem;
+                    font-size: 0.85rem;
+                    letter-spacing: 0.5px;
                 }
 
                 .calendar-body {
                     display: grid;
                     grid-template-columns: repeat(7, 1fr);
-                    gap: 1px;
-                    background: rgba(139, 92, 246, 0.05);
-                    border-radius: 0 0 8px 8px;
-                    overflow: hidden;
+                    gap: 8px;
                 }
 
                 .calendar-day {
-                    background: white;
-                    min-height: 100px;
+                    aspect-ratio: 1;
+                    border: 1px solid rgba(139, 92, 246, 0.1);
+                    border-radius: 12px;
                     padding: 8px;
-                    position: relative;
                     cursor: pointer;
                     transition: all 0.2s ease;
+                    background: rgba(255, 255, 255, 0.95);
                     display: flex;
                     flex-direction: column;
-                    align-items: flex-start;
+                    position: relative;
+                    min-height: 80px;
                 }
 
                 .calendar-day:hover {
                     background: rgba(139, 92, 246, 0.05);
-                    transform: scale(1.02);
-                }
-
-                .calendar-day.empty {
-                    cursor: default;
-                    background: rgba(139, 92, 246, 0.02);
-                }
-
-                .calendar-day.empty:hover {
-                    transform: none;
-                    background: rgba(139, 92, 246, 0.02);
+                    border-color: rgba(139, 92, 246, 0.3);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
                 }
 
                 .calendar-day.today {
-                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1));
+                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.1));
                     border: 2px solid #8B5CF6;
+                    font-weight: bold;
                 }
 
-                /* Enhanced deadline styling */
-                .calendar-day.has-deadline {
-                    border-left: 4px solid #3B82F6;
+                .calendar-day.other-month {
+                    background: rgba(0, 0, 0, 0.02);
+                    cursor: default;
                 }
 
-                .calendar-day.deadline-overdue {
-                    border-left-color: #EF4444;
-                    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(220, 38, 38, 0.1));
-                }
-
-                .calendar-day.deadline-near {
-                    border-left-color: #F59E0B;
-                    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(217, 119, 6, 0.1));
-                }
-
-                .calendar-day.deadline-normal {
-                    border-left-color: #3B82F6;
-                    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.1));
-                }
-
-                .calendar-day.has-note {
-                    border-right: 4px solid #10B981;
-                }
-
-                .calendar-day.has-note.has-deadline {
-                    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.1));
+                .calendar-day.has-event {
+                    border-color: rgba(139, 92, 246, 0.3);
                 }
 
                 .day-number {
+                    font-size: 0.9rem;
                     font-weight: 600;
                     color: #374151;
-                    font-size: 0.875rem;
                     margin-bottom: 4px;
-                    z-index: 1;
                 }
 
-                .deadline-indicator, .note-indicator {
+                .note-preview, .deadline-preview {
                     font-size: 0.7rem;
-                    margin-bottom: 2px;
-                    z-index: 1;
-                }
-
-                .deadline-indicator {
-                    color: #3B82F6;
-                }
-
-                .deadline-overdue .deadline-indicator {
-                    color: #EF4444;
-                }
-
-                .deadline-near .deadline-indicator {
-                    color: #F59E0B;
-                }
-
-                .note-indicator {
-                    color: #10B981;
-                }
-
-                .deadline-preview, .note-preview {
-                    font-size: 0.7rem;
-                    color: #6B7280;
-                    line-height: 1.2;
+                    padding: 3px 6px;
+                    border-radius: 6px;
+                    color: white;
+                    margin-top: 2px;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-weight: 500;
+                    white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                    width: 100%;
+                    max-width: 100%;
                 }
 
-                /* Legend styles */
                 .legend-dot {
-                    width: 12px;
-                    height: 12px;
+                    width: 10px;
+                    height: 10px;
                     border-radius: 50%;
                     display: inline-block;
                 }
 
-                /* Enhanced modal styling */
-                .modal-lg {
-                    max-width: 600px;
+                /* Modal Tabs */
+                .nav-pills .nav-link {
+                    border-radius: 10px;
+                    padding: 10px 20px;
+                    color: #6B7280;
+                    font-weight: 500;
                 }
 
-                .modal-content {
-                    border: none;
-                    border-radius: 16px;
-                    box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
+                .nav-pills .nav-link.active {
+                    background: linear-gradient(135deg, #8B5CF6, #A855F7);
                 }
 
-                .modal-header {
-                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(168, 85, 247, 0.1));
-                    border-radius: 16px 16px 0 0;
-                }
-
-                .form-control:focus {
-                    border-color: #8B5CF6;
-                    box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
-                }
-
+                /* Responsive Calendar */
                 @media (max-width: 768px) {
                     .calendar-day {
-                        min-height: 80px;
+                        min-height: 70px;
                         padding: 6px;
                     }
 
@@ -1013,7 +1321,6 @@
 
                     .deadline-preview, .note-preview {
                         font-size: 0.65rem;
-                        -webkit-line-clamp: 1;
                     }
 
                     .modal-lg {
@@ -1054,12 +1361,6 @@
                     cursor: pointer;
                 }
 
-                @media (max-width: 768px) {
-                    .luxury-card:hover {
-                        transform: none !important;
-                    }
-                }
-
                 .bg-purple {
                     background: linear-gradient(135deg, #8B5CF6, #A855F7) !important;
                 }
@@ -1095,8 +1396,8 @@
                     background: linear-gradient(90deg, #8B5CF6, #A855F7);
                 }
 
-                .stat-card-primary::before {
-                    background: linear-gradient(90deg, #3B82F6, #2563EB);
+                .stat-card-danger::before {
+                    background: linear-gradient(90deg, #DC2626, #B91C1C);
                 }
 
                 .stat-card-success::before {

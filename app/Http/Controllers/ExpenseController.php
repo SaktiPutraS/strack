@@ -411,4 +411,130 @@ class ExpenseController extends Controller
             'formatted_cash_balance' => 'Rp ' . number_format(CashBalance::getCurrentBalance(), 0, ',', '.'),
         ]);
     }
+
+    public function analysis(Request $request): View
+    {
+        $year = $request->get('year', Carbon::now()->year);
+        $compareYear = $year - 1;
+        $selectedCategory = $request->get('category', null);
+        $periodStart = $request->get('period_start', null);
+        $periodEnd = $request->get('period_end', null);
+
+        // Data bulanan tahun ini (EXCLUDE SALDO_AWAL)
+        $monthlyExpenses = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $query = Expense::whereYear('expense_date', $year)
+                ->whereMonth('expense_date', $month)
+                ->where('category', '!=', 'SALDO_AWAL');
+
+            if ($selectedCategory) {
+                $query->where('category', $selectedCategory);
+            }
+
+            $total = $query->sum('amount');
+
+            $monthlyExpenses[] = [
+                'month' => $month,
+                'month_name' => Carbon::create($year, $month)->format('M'),
+                'total' => $total
+            ];
+        }
+
+        // Perbandingan dengan tahun lalu
+        $comparisonData = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $thisYearQuery = Expense::whereYear('expense_date', $year)
+                ->whereMonth('expense_date', $month)
+                ->where('category', '!=', 'SALDO_AWAL');
+
+            $lastYearQuery = Expense::whereYear('expense_date', $compareYear)
+                ->whereMonth('expense_date', $month)
+                ->where('category', '!=', 'SALDO_AWAL');
+
+            if ($selectedCategory) {
+                $thisYearQuery->where('category', $selectedCategory);
+                $lastYearQuery->where('category', $selectedCategory);
+            }
+
+            $thisYear = $thisYearQuery->sum('amount');
+            $lastYear = $lastYearQuery->sum('amount');
+
+            $comparisonData[] = [
+                'month' => $month,
+                'month_name' => Carbon::create($year, $month)->format('M'),
+                'this_year' => $thisYear,
+                'last_year' => $lastYear,
+                'difference' => $thisYear - $lastYear,
+                'percentage' => $lastYear > 0 ? (($thisYear - $lastYear) / $lastYear) * 100 : 0
+            ];
+        }
+
+        // Top 10 Kategori tahun ini
+        $topCategories = Expense::selectRaw('category, SUM(amount) as total')
+            ->whereYear('expense_date', $year)
+            ->where('category', '!=', 'SALDO_AWAL')
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->category,
+                    'label' => Expense::CATEGORIES[$item->category] ?? $item->category,
+                    'total' => $item->total
+                ];
+            });
+
+        // Detail transaksi berdasarkan filter periode dan kategori
+        $detailTransactions = null;
+        if ($selectedCategory && $periodStart && $periodEnd) {
+            $detailTransactions = Expense::where('category', $selectedCategory)
+                ->whereBetween('expense_date', [$periodStart, $periodEnd])
+                ->orderByDesc('amount')
+                ->get();
+        }
+
+        // Statistik summary
+        $statsQuery = Expense::whereYear('expense_date', $year)->where('category', '!=', 'SALDO_AWAL');
+        if ($selectedCategory) {
+            $statsQuery->where('category', $selectedCategory);
+        }
+
+        $stats = [
+            'total_year' => $statsQuery->sum('amount'),
+            'total_last_year' => Expense::whereYear('expense_date', $compareYear)
+                ->where('category', '!=', 'SALDO_AWAL')
+                ->when($selectedCategory, fn($q) => $q->where('category', $selectedCategory))
+                ->sum('amount'),
+            'avg_monthly' => $statsQuery->sum('amount') / 12,
+            'highest_month' => collect($monthlyExpenses)->sortByDesc('total')->first(),
+            'lowest_month' => collect($monthlyExpenses)->where('total', '>', 0)->sortBy('total')->first(),
+            'total_transactions' => $statsQuery->count(),
+        ];
+
+        // Daftar tahun yang tersedia
+        $availableYears = Expense::selectRaw('YEAR(expense_date) as year')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year');
+
+        // List kategori untuk filter
+        $categories = Expense::CATEGORIES;
+
+        return view('expenses.analysis', compact(
+            'year',
+            'compareYear',
+            'monthlyExpenses',
+            'comparisonData',
+            'topCategories',
+            'stats',
+            'availableYears',
+            'categories',
+            'selectedCategory',
+            'periodStart',
+            'periodEnd',
+            'detailTransactions'
+        ));
+    }
 }

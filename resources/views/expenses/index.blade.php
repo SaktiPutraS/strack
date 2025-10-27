@@ -12,6 +12,10 @@
                     <p class="text-muted mb-0">Kelola semua pengeluaran Bank & Cash</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
+                    <!-- Analysis Button -->
+                    <a href="{{ route('expenses.analysis') }}" class="btn btn-outline-purple">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Analisis Pengeluaran
+                    </a>
                     <!-- Export Button -->
                     <button type="button" class="btn btn-outline-success" id="exportExcelBtn">
                         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
@@ -494,6 +498,18 @@
     </script>
 
     <style>
+        .btn-outline-purple {
+            border: 1.5px solid #8B5CF6;
+            color: #8B5CF6;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-outline-purple:hover {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7);
+            color: white;
+            border-color: #8B5CF6;
+        }
+
         /* Export button styling */
         .btn-outline-success {
             border-color: #10B981;

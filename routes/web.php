@@ -17,6 +17,7 @@ use App\Http\Controllers\UrfavController;
 use App\Http\Controllers\CalendarNoteController;
 use App\Http\Controllers\ProspectController;
 use App\Http\Controllers\SupplyController;
+use App\Http\Controllers\BudgetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -179,6 +180,12 @@ Route::middleware('simpleauth')->group(function () {
     Route::delete('supply-usages/{usage}', [SupplyController::class, 'deleteUsage'])->name('supply-usages.destroy');
     Route::get('supplies/{supply}/add-stock', [SupplyController::class, 'showAddStockForm'])->name('supplies.add-stock-form');
     Route::post('supplies/{supply}/add-stock', [SupplyController::class, 'addStock'])->name('supplies.add-stock');
+
+    // Budgets Management
+    Route::resource('budgets', BudgetController::class);
+    Route::post('budget-items/{item}/toggle-complete', [BudgetController::class, 'toggleItemComplete'])
+        ->name('budget-items.toggle-complete');
+    Route::get('budgets-report/{year?}', [BudgetController::class, 'report'])->name('budgets.report');
 });
 
 Route::get('/image/{filename}', function ($filename) {

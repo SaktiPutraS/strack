@@ -595,12 +595,18 @@
                             </div>
                         </li>
 
-
                         {{-- Laporan --}}
                         <li class="nav-item">
                             <a href="{{ route('financial-reports.index') }}"
                                 class="nav-link {{ request()->routeIs('financial-reports.*') ? 'active' : '' }}">
                                 <i class="bi bi-graph-up me-2"></i>Laporan
+                            </a>
+                        </li>
+
+                        {{-- Menu Budgeting --}}
+                        <li class="nav-item">
+                            <a href="{{ route('budgets.index') }}" class="nav-link {{ request()->routeIs('budgets.*') ? 'active' : '' }}">
+                                <i class="bi bi-calculator me-2"></i>Budgeting
                             </a>
                         </li>
 

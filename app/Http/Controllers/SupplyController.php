@@ -24,6 +24,7 @@ class SupplyController extends Controller
             match ($request->status) {
                 'low' => $query->lowStock(),
                 'out' => $query->outOfStock(),
+                'normal' => $query->whereColumn('qty', '>=', 'minimum_stock')->where('qty', '>', 0),
                 default => null
             };
         }

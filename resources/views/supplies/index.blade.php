@@ -21,48 +21,56 @@
     <!-- Statistics Cards -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-purple h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-boxes text-purple fs-4"></i>
+            <a href="{{ route('supplies.index') }}" class="text-decoration-none">
+                <div class="card luxury-card stat-card stat-card-purple h-100 clickable-card">
+                    <div class="card-body text-center p-3">
+                        <div class="luxury-icon mx-auto mb-2">
+                            <i class="bi bi-boxes text-purple fs-4"></i>
+                        </div>
+                        <h3 class="fw-bold text-purple mb-1">{{ $stats['total'] }}</h3>
+                        <small class="text-muted fw-semibold">Total Item</small>
                     </div>
-                    <h3 class="fw-bold text-purple mb-1">{{ $stats['total'] }}</h3>
-                    <small class="text-muted fw-semibold">Total Item</small>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-success h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2" style="background: rgba(16, 185, 129, 0.1)">
-                        <i class="bi bi-check-circle text-success fs-4"></i>
+            <a href="{{ route('supplies.index') }}?status=normal" class="text-decoration-none">
+                <div class="card luxury-card stat-card stat-card-success h-100 clickable-card">
+                    <div class="card-body text-center p-3">
+                        <div class="luxury-icon mx-auto mb-2" style="background: rgba(16, 185, 129, 0.1)">
+                            <i class="bi bi-check-circle text-success fs-4"></i>
+                        </div>
+                        <h3 class="fw-bold text-success mb-1">{{ $stats['normal'] }}</h3>
+                        <small class="text-muted fw-semibold">Stok Normal</small>
                     </div>
-                    <h3 class="fw-bold text-success mb-1">{{ $stats['normal'] }}</h3>
-                    <small class="text-muted fw-semibold">Stok Normal</small>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-warning h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2" style="background: rgba(245, 158, 11, 0.1)">
-                        <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+            <a href="{{ route('supplies.index') }}?status=low" class="text-decoration-none">
+                <div class="card luxury-card stat-card stat-card-warning h-100 clickable-card">
+                    <div class="card-body text-center p-3">
+                        <div class="luxury-icon mx-auto mb-2" style="background: rgba(245, 158, 11, 0.1)">
+                            <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                        </div>
+                        <h3 class="fw-bold text-warning mb-1">{{ $stats['low_stock'] }}</h3>
+                        <small class="text-muted fw-semibold">Stok Rendah</small>
                     </div>
-                    <h3 class="fw-bold text-warning mb-1">{{ $stats['low_stock'] }}</h3>
-                    <small class="text-muted fw-semibold">Stok Rendah</small>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-6 col-lg-3">
-            <div class="card luxury-card stat-card stat-card-danger h-100">
-                <div class="card-body text-center p-3">
-                    <div class="luxury-icon mx-auto mb-2" style="background: rgba(239, 68, 68, 0.1)">
-                        <i class="bi bi-x-circle text-danger fs-4"></i>
+            <a href="{{ route('supplies.index') }}?status=out" class="text-decoration-none">
+                <div class="card luxury-card stat-card stat-card-danger h-100 clickable-card">
+                    <div class="card-body text-center p-3">
+                        <div class="luxury-icon mx-auto mb-2" style="background: rgba(239, 68, 68, 0.1)">
+                            <i class="bi bi-x-circle text-danger fs-4"></i>
+                        </div>
+                        <h3 class="fw-bold text-danger mb-1">{{ $stats['out_of_stock'] }}</h3>
+                        <small class="text-muted fw-semibold">Habis</small>
                     </div>
-                    <h3 class="fw-bold text-danger mb-1">{{ $stats['out_of_stock'] }}</h3>
-                    <small class="text-muted fw-semibold">Habis</small>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 
@@ -392,6 +400,27 @@
 
         .table tbody tr:hover {
             background-color: rgba(139, 92, 246, 0.03);
+        }
+
+        .clickable-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clickable-card:hover {
+            transform: translateY(-8px) !important;
+            box-shadow: 0 12px 48px rgba(139, 92, 246, 0.2) !important;
+        }
+
+        .clickable-card:active {
+            transform: translateY(-4px) !important;
+        }
+
+        a:hover .clickable-card .text-purple,
+        a:hover .clickable-card .text-success,
+        a:hover .clickable-card .text-warning,
+        a:hover .clickable-card .text-danger {
+            transform: scale(1.05);
         }
 
         /* Responsive */

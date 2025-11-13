@@ -347,10 +347,13 @@ class BudgetController extends Controller
 
         // Kategorisasi Items (berdasarkan keyword)
         $categories = [
-            'Cicilan & Hutang' => ['KPR', 'Hutang', 'CC', 'Angsuran'],
+            'Cicilan & Hutang' => ['KPR', 'Hutang', 'Angsuran'],
+            'CC CIMB' => ['CC CIMB', 'CIMB'],
+            'CC UOB' => ['CC UOB', 'UOB'],
             'Keluarga' => ['Mama', 'Aung', 'Soskar'],
             'Komunikasi' => ['Pulsa', 'Internet'],
             'Utilitas' => ['Listrik', 'Token', 'PAM', 'IPL'],
+            'Gaji & Upah' => ['Gaji', 'Upah', 'Karyawan'],
             'Lainnya' => [],
         ];
 

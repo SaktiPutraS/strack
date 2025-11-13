@@ -604,6 +604,13 @@
                             </a>
                         </li>
 
+                        {{-- Perlengkapan --}}
+                        <li class="nav-item">
+                            <a href="{{ route('supplies.index') }}" class="nav-link {{ request()->routeIs('supplies.*') ? 'active' : '' }}">
+                                <i class="bi bi-box-seam me-2"></i>Perlengkapan
+                            </a>
+                        </li>
+
 
                         {{-- Saktify Menu --}}
                         <li class="nav-item dropdown">

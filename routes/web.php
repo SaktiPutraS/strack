@@ -16,6 +16,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UrfavController;
 use App\Http\Controllers\CalendarNoteController;
 use App\Http\Controllers\ProspectController;
+use App\Http\Controllers\SupplyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -170,6 +171,14 @@ Route::middleware('simpleauth')->group(function () {
     Route::get('/price-list', function () {
         return view('price-list.index');
     })->name('price-list');
+
+    // Supplies Management
+    Route::resource('supplies', SupplyController::class);
+    Route::get('supplies/{supply}/use', [SupplyController::class, 'showUseForm'])->name('supplies.use-form');
+    Route::post('supplies/{supply}/use', [SupplyController::class, 'recordUsage'])->name('supplies.record-usage');
+    Route::delete('supply-usages/{usage}', [SupplyController::class, 'deleteUsage'])->name('supply-usages.destroy');
+    Route::get('supplies/{supply}/add-stock', [SupplyController::class, 'showAddStockForm'])->name('supplies.add-stock-form');
+    Route::post('supplies/{supply}/add-stock', [SupplyController::class, 'addStock'])->name('supplies.add-stock');
 });
 
 Route::get('/image/{filename}', function ($filename) {

@@ -139,13 +139,19 @@
                                                 <i class="bi bi-trash"></i> Hapus
                                             </button>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold">Kategori</label>
+                                            <input type="text" name="items[{{ $index }}][category]" class="form-control item-category"
+                                                value="{{ old("items.$index.category", $item->category) }}"
+                                                placeholder="Contoh: Kartu Kredit CIMB" list="categoryList">
+                                        </div>
+                                        <div class="col-md-4">
                                             <label class="form-label fw-semibold">Nama Item <span class="text-danger">*</span></label>
                                             <input type="text" name="items[{{ $index }}][item_name]" class="form-control"
                                                 value="{{ old("items.$index.item_name", $item->item_name) }}"
                                                 placeholder="Contoh: Gaji, Bensin, Internet" required>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <label class="form-label fw-semibold">Estimasi Nominal <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rp</span>
@@ -164,6 +170,11 @@
                                 </div>
                             @endforeach
                         </div>
+                        <datalist id="categoryList">
+                            @foreach ($budget->categories as $cat)
+                                <option value="{{ $cat }}">
+                            @endforeach
+                        </datalist>
                     </div>
                 </div>
 
@@ -244,12 +255,17 @@
                                     <i class="bi bi-trash"></i> Hapus
                                 </button>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Kategori</label>
+                                <input type="text" name="items[${itemIndex}][category]"
+                                    class="form-control item-category" placeholder="Contoh: Kartu Kredit CIMB" list="categoryList">
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label fw-semibold">Nama Item <span class="text-danger">*</span></label>
                                 <input type="text" name="items[${itemIndex}][item_name]"
                                     class="form-control" placeholder="Contoh: Gaji, Bensin, Internet" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-semibold">Estimasi Nominal <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
@@ -269,7 +285,32 @@
                 itemIndex++;
                 updateItemNumbers();
                 calculateTotal();
+                updateCategoryList();
             });
+
+            // Update category datalist
+            function updateCategoryList() {
+                const categories = new Set();
+                document.querySelectorAll('.item-category').forEach(input => {
+                    if (input.value.trim()) {
+                        categories.add(input.value.trim());
+                    }
+                });
+                const datalist = document.getElementById('categoryList');
+                if (datalist) {
+                    datalist.innerHTML = Array.from(categories).map(cat => `<option value="${cat}">`).join('');
+                }
+            }
+
+            // Update category list on input
+            itemsContainer.addEventListener('input', function(e) {
+                if (e.target.classList.contains('item-category')) {
+                    updateCategoryList();
+                }
+            });
+
+            // Initialize category list
+            updateCategoryList();
 
             // Remove item
             itemsContainer.addEventListener('click', function(e) {

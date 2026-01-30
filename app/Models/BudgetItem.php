@@ -11,6 +11,7 @@ class BudgetItem extends Model
 
     protected $fillable = [
         'budget_id',
+        'category',
         'item_name',
         'estimated_amount',
         'notes',

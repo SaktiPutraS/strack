@@ -115,15 +115,15 @@
                 </div>
             </div>
 
-            <!-- Monthly Comparison -->
+            <!-- Monthly Comparison - Total Tiap Bulan -->
             @if (count($monthlyComparison) > 0)
                 <div class="card luxury-card border-0 mb-4">
                     <div class="card-header bg-white border-0 p-4">
                         <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
                             <div class="luxury-icon me-3">
-                                <i class="bi bi-arrow-left-right text-purple"></i>
+                                <i class="bi bi-table text-purple"></i>
                             </div>
-                            Perbandingan Antar Bulan
+                            Data Perbandingan Antar Bulan
                         </h5>
                     </div>
                     <div class="card-body p-4">
@@ -131,31 +131,104 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Dari → Ke</th>
-                                        <th class="text-end">Selisih</th>
-                                        <th class="text-end">Persentase</th>
-                                        <th class="text-center">Trend</th>
+                                        <th>Bulan</th>
+                                        <th class="text-end">Total Budget</th>
+                                        <th class="text-center">Jumlah Item</th>
+                                        <th class="text-center">Selesai</th>
+                                        <th class="text-center">Progress</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($monthlyComparison as $comp)
                                         <tr>
-                                            <td class="fw-semibold">{{ $comp['from'] }} → {{ $comp['to'] }}</td>
-                                            <td class="text-end">
-                                                <span class="text-{{ $comp['type'] == 'increase' ? 'success' : 'danger' }}">
-                                                    {{ $comp['type'] == 'increase' ? '+' : '' }}Rp {{ number_format(abs($comp['diff']), 0, ',', '.') }}
-                                                </span>
+                                            <td class="fw-semibold">{{ $comp['month_name'] }}</td>
+                                            <td class="text-end fw-bold text-purple">
+                                                Rp {{ number_format($comp['total'], 0, ',', '.') }}
                                             </td>
-                                            <td class="text-end">
-                                                <span class="badge bg-{{ $comp['type'] == 'increase' ? 'success' : 'danger' }}">
-                                                    {{ $comp['type'] == 'increase' ? '+' : '' }}{{ $comp['diff_percent'] }}%
-                                                </span>
+                                            <td class="text-center">{{ $comp['items_count'] }}</td>
+                                            <td class="text-center text-success">{{ $comp['completed_count'] }}</td>
+                                            <td class="text-center">
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <div class="progress flex-grow-1" style="height: 8px; max-width: 80px;">
+                                                        <div class="progress-bar bg-{{ $comp['progress'] == 100 ? 'success' : ($comp['progress'] > 0 ? 'warning' : 'secondary') }}"
+                                                            style="width: {{ $comp['progress'] }}%"></div>
+                                                    </div>
+                                                    <span class="badge bg-{{ $comp['progress'] == 100 ? 'success' : ($comp['progress'] > 0 ? 'warning' : 'secondary') }}">
+                                                        {{ $comp['progress'] }}%
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr class="fw-bold">
+                                        <td>TOTAL</td>
+                                        <td class="text-end text-purple">Rp {{ number_format($stats['total_budget_year'], 0, ',', '.') }}</td>
+                                        <td class="text-center">{{ $stats['total_items'] }}</td>
+                                        <td class="text-center text-success">{{ $stats['completed_items'] }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-{{ $stats['completion_rate'] == 100 ? 'success' : ($stats['completion_rate'] > 0 ? 'warning' : 'secondary') }}">
+                                                {{ $stats['completion_rate'] }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Pengeluaran Rutin Tahunan (dipindah ke sini) -->
+            @if ($itemGroups->count() > 0)
+                <div class="card luxury-card border-0 mb-4">
+                    <div class="card-header bg-white border-0 p-4">
+                        <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                            <div class="luxury-icon me-3">
+                                <i class="bi bi-arrow-repeat text-purple"></i>
+                            </div>
+                            Pengeluaran Rutin Tahunan
+                        </h5>
+                        <p class="text-muted small mb-0 mt-2">Item yang muncul di beberapa bulan sepanjang tahun {{ $selectedYear }}</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Item</th>
+                                        <th class="text-center">Frekuensi</th>
+                                        <th class="text-end">Total</th>
+                                        <th class="text-end">Rata-rata</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($itemGroups->take(15) as $group)
+                                        @php
+                                            $completionRate = $group['count'] > 0 ? round(($group['completed'] / $group['count']) * 100) : 0;
+                                        @endphp
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">{{ $group['name'] }}</div>
                                             </td>
                                             <td class="text-center">
-                                                @if ($comp['type'] == 'increase')
-                                                    <i class="bi bi-arrow-up-circle-fill text-success fs-5"></i>
+                                                <span class="badge bg-purple-soft text-purple">{{ $group['count'] }}x</span>
+                                            </td>
+                                            <td class="text-end fw-bold text-purple">
+                                                Rp {{ number_format($group['total'], 0, ',', '.') }}
+                                            </td>
+                                            <td class="text-end text-muted">
+                                                Rp {{ number_format($group['avg'], 0, ',', '.') }}
+                                            </td>
+                                            <td class="text-center">
+                                                @if ($completionRate == 100)
+                                                    <span class="badge bg-success">{{ $group['completed'] }}/{{ $group['count'] }}</span>
+                                                @elseif ($completionRate > 0)
+                                                    <span class="badge bg-warning">{{ $group['completed'] }}/{{ $group['count'] }}</span>
                                                 @else
-                                                    <i class="bi bi-arrow-down-circle-fill text-danger fs-5"></i>
+                                                    <span class="badge bg-secondary">0/{{ $group['count'] }}</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -166,55 +239,6 @@
                     </div>
                 </div>
             @endif
-
-            <!-- Top Items -->
-            <div class="card luxury-card border-0 mb-4">
-                <div class="card-header bg-white border-0 p-4">
-                    <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                        <div class="luxury-icon me-3">
-                            <i class="bi bi-trophy text-purple"></i>
-                        </div>
-                        10 Item Pengeluaran Terbesar
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th width="5%">#</th>
-                                    <th>Nama Item</th>
-                                    <th>Bulan</th>
-                                    <th class="text-end">Nominal</th>
-                                    <th class="text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($topItems as $index => $item)
-                                    <tr>
-                                        <td class="fw-bold text-purple">{{ $index + 1 }}</td>
-                                        <td>
-                                            <div class="fw-semibold">{{ $item->item_name }}</div>
-                                            @if ($item->notes)
-                                                <small class="text-muted">{{ Str::limit($item->notes, 30) }}</small>
-                                            @endif
-                                        </td>
-                                        <td>{{ $item->budget->month_name }}</td>
-                                        <td class="text-end fw-bold">{{ $item->formatted_amount }}</td>
-                                        <td class="text-center">
-                                            @if ($item->is_completed)
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                            @else
-                                                <i class="bi bi-circle text-warning"></i>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Right Column -->
@@ -230,60 +254,38 @@
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <canvas id="categoryChart" height="200"></canvas>
-                    <div class="mt-4">
-                        @foreach ($categorizedData as $category => $data)
-                            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                                <div>
-                                    <div class="fw-bold">{{ $category }}</div>
-                                    <small class="text-muted">{{ $data['count'] }} item</small>
+                    @if($categorizedData->count() > 0)
+                        <canvas id="categoryChart" height="200"></canvas>
+                        <div class="mt-4">
+                            @foreach ($categorizedData as $category => $data)
+                                @php
+                                    $percentage = $stats['total_budget_year'] > 0
+                                        ? round(($data['total'] / $stats['total_budget_year']) * 100, 1)
+                                        : 0;
+                                @endphp
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                                    <div>
+                                        <div class="fw-bold">{{ $category }}</div>
+                                        <small class="text-muted">
+                                            {{ $data['count'] }} item
+                                            @if(isset($data['completed']) && $data['completed'] > 0)
+                                                · {{ $data['completed'] }} selesai
+                                            @endif
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-purple">Rp {{ number_format($data['total'], 0, ',', '.') }}</div>
+                                        <small class="text-muted">{{ $percentage }}%</small>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <div class="fw-bold text-purple">Rp {{ number_format($data['total'], 0, ',', '.') }}</div>
-                                    <small class="text-muted">
-                                        {{ round(($data['total'] / $stats['total_budget_year']) * 100, 1) }}%
-                                    </small>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recurring Items -->
-            <div class="card luxury-card border-0 mb-4">
-                <div class="card-header bg-white border-0 p-4">
-                    <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                        <div class="luxury-icon me-3" style="width: 40px; height: 40px;">
-                            <i class="bi bi-arrow-repeat text-purple"></i>
+                            @endforeach
                         </div>
-                        Item Berulang
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    @foreach ($itemGroups->take(10) as $group)
-                        <div class="mb-3 pb-3 border-bottom">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold">{{ $group['name'] }}</div>
-                                    <small class="text-muted">
-                                        Muncul {{ $group['count'] }}x
-                                        @if ($group['completed'] > 0)
-                                            · {{ $group['completed'] }} selesai
-                                        @endif
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <small class="text-muted">Total:</small>
-                                <strong class="text-purple">Rp {{ number_format($group['total'], 0, ',', '.') }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <small class="text-muted">Rata-rata:</small>
-                                <span class="text-muted">Rp {{ number_format($group['avg'], 0, ',', '.') }}</span>
-                            </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bi bi-folder2-open text-muted" style="font-size: 2.5rem;"></i>
+                            <p class="text-muted mt-2 mb-0">Belum ada data kategori</p>
                         </div>
-                    @endforeach
+                    @endif
                 </div>
             </div>
 
@@ -375,7 +377,7 @@
                     },
                     scales: {
                         y: {
-                            beginAtZero: false,
+                            beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
                                     return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
@@ -387,52 +389,58 @@
             });
 
             // Category Chart
-            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-            const categorizedData = @json($categorizedData);
+            const categoryChartEl = document.getElementById('categoryChart');
+            if (categoryChartEl) {
+                const categoryCtx = categoryChartEl.getContext('2d');
+                const categorizedData = @json($categorizedData);
 
-            const categoryLabels = Object.keys(categorizedData);
-            const categoryValues = Object.values(categorizedData).map(d => d.total);
-            const categoryColors = [
-                '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4'
-            ];
+                const categoryLabels = Object.keys(categorizedData);
+                const categoryValues = Object.values(categorizedData).map(d => d.total);
+                const categoryColors = [
+                    '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4',
+                    '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'
+                ];
 
-            new Chart(categoryCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: categoryLabels,
-                    datasets: [{
-                        data: categoryValues,
-                        backgroundColor: categoryColors,
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                font: {
-                                    size: 12
-                                }
-                            }
+                if (categoryLabels.length > 0) {
+                    new Chart(categoryCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: categoryLabels,
+                            datasets: [{
+                                data: categoryValues,
+                                backgroundColor: categoryColors.slice(0, categoryLabels.length),
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
                         },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.parsed;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return context.label + ': Rp ' + value.toLocaleString('id-ID') + ' (' + percentage + '%)';
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: {
+                                            size: 11
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return context.label + ': Rp ' + value.toLocaleString('id-ID') + ' (' + percentage + '%)';
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                    });
                 }
-            });
+            }
         });
     </script>
 
@@ -509,6 +517,19 @@
 
         .table tbody tr:hover {
             background-color: rgba(139, 92, 246, 0.03);
+        }
+
+        .bg-purple-soft {
+            background-color: rgba(139, 92, 246, 0.15) !important;
+        }
+
+        .progress {
+            border-radius: 10px;
+            background-color: rgba(139, 92, 246, 0.1);
+        }
+
+        .progress-bar {
+            border-radius: 10px;
         }
     </style>
 @endpush

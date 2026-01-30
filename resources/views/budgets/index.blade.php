@@ -24,10 +24,10 @@
             <div class="card luxury-card stat-card stat-card-purple h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
-                        <i class="bi bi-calendar-check text-purple fs-4"></i>
+                        <i class="bi bi-wallet2 text-purple fs-4"></i>
                     </div>
-                    <h3 class="fw-bold text-purple mb-1">{{ $stats['total_budgets'] }}</h3>
-                    <small class="text-muted fw-semibold">Budget Tahun Ini</small>
+                    <h3 class="fw-bold text-purple mb-1 fs-6">{{ number_format($stats['current_month_budget'], 0, ',', '.') }}</h3>
+                    <small class="text-muted fw-semibold">Budget Bulan Ini</small>
                 </div>
             </div>
         </div>
@@ -35,10 +35,16 @@
             <div class="card luxury-card stat-card stat-card-success h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2" style="background: rgba(16, 185, 129, 0.1)">
-                        <i class="bi bi-check-circle text-success fs-4"></i>
+                        <i class="bi bi-pie-chart text-success fs-4"></i>
                     </div>
-                    <h3 class="fw-bold text-success mb-1">{{ $stats['completed_budgets'] }}</h3>
-                    <small class="text-muted fw-semibold">Selesai Sempurna</small>
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <h3 class="fw-bold text-success mb-0">{{ $stats['current_month_progress'] }}%</h3>
+                    </div>
+                    <small class="text-muted fw-semibold">Progress Bulan Ini</small>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: {{ $stats['current_month_progress'] }}%"></div>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.7rem;">{{ $stats['current_month_completed_items'] }}/{{ $stats['current_month_total_items'] }} item</small>
                 </div>
             </div>
         </div>
@@ -77,42 +83,24 @@
                         </div>
                         Daftar Budget
                     </h5>
-                    <p class="text-muted mb-0">{{ $budgets->total() }} budget</p>
+                    <p class="text-muted mb-0">Menampilkan 3 bulan (bulan lalu, sekarang, depan)</p>
                 </div>
 
                 <div class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
-                    <!-- Button Laporan - TAMBAH INI -->
+                    <!-- Button Import/Export -->
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importExportModal">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Import/Export
+                    </button>
+                    <!-- Button Laporan -->
                     <a href="{{ route('budgets.report', $selectedYear) }}" class="btn btn-success">
                         <i class="bi bi-file-earmark-bar-graph me-2"></i>Lihat Laporan
                     </a>
-
-                    <!-- Filter -->
-                    <form method="GET" class="d-flex gap-2">
-                        <select name="year" class="form-select" onchange="this.form.submit()">
-                            @foreach ($availableYears as $year)
-                                <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>
-                                    {{ $year }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <select name="status" class="form-select" onchange="this.form.submit()">
-                            <option value="">Semua Status</option>
-                            <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>Baru</option>
-                            <option value="progress" {{ request('status') == 'progress' ? 'selected' : '' }}>Progress</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Selesai</option>
-                        </select>
-                        @if (request()->hasAny(['status']))
-                            <a href="{{ route('budgets.index', ['year' => $selectedYear]) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i>
-                            </a>
-                        @endif
-                    </form>
                 </div>
             </div>
         </div>
 
         <div class="card-body p-0">
-            @if ($budgets->count() > 0)
+            @if (count($budgets) > 0)
                 <!-- Budget Cards Grid -->
                 <div class="p-4">
                     <div class="row g-3">
@@ -198,24 +186,6 @@
                     </div>
                 </div>
 
-                <!-- Pagination -->
-                @if ($budgets->hasPages())
-                    <div class="card-footer bg-light border-0 p-4">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <p class="text-muted mb-0">
-                                    Menampilkan {{ $budgets->firstItem() }}-{{ $budgets->lastItem() }}
-                                    dari {{ $budgets->total() }} budget
-                                </p>
-                            </div>
-                            <div class="col-md-6">
-                                <nav class="d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
-                                    {{ $budgets->links() }}
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                @endif
             @else
                 <!-- Empty State -->
                 <div class="text-center py-5">
@@ -229,6 +199,86 @@
                     </a>
                 </div>
             @endif
+        </div>
+    </div>
+    <!-- Import/Export Modal -->
+    <div class="modal fade" id="importExportModal" tabindex="-1" aria-labelledby="importExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExportModalLabel">
+                        <i class="bi bi-file-earmark-excel me-2 text-purple"></i>Import / Export Semua Budget
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Export Section -->
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <div class="card border-success h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-download me-2"></i>Export Semua Budget</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small mb-3">
+                                        Download semua data budget dalam satu file Excel. Setiap budget akan menjadi sheet terpisah.
+                                    </p>
+                                    <ul class="text-muted small mb-3">
+                                        <li>Sheet RINGKASAN berisi summary semua budget</li>
+                                        <li>Setiap sheet berisi data budget per periode</li>
+                                        <li>Format siap edit untuk import ulang</li>
+                                    </ul>
+                                    <div class="d-grid">
+                                        <a href="{{ route('budgets.export-all') }}" class="btn btn-success">
+                                            <i class="bi bi-download me-2"></i>Export Semua ke Excel
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Import Section -->
+                        <div class="col-md-6">
+                            <div class="card border-primary h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-upload me-2"></i>Import Masal</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small mb-3">
+                                        Upload file Excel untuk update atau membuat budget baru secara masal.
+                                    </p>
+                                    <div class="alert alert-info small py-2 mb-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        <strong>Update Budget:</strong> Isi kolom Budget ID dengan ID budget yang ada.<br>
+                                        <strong>Buat Budget Baru:</strong> Kosongkan kolom Budget ID, nama sheet harus format <code>YYYY-MM</code> (contoh: 2026-02).
+                                    </div>
+                                    <div class="alert alert-warning small py-2 mb-3">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Jangan ubah kolom ID jika ingin update item yang ada!
+                                    </div>
+                                    <form action="{{ route('budgets.import-all') }}" method="POST" enctype="multipart/form-data" id="importAllForm">
+                                        @csrf
+                                        <div class="mb-3">
+                                            <label for="import_excel_file" class="form-label fw-semibold">Pilih File Excel</label>
+                                            <input type="file" class="form-control" id="import_excel_file" name="excel_file"
+                                                accept=".xlsx,.xls" required>
+                                            <small class="text-muted">Format: .xlsx atau .xls (Max 10MB)</small>
+                                        </div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary" id="importAllBtn">
+                                                <i class="bi bi-upload me-2"></i>Import dari Excel
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -253,11 +303,57 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Import form handling
+            const importAllForm = document.getElementById('importAllForm');
+            const importAllBtn = document.getElementById('importAllBtn');
+
+            if (importAllForm) {
+                importAllForm.addEventListener('submit', function(e) {
+                    const fileInput = document.getElementById('import_excel_file');
+                    if (!fileInput.files.length) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Perhatian',
+                            text: 'Pilih file Excel terlebih dahulu!',
+                            confirmButtonColor: '#8B5CF6'
+                        });
+                        return;
+                    }
+
+                    // Check file size (max 10MB)
+                    const maxSize = 10 * 1024 * 1024;
+                    if (fileInput.files[0].size > maxSize) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'File Terlalu Besar',
+                            text: 'Ukuran file maksimal 10MB',
+                            confirmButtonColor: '#8B5CF6'
+                        });
+                        return;
+                    }
+
+                    // Show loading
+                    importAllBtn.disabled = true;
+                    importAllBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Mengimport...';
+                });
+            }
+
             @if (session('success'))
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
                     text: '{{ session('success') }}',
+                    confirmButtonColor: '#8B5CF6'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: '{{ session('error') }}',
                     confirmButtonColor: '#8B5CF6'
                 });
             @endif
@@ -270,7 +366,6 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 16px;
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
@@ -283,7 +378,6 @@
             left: 0;
             right: 0;
             height: 4px;
-            transition: all 0.3s ease;
         }
 
         .stat-card-purple::before {
@@ -302,18 +396,8 @@
             background: linear-gradient(90deg, #F59E0B, #D97706);
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
-        }
-
         .budget-card {
-            transition: all 0.3s ease;
-        }
-
-        .budget-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 48px rgba(139, 92, 246, 0.15);
+            /* No transform animation to prevent click issues */
         }
 
         .luxury-card {

@@ -146,4 +146,58 @@ class Budget extends Model
         $this->total_budget = $this->items()->sum('estimated_amount');
         $this->save();
     }
+
+    // Get items grouped by category
+    public function getItemsGroupedByCategoryAttribute(): array
+    {
+        $items = $this->items()
+            ->orderBy('category')
+            ->orderBy('is_completed')
+            ->orderBy('id')
+            ->get();
+
+        $grouped = [];
+
+        // Group items by category
+        foreach ($items as $item) {
+            $category = $item->category ?: 'Tanpa Kategori';
+            if (!isset($grouped[$category])) {
+                $grouped[$category] = [
+                    'name' => $category,
+                    'items' => [],
+                    'total_amount' => 0,
+                    'completed_amount' => 0,
+                    'total_count' => 0,
+                    'completed_count' => 0,
+                ];
+            }
+            $grouped[$category]['items'][] = $item;
+            $grouped[$category]['total_amount'] += $item->estimated_amount;
+            $grouped[$category]['total_count']++;
+            if ($item->is_completed) {
+                $grouped[$category]['completed_amount'] += $item->estimated_amount;
+                $grouped[$category]['completed_count']++;
+            }
+        }
+
+        // Calculate progress for each category
+        foreach ($grouped as $key => $category) {
+            $grouped[$key]['progress'] = $category['total_count'] > 0
+                ? round(($category['completed_count'] / $category['total_count']) * 100, 1)
+                : 0;
+            $grouped[$key]['is_completed'] = $category['completed_count'] == $category['total_count'] && $category['total_count'] > 0;
+        }
+
+        return $grouped;
+    }
+
+    // Get all unique categories for this budget
+    public function getCategoriesAttribute(): array
+    {
+        return $this->items()
+            ->whereNotNull('category')
+            ->distinct()
+            ->pluck('category')
+            ->toArray();
+    }
 }

@@ -61,7 +61,6 @@
 
         .luxury-card:hover {
             box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
-            transform: translateY(-2px);
         }
 
         .btn-primary {
@@ -169,10 +168,7 @@
             opacity: 1;
         }
 
-        .btn:active,
-        .luxury-card:active {
-            transform: scale(0.98);
-        }
+        /* Animasi scale dihapus untuk menghindari masalah klik */
 
         .text-purple {
             color: #8B5CF6;
@@ -647,6 +643,12 @@
                         <li class="nav-item">
                             <a href="{{ route('price-list') }}" class="nav-link {{ request()->routeIs('price-list') ? 'active' : '' }}">
                                 <i class="bi bi-currency-dollar me-2"></i>Daftar Harga
+                            </a>
+                        </li>
+                        {{-- Menu Guide Chat --}}
+                        <li class="nav-item">
+                            <a href="{{ route('guide-chat.index') }}" class="nav-link {{ request()->routeIs('guide-chat.*') ? 'active' : '' }}">
+                                <i class="bi bi-chat-dots me-2"></i>Guide Chat
                             </a>
                         </li>
                         <li class="nav-item">

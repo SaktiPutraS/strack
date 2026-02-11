@@ -2,7 +2,6 @@
 @section('title', $project->title)
 
 @section('content')
-    <!-- Modern Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
@@ -24,7 +23,6 @@
         </div>
     </div>
 
-    <!-- Project Status & Progress Overview -->
     <div class="row g-3 mb-4">
         <div class="col-12">
             <h5 class="text-uppercase text-muted fw-bold mb-3 fs-6">
@@ -106,9 +104,7 @@
     </div>
 
     <div class="row">
-        <!-- Project Details -->
         <div class="col-lg-8">
-            <!-- Main Project Information -->
             <div class="card luxury-card border-0 mb-4">
                 <div class="card-header bg-white border-0 p-4">
                     <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
@@ -120,7 +116,6 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-4">
-                        <!-- Client Information -->
                         <div class="col-md-6">
                             <label class="form-label text-muted fw-semibold">Klien</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
@@ -137,7 +132,6 @@
                             </div>
                         </div>
 
-                        <!-- Project Type -->
                         <div class="col-md-6">
                             <label class="form-label text-muted fw-semibold">Tipe Proyek</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
@@ -150,7 +144,6 @@
                             </div>
                         </div>
 
-                        <!-- Deadline -->
                         <div class="col-md-6">
                             <label class="form-label text-muted fw-semibold">Deadline</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
@@ -176,7 +169,6 @@
                             </div>
                         </div>
 
-                        <!-- Project Value -->
                         <div class="col-md-6">
                             <label class="form-label text-muted fw-semibold">Nilai Proyek</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
@@ -187,7 +179,6 @@
                             </div>
                         </div>
 
-                        <!-- Description -->
                         <div class="col-12">
                             <label class="form-label text-muted fw-semibold">Deskripsi Proyek</label>
                             <div class="p-3 bg-light rounded-3">
@@ -196,7 +187,6 @@
                         </div>
 
                         @if ($project->notes)
-                            <!-- Notes -->
                             <div class="col-12">
                                 <label class="form-label text-muted fw-semibold">Catatan Khusus</label>
                                 <div class="p-3 bg-warning bg-opacity-10 rounded-3 border-start border-warning border-3">
@@ -205,11 +195,9 @@
                             </div>
                         @endif
                     </div>
-
                 </div>
             </div>
 
-            <!-- Payment History -->
             <div class="card luxury-card border-0">
                 <div class="card-header bg-white border-0 p-4">
                     <div class="d-flex justify-content-between align-items-center">
@@ -294,10 +282,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Quick Actions -->
             <div class="card luxury-card border-0 mb-4">
                 <div class="card-header bg-white border-0 p-4">
                     <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
@@ -330,17 +315,15 @@
                             </button>
                         @endif
 
-                        @if ($project->type === 'BTOOLS')
-                            <a href="{{ route('projects.preview-quotation', $project) }}"
-                                class="btn btn-warning d-flex align-items-center justify-content-center">
-                                <i class="bi bi-file-text me-2"></i>Print Quotation
-                            </a>
+                        <a href="{{ route('projects.preview-quotation', $project) }}"
+                            class="btn btn-warning d-flex align-items-center justify-content-center">
+                            <i class="bi bi-file-text me-2"></i>Print Quotation
+                        </a>
 
-                            <a href="{{ route('projects.preview-invoice', $project) }}"
-                                class="btn btn-info d-flex align-items-center justify-content-center">
-                                <i class="bi bi-printer me-2"></i>Print Invoice
-                            </a>
-                        @endif
+                        <a href="{{ route('projects.preview-invoice', $project) }}"
+                            class="btn btn-info d-flex align-items-center justify-content-center">
+                            <i class="bi bi-printer me-2"></i>Print Invoice
+                        </a>
 
                         <a href="{{ $project->client->whatsapp_link }}" target="_blank"
                             class="btn btn-success d-flex align-items-center justify-content-center">
@@ -360,7 +343,6 @@
                 </div>
             </div>
 
-            <!-- Project Timeline -->
             <div class="card luxury-card border-0">
                 <div class="card-header bg-white border-0 p-4">
                     <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
@@ -568,7 +550,6 @@
     </script>
 
     <style>
-        /* Custom col-md-2-4 for 5 columns on medium screens */
         @media (min-width: 768px) {
             .col-md-2-4 {
                 flex: 0 0 auto;
@@ -576,7 +557,6 @@
             }
         }
 
-        /* Stat card styling dengan border atas berwarna */
         .stat-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -660,7 +640,6 @@
             border-color: rgba(139, 92, 246, 0.3) !important;
         }
 
-        /* Timeline styling */
         .timeline {
             position: relative;
             padding-left: 2rem;

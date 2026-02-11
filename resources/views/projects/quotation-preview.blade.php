@@ -2,12 +2,11 @@
 @section('title', 'Preview Quotation - ' . $project->title)
 
 @section('content')
-    <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
                 <div>
-                    <h1 class="h2 fw-bold text-purple mb-1">
+                    <h1 class="h2 fw-bold text-teal mb-1">
                         <i class="bi bi-file-text me-2"></i>Preview Quotation
                     </h1>
                     <p class="text-muted mb-0">Edit informasi client sebelum mencetak quotation untuk {{ $project->title }}</p>
@@ -21,14 +20,20 @@
         </div>
     </div>
 
+    @if (!$isBtools)
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Catatan:</strong> Quotation untuk project non-BTOOLS menggunakan template Saktify dengan logo dan stempel Saktify.
+        </div>
+    @endif
+
     <div class="row">
-        <!-- Form Edit Client Info -->
         <div class="col-lg-6">
             <div class="card luxury-card border-0">
                 <div class="card-header bg-white border-0 p-4">
                     <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
                         <div class="luxury-icon me-3">
-                            <i class="bi bi-person-lines-fill text-purple"></i>
+                            <i class="bi bi-person-lines-fill text-teal"></i>
                         </div>
                         Edit Informasi Client
                     </h5>
@@ -58,35 +63,26 @@
                         </div>
 
                         <div class="border-top pt-3 mb-3">
-                            <h6 class="fw-bold text-dark mb-3">Detail Penawaran</h6>
+                            <h6 class="fw-bold text-dark mb-3">Detail Item</h6>
 
                             <div class="mb-3">
-                                <label for="qty" class="form-label fw-semibold">Quantity</label>
-                                <input type="number" class="form-control" id="qty" name="qty" value="1" min="1" step="1"
-                                    required>
+                                <label for="item_description" class="form-label fw-semibold">Deskripsi Item</label>
+                                <textarea class="form-control" id="item_description" name="item_description" rows="3" required>{{ $project->title }}
+{{ $project->description }}</textarea>
+                                <small class="text-muted">Isi dengan deskripsi lengkap item/jasa yang ditawarkan</small>
                             </div>
 
                             <div class="mb-3">
-                                <label for="unit_price" class="form-label fw-semibold">Unit Price</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
-                                    <input type="text" class="form-control" id="unit_price" name="unit_price"
-                                        value="{{ number_format($project->total_value, 0, ',', '.') }}" readonly>
-                                </div>
-                                <small class="text-muted">Unit price akan otomatis dihitung berdasarkan quantity</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Total</label>
+                                <label class="form-label fw-semibold">Total Nilai</label>
                                 <div class="d-flex align-items-center p-3 bg-light rounded-3">
                                     <i class="bi bi-calculator text-success me-2"></i>
-                                    <strong class="text-success" id="total_display">{{ $project->formatted_total_value }}</strong>
+                                    <strong class="text-success">{{ $project->formatted_total_value }}</strong>
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-teal">
                                 <i class="bi bi-printer me-2"></i>Print Quotation
                             </button>
                             <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
@@ -98,13 +94,12 @@
             </div>
         </div>
 
-        <!-- Project Summary -->
         <div class="col-lg-6">
             <div class="card luxury-card border-0">
                 <div class="card-header bg-white border-0 p-4">
                     <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
                         <div class="luxury-icon me-3">
-                            <i class="bi bi-folder2-open text-purple"></i>
+                            <i class="bi bi-folder2-open text-teal"></i>
                         </div>
                         Ringkasan Proyek
                     </h5>
@@ -114,7 +109,7 @@
                         <div class="col-12">
                             <label class="form-label text-muted fw-semibold">Nomor Quotation</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
-                                <i class="bi bi-hash text-purple me-2"></i>
+                                <i class="bi bi-hash text-teal me-2"></i>
                                 <strong>{{ $quotationNumber }}</strong>
                             </div>
                         </div>
@@ -122,7 +117,7 @@
                         <div class="col-12">
                             <label class="form-label text-muted fw-semibold">Judul Proyek</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
-                                <i class="bi bi-folder text-purple me-2"></i>
+                                <i class="bi bi-folder text-teal me-2"></i>
                                 <strong>{{ $project->title }}</strong>
                             </div>
                         </div>
@@ -131,7 +126,8 @@
                             <label class="form-label text-muted fw-semibold">Tipe Proyek</label>
                             <div class="d-flex align-items-center p-3 bg-light rounded-3">
                                 <i class="bi bi-tag text-secondary me-2"></i>
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-3 py-2">
+                                <span
+                                    class="badge {{ $isBtools ? 'bg-info' : 'bg-teal' }} bg-opacity-10 text-{{ $isBtools ? 'info' : 'teal' }} border border-{{ $isBtools ? 'info' : 'teal' }} px-3 py-2">
                                     {{ $project->type }}
                                 </span>
                             </div>
@@ -178,34 +174,18 @@
 
 @push('scripts')
     <script>
-        const totalValue = {{ $project->total_value }};
-
         function resetForm() {
-            // Reset ke data asli dari database
             document.getElementById('client_name').value = '{{ $project->client->name }}';
             document.getElementById('client_address').value = '{{ $project->client->address }}';
             document.getElementById('client_phone').value = '{{ $project->client->phone }}';
             document.getElementById('client_email').value = '{{ $project->client->email }}';
-            document.getElementById('qty').value = '1';
-            calculateUnitPrice();
+            document.getElementById('item_description').value = '{{ $project->title }}\n{{ $project->description }}';
         }
 
-        function calculateUnitPrice() {
-            const qty = parseInt(document.getElementById('qty').value) || 1;
-            const unitPrice = totalValue / qty;
-
-            // Format unit price dengan pemisah ribuan
-            document.getElementById('unit_price').value = new Intl.NumberFormat('id-ID').format(Math.round(unitPrice));
-        }
-
-        // Event listener untuk qty change
-        document.getElementById('qty').addEventListener('input', calculateUnitPrice);
-
-        // Validasi form sebelum submit
         document.getElementById('quotationForm').addEventListener('submit', function(e) {
             const name = document.getElementById('client_name').value.trim();
             const phone = document.getElementById('client_phone').value.trim();
-            const qty = parseInt(document.getElementById('qty').value);
+            const description = document.getElementById('item_description').value.trim();
 
             if (!name) {
                 e.preventDefault();
@@ -213,7 +193,7 @@
                     title: 'Peringatan!',
                     text: 'Nama client harus diisi',
                     icon: 'warning',
-                    confirmButtonColor: '#8B5CF6'
+                    confirmButtonColor: '#14B8A6'
                 });
                 return;
             }
@@ -224,18 +204,18 @@
                     title: 'Peringatan!',
                     text: 'No. telepon client harus diisi',
                     icon: 'warning',
-                    confirmButtonColor: '#8B5CF6'
+                    confirmButtonColor: '#14B8A6'
                 });
                 return;
             }
 
-            if (!qty || qty < 1) {
+            if (!description) {
                 e.preventDefault();
                 Swal.fire({
                     title: 'Peringatan!',
-                    text: 'Quantity harus diisi minimal 1',
+                    text: 'Deskripsi item harus diisi',
                     icon: 'warning',
-                    confirmButtonColor: '#8B5CF6'
+                    confirmButtonColor: '#14B8A6'
                 });
                 return;
             }
@@ -246,35 +226,55 @@
         .luxury-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(139, 92, 246, 0.08);
-            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(20, 184, 166, 0.08);
+            box-shadow: 0 4px 24px rgba(20, 184, 166, 0.08);
             border-radius: 16px;
             transition: all 0.3s ease;
         }
 
         .luxury-card:hover {
-            box-shadow: 0 8px 40px rgba(139, 92, 246, 0.15);
+            box-shadow: 0 8px 40px rgba(20, 184, 166, 0.15);
             transform: translateY(-2px);
         }
 
         .luxury-icon {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(20, 184, 166, 0.15));
             border-radius: 12px;
             width: 48px;
             height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
         }
 
-        .text-purple {
-            color: #8B5CF6 !important;
+        .text-teal {
+            color: #14B8A6 !important;
+        }
+
+        .bg-teal {
+            background-color: #14B8A6 !important;
+        }
+
+        .btn-teal {
+            background-color: #14B8A6;
+            border-color: #14B8A6;
+            color: white;
+        }
+
+        .btn-teal:hover {
+            background-color: #0D9488;
+            border-color: #0D9488;
+            color: white;
+        }
+
+        .border-teal {
+            border-color: rgba(20, 184, 166, 0.3) !important;
         }
 
         .form-control:focus {
-            border-color: rgba(139, 92, 246, 0.5);
-            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+            border-color: rgba(20, 184, 166, 0.5);
+            box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.25);
         }
     </style>
 @endpush

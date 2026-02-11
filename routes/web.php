@@ -1,9 +1,9 @@
 <?php
-// routes/web.php
 
 use App\Http\Controllers\SimpleLoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectInvoiceController;
 use App\Http\Controllers\ProjectTypeController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PaymentController;
@@ -21,12 +21,6 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\GuideController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Public Routes (No Auth)
-|--------------------------------------------------------------------------
-*/
-
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -35,68 +29,51 @@ Route::get('/login', [SimpleLoginController::class, 'showLoginForm'])->name('log
 Route::post('/login', [SimpleLoginController::class, 'login']);
 Route::get('/logout', [SimpleLoginController::class, 'logout']);
 
-/*
-|--------------------------------------------------------------------------
-| Protected Routes (With simpleauth Middleware)
-|--------------------------------------------------------------------------
-*/
 Route::middleware('simpleauth')->group(function () {
 
-    // Dashboard
     Route::get('/dashboard-admin', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Prospects Management (Saktify)
     Route::resource('prospects', ProspectController::class);
 
-    // Projects - Export route harus di atas resource route
     Route::get('projects/export/excel', [ProjectController::class, 'exportExcel'])->name('projects.export.excel');
-    Route::get('projects/{project}/preview-invoice', [ProjectController::class, 'previewInvoice'])->name('projects.preview-invoice');
-    Route::get('projects/{project}/print-invoice', [ProjectController::class, 'printInvoice'])->name('projects.print-invoice');
-    Route::get('projects/{project}/preview-quotation', [ProjectController::class, 'previewQuotation'])->name('projects.preview-quotation');
-    Route::get('projects/{project}/print-quotation', [ProjectController::class, 'printQuotation'])->name('projects.print-quotation');
+
+    Route::get('projects/{project}/preview-invoice', [ProjectInvoiceController::class, 'previewInvoice'])->name('projects.preview-invoice');
+    Route::get('projects/{project}/print-invoice', [ProjectInvoiceController::class, 'printInvoice'])->name('projects.print-invoice');
+    Route::get('projects/{project}/preview-quotation', [ProjectInvoiceController::class, 'previewQuotation'])->name('projects.preview-quotation');
+    Route::get('projects/{project}/print-quotation', [ProjectInvoiceController::class, 'printQuotation'])->name('projects.print-quotation');
+
     Route::resource('projects', ProjectController::class);
     Route::patch('projects/{project}/status', [ProjectController::class, 'updateStatus'])->name('projects.status');
     Route::patch('projects/{project}/testimoni', [ProjectController::class, 'updateTestimoni'])->name('projects.testimoni');
 
-    // Project Types Management
     Route::resource('project-types', ProjectTypeController::class);
     Route::patch('project-types/{projectType}/toggle', [ProjectTypeController::class, 'toggle'])
         ->name('project-types.toggle');
 
-    // Clients
     Route::resource('clients', ClientController::class);
 
-    // Payments
     Route::resource('payments', PaymentController::class);
     Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');
 
-    // Expenses Analysis - harus di atas resource
     Route::get('expenses/analysis', [ExpenseController::class, 'analysis'])->name('expenses.analysis');
     Route::get('expenses/export/excel', [ExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
     Route::resource('expenses', ExpenseController::class);
 
-    // Financial Management Routes
     Route::prefix('financial')->group(function () {
-        // Expenses Management - Export route harus di atas resource
         Route::get('expenses/export/excel', [ExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
         Route::resource('expenses', ExpenseController::class);
         Route::get('expenses/subcategories/{category}', [ExpenseController::class, 'getSubcategories'])->name('expenses.subcategories');
 
-        // Bank Transfers Management
         Route::resource('bank-transfers', BankTransferController::class)->except(['edit', 'update', 'show']);
         Route::post('bank-transfers/batch', [BankTransferController::class, 'batchTransfer'])->name('bank-transfers.batch');
 
-        // Cash Withdrawals Management - NEW
         Route::resource('cash-withdrawals', CashWithdrawalController::class);
 
-        // Gold Transactions Management
         Route::resource('gold', GoldTransactionController::class)->only(['index', 'create', 'store', 'destroy']);
 
-        // Financial Reports
         Route::get('reports', [FinancialReportController::class, 'index'])->name('financial-reports.index');
     });
 
-    // Task Management Routes untuk Admin
     Route::prefix('tasks')->name('tasks.')->group(function () {
         Route::get('/', [TaskController::class, 'index'])->name('index');
         Route::get('/create', [TaskController::class, 'create'])->name('create');
@@ -106,30 +83,22 @@ Route::middleware('simpleauth')->group(function () {
         Route::put('/{task}', [TaskController::class, 'update'])->name('update');
         Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
 
-        // Export routes
         Route::get('/export/excel', [TaskController::class, 'exportExcel'])->name('export-excel');
 
-        // Validation routes
         Route::get('/validation/pending', [TaskController::class, 'validation'])->name('validation');
         Route::post('/assignments/{assignment}/validate', [TaskController::class, 'validateAssignment'])->name('validate-assignment');
 
-        // Download attachment
         Route::get('/assignments/{assignment}/download', [TaskController::class, 'downloadAttachment'])->name('download-attachment');
     });
 
-    // Minimal API Routes for AJAX requests
     Route::prefix('api')->group(function () {
-        // Client creation for project form
         Route::post('clients', [ClientController::class, 'store'])->name('api.clients.store');
 
-        // Gold portfolio data for forms that need it
         Route::get('gold/portfolio', [GoldTransactionController::class, 'getPortfolio'])->name('api.gold.portfolio');
 
-        // Balance data for expense forms - NEW
         Route::get('balances', [ExpenseController::class, 'getBalances'])->name('api.balances');
     });
 
-    // User Dashboard
     Route::get('/dashboard-user', [DashboardController::class, 'userIndex'])->name('dashboard.user');
 
     Route::prefix('tasks-user')->name('tasks.user.')->group(function () {
@@ -138,7 +107,6 @@ Route::middleware('simpleauth')->group(function () {
         Route::post('/assignments/{assignment}/submit', [TaskController::class, 'userSubmit'])->name('submit');
     });
 
-    // Urfav Management Routes
     Route::prefix('urfav')->name('urfav.')->group(function () {
         Route::get('/', [UrfavController::class, 'index'])->name('index');
         Route::post('/', [UrfavController::class, 'store'])->name('store');
@@ -152,7 +120,6 @@ Route::middleware('simpleauth')->group(function () {
         Route::delete('/products/{product}', [UrfavController::class, 'destroy'])->name('destroy');
     });
 
-    // Sierra Berak Routes
     Route::prefix('sierra-berak')->name('sierra-berak.')->group(function () {
         Route::get('/', [App\Http\Controllers\SierraBerakController::class, 'index'])->name('index');
         Route::post('/', [App\Http\Controllers\SierraBerakController::class, 'store'])->name('store');
@@ -162,7 +129,6 @@ Route::middleware('simpleauth')->group(function () {
         Route::delete('/{id}', [App\Http\Controllers\SierraBerakController::class, 'destroy'])->name('destroy');
     });
 
-    // Calendar Notes Routes
     Route::get('/calendar-notes/month/{year}/{month}', [CalendarNoteController::class, 'getMonthNotes'])->name('calendar-notes.month');
     Route::post('/calendar-notes', [CalendarNoteController::class, 'store'])->name('calendar-notes.store');
     Route::put('/calendar-notes/{id}', [CalendarNoteController::class, 'update'])->name('calendar-notes.update');
@@ -174,7 +140,6 @@ Route::middleware('simpleauth')->group(function () {
         return view('price-list.index');
     })->name('price-list');
 
-    // Guide Chat Routes - UPDATED
     Route::prefix('guide-chat')->name('guide-chat.')->group(function () {
         Route::get('/', [GuideController::class, 'index'])->name('index');
         Route::get('/phase1', [GuideController::class, 'phase1'])->name('phase1');
@@ -185,7 +150,6 @@ Route::middleware('simpleauth')->group(function () {
         Route::get('/pricing', [GuideController::class, 'pricing'])->name('pricing');
     });
 
-    // Supplies Management
     Route::resource('supplies', SupplyController::class);
     Route::get('supplies/{supply}/use', [SupplyController::class, 'showUseForm'])->name('supplies.use-form');
     Route::post('supplies/{supply}/use', [SupplyController::class, 'recordUsage'])->name('supplies.record-usage');
@@ -193,7 +157,6 @@ Route::middleware('simpleauth')->group(function () {
     Route::get('supplies/{supply}/add-stock', [SupplyController::class, 'showAddStockForm'])->name('supplies.add-stock-form');
     Route::post('supplies/{supply}/add-stock', [SupplyController::class, 'addStock'])->name('supplies.add-stock');
 
-    // Budgets Management
     Route::resource('budgets', BudgetController::class);
     Route::post('budget-items/{budgetItem}/toggle-complete', [BudgetController::class, 'toggleItemComplete'])
         ->name('budget-items.toggle-complete');

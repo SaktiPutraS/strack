@@ -58,7 +58,7 @@
                                         ];
                                     @endphp
                                     @foreach ($months as $num => $name)
-                                        <option value="{{ $num }}" {{ old('month') == $num ? 'selected' : '' }}
+                                        <option value="{{ $num }}" {{ old('month', $preMonth) == $num ? 'selected' : '' }}
                                             {{ in_array($num, $usedMonths) ? 'disabled' : '' }}>
                                             {{ $name }}
                                             {{ in_array($num, $usedMonths) ? '(Sudah ada budget)' : '' }}
@@ -73,24 +73,15 @@
                                 <label for="year" class="form-label fw-semibold">
                                     Tahun <span class="text-danger">*</span>
                                 </label>
-                                <select name="year" id="year" class="form-select form-select-lg @error('year') is-invalid @enderror" required>
-                                    @for ($y = date('Y'); $y <= date('Y') + 2; $y++)
+                                <select name="year" id="year" class="form-select form-select-lg @error('year') is-invalid @enderror" required
+                                    onchange="window.location.href='{{ route('budgets.create') }}?year='+this.value+(document.getElementById('month').value?'&month='+document.getElementById('month').value:'')">
+                                    @for ($y = date('Y') - 1; $y <= date('Y') + 2; $y++)
                                         <option value="{{ $y }}" {{ old('year', $currentYear) == $y ? 'selected' : '' }}>
                                             {{ $y }}
                                         </option>
                                     @endfor
                                 </select>
                                 @error('year')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-12">
-                                <label for="notes" class="form-label fw-semibold">
-                                    Catatan Budget
-                                </label>
-                                <textarea name="notes" id="notes" class="form-control @error('notes') is-invalid @enderror" rows="3"
-                                    placeholder="Catatan umum untuk budget ini (opsional)">{{ old('notes') }}</textarea>
-                                @error('notes')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -126,12 +117,18 @@
                                                     <i class="bi bi-trash"></i> Hapus
                                                 </button>
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Kategori</label>
+                                                <input type="text" name="items[{{ $index }}][category]"
+                                                    class="form-control item-category" value="{{ $item['category'] ?? '' }}"
+                                                    placeholder="Contoh: Kartu Kredit CIMB" list="categoryList">
+                                            </div>
+                                            <div class="col-md-4">
                                                 <label class="form-label fw-semibold">Nama Item <span class="text-danger">*</span></label>
                                                 <input type="text" name="items[{{ $index }}][item_name]" class="form-control"
                                                     value="{{ $item['item_name'] ?? '' }}" placeholder="Contoh: Gaji, Bensin, Internet" required>
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
                                                 <label class="form-label fw-semibold">Estimasi Nominal <span class="text-danger">*</span></label>
                                                 <div class="input-group">
                                                     <span class="input-group-text">Rp</span>
@@ -151,7 +148,11 @@
                             @endif
                         </div>
 
-                        <datalist id="categoryList"></datalist>
+                        <datalist id="categoryList">
+                            @foreach($allCategories ?? [] as $cat)
+                                <option value="{{ $cat }}">
+                            @endforeach
+                        </datalist>
 
                         <div id="no-items-message" class="text-center py-4" style="{{ old('items') ? 'display: none;' : '' }}">
                             <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>

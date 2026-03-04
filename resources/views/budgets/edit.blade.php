@@ -12,7 +12,7 @@
                     <p class="text-muted mb-0">{{ $budget->period }}</p>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-2">
-                    <a href="{{ route('budgets.show', $budget) }}" class="btn btn-outline-primary">
+                    <a href="{{ route('budgets.show', [$budget->year, $budget->month]) }}" class="btn btn-outline-primary">
                         <i class="bi bi-eye me-2"></i>Lihat Detail
                     </a>
                     <a href="{{ route('budgets.index') }}" class="btn btn-outline-secondary">
@@ -25,7 +25,7 @@
 
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
-            <form action="{{ route('budgets.update', $budget) }}" method="POST" id="budget-form">
+            <form action="{{ route('budgets.update', [$budget->year, $budget->month]) }}" method="POST" id="budget-form">
                 @csrf
                 @method('PUT')
 
@@ -87,16 +87,6 @@
                                     @endfor
                                 </select>
                                 @error('year')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-12">
-                                <label for="notes" class="form-label fw-semibold">
-                                    Catatan Budget
-                                </label>
-                                <textarea name="notes" id="notes" class="form-control @error('notes') is-invalid @enderror" rows="3"
-                                    placeholder="Catatan umum untuk budget ini (opsional)">{{ old('notes', $budget->notes) }}</textarea>
-                                @error('notes')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -196,7 +186,7 @@
                                 <i class="bi bi-trash me-2"></i>Hapus Budget
                             </button>
                             <div class="d-flex flex-column flex-sm-row gap-2">
-                                <a href="{{ route('budgets.show', $budget) }}" class="btn btn-secondary btn-lg">
+                                <a href="{{ route('budgets.show', [$budget->year, $budget->month]) }}" class="btn btn-secondary btn-lg">
                                     <i class="bi bi-x-circle me-2"></i>Batal
                                 </a>
                                 <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
@@ -209,7 +199,7 @@
             </form>
 
             <!-- Delete Form -->
-            <form id="delete-form" action="{{ route('budgets.destroy', $budget) }}" method="POST" style="display: none;">
+            <form id="delete-form" action="{{ route('budgets.destroy', [$budget->year, $budget->month]) }}" method="POST" style="display: none;">
                 @csrf
                 @method('DELETE')
             </form>

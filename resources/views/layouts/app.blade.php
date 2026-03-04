@@ -288,81 +288,6 @@
             background: linear-gradient(90deg, #8B5CF6, #A855F7);
         }
 
-        .price-list-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-        }
-
-        .price-list-table th {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15));
-            color: #374151;
-            font-weight: 600;
-            padding: 15px 20px;
-            text-align: left;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .price-list-table td {
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(139, 92, 246, 0.05);
-            vertical-align: middle;
-        }
-
-        .price-list-table tr:hover {
-            background: rgba(139, 92, 246, 0.03);
-        }
-
-        .category-row {
-            background: linear-gradient(135deg, #8B5CF6, #A855F7) !important;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .category-row td {
-            padding: 15px 20px;
-            font-size: 1.1rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .category-row:hover {
-            background: linear-gradient(135deg, #7C3AED, #9333EA) !important;
-        }
-
-        .price {
-            white-space: nowrap;
-            font-weight: bold;
-            color: #059669;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 6px 12px;
-            border-radius: 8px;
-            display: inline-block;
-        }
-
-        .tech-badge {
-            display: inline-block;
-            background: rgba(139, 92, 246, 0.1);
-            color: #8B5CF6;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            margin: 2px;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .timeline-badge {
-            background: rgba(249, 115, 22, 0.1);
-            color: #F97316;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            border: 1px solid rgba(249, 115, 22, 0.2);
-        }
-
         .no-results {
             text-align: center;
             padding: 60px 20px;
@@ -442,31 +367,11 @@
             .table-container {
                 overflow-x: auto;
             }
-
-            .price-list-table {
-                min-width: 800px;
-            }
-
-            .price-list-table th,
-            .price-list-table td {
-                padding: 8px 12px;
-                font-size: 0.9rem;
-            }
-
-            .category-row td {
-                font-size: 1rem;
-            }
         }
 
         @media (max-width: 480px) {
             .page-title {
                 font-size: 1.5rem;
-            }
-
-            .price-list-table th,
-            .price-list-table td {
-                padding: 6px 8px;
-                font-size: 0.8rem;
             }
 
             .search-input {
@@ -614,24 +519,6 @@
                         </li>
 
 
-                        {{-- Saktify Menu --}}
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('prospects.*') ? 'active' : '' }}"
-                                data-bs-toggle="collapse" data-bs-target="#saktifyMenu">
-                                <i class="bi bi-stars me-2"></i>Saktify
-                            </a>
-                            <div class="collapse ms-3 {{ request()->routeIs('prospects.*') ? 'show' : '' }}" id="saktifyMenu">
-                                <ul class="nav nav-pills flex-column">
-                                    <li>
-                                        <a href="{{ route('prospects.index') }}"
-                                            class="nav-link py-2 fs-7 {{ request()->routeIs('prospects.*') ? 'active' : '' }}">
-                                            <i class="bi bi-people me-2"></i>Manajemen Prospek
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
                         {{-- Tasks --}}
                         <li class="nav-item">
                             <a href="{{ route('tasks.index') }}" class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
@@ -639,23 +526,6 @@
                             </a>
                         </li>
 
-                        {{-- Menu Daftar Harga --}}
-                        <li class="nav-item">
-                            <a href="{{ route('price-list') }}" class="nav-link {{ request()->routeIs('price-list') ? 'active' : '' }}">
-                                <i class="bi bi-currency-dollar me-2"></i>Daftar Harga
-                            </a>
-                        </li>
-                        {{-- Menu Guide Chat --}}
-                        <li class="nav-item">
-                            <a href="{{ route('guide-chat.index') }}" class="nav-link {{ request()->routeIs('guide-chat.*') ? 'active' : '' }}">
-                                <i class="bi bi-chat-dots me-2"></i>Guide Chat
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('urfav.index') }}" class="nav-link {{ request()->routeIs('urfav.*') ? 'active' : '' }}">
-                                <i class="bi bi-shop me-2"></i>Urfav
-                            </a>
-                        </li>
                     @endif
 
                     @if (session('role') === 'user')
@@ -667,28 +537,6 @@
                         <li class="nav-item">
                             <a href="{{ route('tasks.user.index') }}" class="nav-link {{ request()->routeIs('tasks.user.*') ? 'active' : '' }}">
                                 <i class="bi bi-list-task me-2"></i>Tugas
-                            </a>
-                        </li>
-                        {{-- Saktify Menu --}}
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('prospects.*') ? 'active' : '' }}"
-                                data-bs-toggle="collapse" data-bs-target="#saktifyMenu">
-                                <i class="bi bi-stars me-2"></i>Saktify
-                            </a>
-                            <div class="collapse ms-3 {{ request()->routeIs('prospects.*') ? 'show' : '' }}" id="saktifyMenu">
-                                <ul class="nav nav-pills flex-column">
-                                    <li>
-                                        <a href="{{ route('prospects.index') }}"
-                                            class="nav-link py-2 fs-7 {{ request()->routeIs('prospects.*') ? 'active' : '' }}">
-                                            <i class="bi bi-people me-2"></i>Manajemen Prospek
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('urfav.index') }}" class="nav-link {{ request()->routeIs('urfav.*') ? 'active' : '' }}">
-                                <i class="bi bi-shop me-2"></i>Urfav
                             </a>
                         </li>
                     @endif

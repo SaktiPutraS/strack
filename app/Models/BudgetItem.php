@@ -10,7 +10,8 @@ class BudgetItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'budget_id',
+        'month',
+        'year',
         'category',
         'item_name',
         'estimated_amount',
@@ -20,20 +21,17 @@ class BudgetItem extends Model
     ];
 
     protected $casts = [
+        'month'            => 'integer',
+        'year'             => 'integer',
         'estimated_amount' => 'decimal:2',
-        'is_completed' => 'boolean',
-        'completed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'is_completed'     => 'boolean',
+        'completed_at'     => 'datetime',
+        'created_at'       => 'datetime',
+        'updated_at'       => 'datetime',
     ];
 
-    // Relationship
-    public function budget()
-    {
-        return $this->belongsTo(Budget::class);
-    }
+    // ─── Accessors ────────────────────────────────────────────────────────────
 
-    // Accessors
     public function getFormattedAmountAttribute(): string
     {
         return 'Rp ' . number_format($this->estimated_amount, 0, ',', '.');
@@ -44,7 +42,8 @@ class BudgetItem extends Model
         return $this->completed_at ? $this->completed_at->format('d M Y') : null;
     }
 
-    // Methods
+    // ─── Methods ──────────────────────────────────────────────────────────────
+
     public function toggleComplete(): bool
     {
         $this->is_completed = !$this->is_completed;
@@ -52,18 +51,15 @@ class BudgetItem extends Model
         return $this->save();
     }
 
-    // Boot
-    protected static function boot()
+    // ─── Scopes ───────────────────────────────────────────────────────────────
+
+    public function scopeForMonth($query, int $month, int $year)
     {
-        parent::boot();
+        return $query->where('month', $month)->where('year', $year);
+    }
 
-        // Update budget total after item changes
-        static::saved(function ($item) {
-            $item->budget->updateTotalBudget();
-        });
-
-        static::deleted(function ($item) {
-            $item->budget->updateTotalBudget();
-        });
+    public function scopeByYear($query, int $year)
+    {
+        return $query->where('year', $year);
     }
 }

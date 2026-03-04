@@ -13,12 +13,9 @@ use App\Http\Controllers\CashWithdrawalController;
 use App\Http\Controllers\GoldTransactionController;
 use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\TaskController;
-use App\Http\Controllers\UrfavController;
 use App\Http\Controllers\CalendarNoteController;
-use App\Http\Controllers\ProspectController;
 use App\Http\Controllers\SupplyController;
 use App\Http\Controllers\BudgetController;
-use App\Http\Controllers\GuideController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -32,8 +29,6 @@ Route::get('/logout', [SimpleLoginController::class, 'logout']);
 Route::middleware('simpleauth')->group(function () {
 
     Route::get('/dashboard-admin', [DashboardController::class, 'index'])->name('dashboard');
-
-    Route::resource('prospects', ProspectController::class);
 
     Route::get('projects/export/excel', [ProjectController::class, 'exportExcel'])->name('projects.export.excel');
 
@@ -107,19 +102,6 @@ Route::middleware('simpleauth')->group(function () {
         Route::post('/assignments/{assignment}/submit', [TaskController::class, 'userSubmit'])->name('submit');
     });
 
-    Route::prefix('urfav')->name('urfav.')->group(function () {
-        Route::get('/', [UrfavController::class, 'index'])->name('index');
-        Route::post('/', [UrfavController::class, 'store'])->name('store');
-        Route::post('/import-jakmall', [UrfavController::class, 'importJakmall'])->name('import-jakmall');
-        Route::post('/sync-shopee', [UrfavController::class, 'syncToShopee'])->name('sync-shopee');
-        Route::post('/update-urutan', [UrfavController::class, 'updateUrutan'])->name('update-urutan');
-        Route::post('/update-urutan-file', [UrfavController::class, 'updateUrutanFromFile'])->name('update-urutan-file');
-        Route::patch('/products/{product}', [UrfavController::class, 'updateProduct'])->name('update-product');
-        Route::get('/export-shopee', [UrfavController::class, 'exportShopee'])->name('export-shopee');
-        Route::get('/export-all', [UrfavController::class, 'exportAll'])->name('export-all');
-        Route::delete('/products/{product}', [UrfavController::class, 'destroy'])->name('destroy');
-    });
-
     Route::prefix('sierra-berak')->name('sierra-berak.')->group(function () {
         Route::get('/', [App\Http\Controllers\SierraBerakController::class, 'index'])->name('index');
         Route::post('/', [App\Http\Controllers\SierraBerakController::class, 'store'])->name('store');
@@ -136,20 +118,6 @@ Route::middleware('simpleauth')->group(function () {
 
     Route::get('/projects/deadlines/month/{year}/{month}', [ProjectController::class, 'getMonthDeadlines'])->name('projects.deadlines.month');
 
-    Route::get('/price-list', function () {
-        return view('price-list.index');
-    })->name('price-list');
-
-    Route::prefix('guide-chat')->name('guide-chat.')->group(function () {
-        Route::get('/', [GuideController::class, 'index'])->name('index');
-        Route::get('/phase1', [GuideController::class, 'phase1'])->name('phase1');
-        Route::get('/phase2', [GuideController::class, 'phase2'])->name('phase2');
-        Route::get('/phase3', [GuideController::class, 'phase3'])->name('phase3');
-        Route::get('/phase4', [GuideController::class, 'phase4'])->name('phase4');
-        Route::get('/phase5', [GuideController::class, 'phase5'])->name('phase5');
-        Route::get('/pricing', [GuideController::class, 'pricing'])->name('pricing');
-    });
-
     Route::resource('supplies', SupplyController::class);
     Route::get('supplies/{supply}/use', [SupplyController::class, 'showUseForm'])->name('supplies.use-form');
     Route::post('supplies/{supply}/use', [SupplyController::class, 'recordUsage'])->name('supplies.record-usage');
@@ -157,24 +125,29 @@ Route::middleware('simpleauth')->group(function () {
     Route::get('supplies/{supply}/add-stock', [SupplyController::class, 'showAddStockForm'])->name('supplies.add-stock-form');
     Route::post('supplies/{supply}/add-stock', [SupplyController::class, 'addStock'])->name('supplies.add-stock');
 
-    Route::resource('budgets', BudgetController::class);
-    Route::post('budget-items/{budgetItem}/toggle-complete', [BudgetController::class, 'toggleItemComplete'])
-        ->name('budget-items.toggle-complete');
-    Route::post('budget-items/bulk-toggle', [BudgetController::class, 'bulkToggleComplete'])
-        ->name('budget-items.bulk-toggle');
-    Route::post('budget-category/toggle', [BudgetController::class, 'toggleCategoryComplete'])
-        ->name('budget-category.toggle');
-    Route::put('budget-items/{budgetItem}', [BudgetController::class, 'updateItem'])
-        ->name('budget-items.update');
-    Route::get('budgets/{budget}/export', [BudgetController::class, 'exportExcel'])
-        ->name('budgets.export');
-    Route::post('budgets/{budget}/import', [BudgetController::class, 'importExcel'])
-        ->name('budgets.import');
-    Route::get('budgets-export-all', [BudgetController::class, 'exportAllExcel'])
-        ->name('budgets.export-all');
-    Route::post('budgets-import-all', [BudgetController::class, 'importAllExcel'])
-        ->name('budgets.import-all');
-    Route::get('budgets-report/{year?}', [BudgetController::class, 'report'])->name('budgets.report');
+    // ── Budgets CRUD (year & month sebagai param, tidak pakai model binding) ──
+    Route::get('budgets',                      [BudgetController::class, 'index'])->name('budgets.index');
+    Route::get('budgets/create',               [BudgetController::class, 'create'])->name('budgets.create');
+    Route::post('budgets',                     [BudgetController::class, 'store'])->name('budgets.store');
+    Route::get('budgets/{year}/{month}',       [BudgetController::class, 'show'])->name('budgets.show');
+    Route::get('budgets/{year}/{month}/edit',  [BudgetController::class, 'edit'])->name('budgets.edit');
+    Route::put('budgets/{year}/{month}',       [BudgetController::class, 'update'])->name('budgets.update');
+    Route::delete('budgets/{year}/{month}',    [BudgetController::class, 'destroy'])->name('budgets.destroy');
+
+    // ── Budget Items ──────────────────────────────────────────────────────────
+    Route::post('budgets/{year}/{month}/items',              [BudgetController::class, 'storeItem'])->name('budget-items.store');
+    Route::delete('budget-items/{item}/delete',              [BudgetController::class, 'destroyItem'])->name('budget-items.destroy');
+    Route::post('budget-items/{budgetItem}/toggle-complete', [BudgetController::class, 'toggleItemComplete'])->name('budget-items.toggle-complete');
+    Route::post('budget-items/bulk-toggle',                  [BudgetController::class, 'bulkToggleComplete'])->name('budget-items.bulk-toggle');
+    Route::post('budget-category/toggle',                    [BudgetController::class, 'toggleCategoryComplete'])->name('budget-category.toggle');
+    Route::put('budget-items/{budgetItem}',                  [BudgetController::class, 'updateItem'])->name('budget-items.update');
+
+    // ── Export / Import ───────────────────────────────────────────────────────
+    Route::get('budgets/{year}/{month}/export',  [BudgetController::class, 'exportExcel'])->name('budgets.export');
+    Route::post('budgets/{year}/{month}/import', [BudgetController::class, 'importExcel'])->name('budgets.import');
+    Route::get('budgets-export-all',             [BudgetController::class, 'exportAllExcel'])->name('budgets.export-all');
+    Route::post('budgets-import-all',            [BudgetController::class, 'importAllExcel'])->name('budgets.import-all');
+    Route::get('budgets-report/{year?}',         [BudgetController::class, 'report'])->name('budgets.report');
 });
 
 Route::get('/image/{filename}', function ($filename) {

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Services\BudgetExcelService;
+use App\Support\BudgetPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -14,201 +14,171 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BudgetController extends Controller
 {
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  INDEX — Matrix 12 bulan
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function index(Request $request): View
     {
-        // Menentukan 3 bulan: bulan lalu, sekarang, dan bulan depan
-        $currentMonth = (int) date('n');
-        $currentYear = (int) date('Y');
+        $year = (int) $request->input('year', date('Y'));
 
-        // Hitung bulan lalu
-        $lastMonth = $currentMonth - 1;
-        $lastMonthYear = $currentYear;
-        if ($lastMonth < 1) {
-            $lastMonth = 12;
-            $lastMonthYear = $currentYear - 1;
-        }
-
-        // Hitung bulan depan
-        $nextMonth = $currentMonth + 1;
-        $nextMonthYear = $currentYear;
-        if ($nextMonth > 12) {
-            $nextMonth = 1;
-            $nextMonthYear = $currentYear + 1;
-        }
-
-        // Array untuk filter 3 bulan
-        $targetMonths = [
-            ['month' => $lastMonth, 'year' => $lastMonthYear],
-            ['month' => $currentMonth, 'year' => $currentYear],
-            ['month' => $nextMonth, 'year' => $nextMonthYear],
-        ];
-
-        // Query budgets untuk 3 bulan tersebut
-        $budgets = Budget::with('items')
-            ->where(function ($query) use ($targetMonths) {
-                foreach ($targetMonths as $target) {
-                    $query->orWhere(function ($q) use ($target) {
-                        $q->where('month', $target['month'])
-                          ->where('year', $target['year']);
-                    });
-                }
-            })
+        // Load semua items tahun ini sekaligus
+        $allItems = BudgetItem::where('year', $year)
+            ->orderBy('month')
+            ->orderBy('category')
+            ->orderBy('id')
             ->get();
 
-        // Urutkan: bulan termuda dengan status belum selesai dulu
-        $budgets = $budgets->sortBy(function ($budget) use ($currentMonth, $currentYear) {
-            // Hitung prioritas berdasarkan status (belum selesai = 0, selesai = 1)
-            $statusPriority = $budget->is_fully_completed ? 1 : 0;
+        // Buat koleksi BudgetPeriod keyed by month
+        $existingMonths = $allItems->pluck('month')->unique()->sort()->values();
+        $budgets = collect();
+        foreach ($existingMonths as $m) {
+            $budgets->put($m, new BudgetPeriod($m, $year, $allItems->where('month', $m)->values()));
+        }
 
-            // Hitung jarak bulan dari bulan sekarang (bulan sekarang = 0)
-            $monthsFromNow = (($budget->year - $currentYear) * 12) + ($budget->month - $currentMonth);
+        // Bangun matrix: $matrix[$cat][$item_name][$month] = BudgetItem|null
+        $categoryOrder = [];
+        $matrix        = [];
 
-            // Format: status_priority * 1000 + abs(monthsFromNow)
-            // Ini akan mengurutkan: belum selesai dulu, lalu berdasarkan kedekatan dengan bulan sekarang
-            return $statusPriority * 1000 + abs($monthsFromNow);
-        })->values();
+        for ($m = 1; $m <= 12; $m++) {
+            $bp = $budgets->get($m);
+            if (!$bp) continue;
+            foreach ($bp->items as $item) {
+                $cat = $item->category ?: 'Tanpa Kategori';
+                if (!in_array($cat, $categoryOrder)) $categoryOrder[] = $cat;
+                if (!isset($matrix[$cat][$item->item_name])) {
+                    $matrix[$cat][$item->item_name] = array_fill(1, 12, null);
+                }
+                $matrix[$cat][$item->item_name][$m] = $item;
+            }
+        }
 
-        // Hitung tahun yang dipilih untuk stats (gunakan tahun sekarang)
-        $selectedYear = $currentYear;
+        // Sort kategori A–Z, "Tanpa Kategori" selalu di akhir
+        sort($categoryOrder);
+        if (($idx = array_search('Tanpa Kategori', $categoryOrder)) !== false) {
+            unset($categoryOrder[$idx]);
+            $categoryOrder   = array_values($categoryOrder);
+            $categoryOrder[] = 'Tanpa Kategori';
+        }
 
-        // Dapatkan budget bulan ini
-        $currentBudget = Budget::where('month', $currentMonth)
-            ->where('year', $currentYear)
-            ->with('items')
-            ->first();
+        // Sort item dalam setiap kategori secara alfabetis
+        foreach ($categoryOrder as $cat) {
+            if (isset($matrix[$cat])) {
+                ksort($matrix[$cat]);
+            }
+        }
 
-        // Stats untuk tahun ini dan bulan ini
-        $stats = [
-            'total_year' => Budget::byYear($selectedYear)->sum('total_budget'),
-            'total_budgets' => Budget::byYear($selectedYear)->count(),
-            'completed_budgets' => Budget::byYear($selectedYear)
-                ->get()
-                ->filter(fn($b) => $b->is_fully_completed)
-                ->count(),
-            'avg_budget' => Budget::byYear($selectedYear)->count() > 0
-                ? Budget::byYear($selectedYear)->avg('total_budget')
-                : 0,
-            // Stats bulan ini
-            'current_month_name' => $currentBudget ? $currentBudget->month_name : date('F Y'),
-            'current_month_budget' => $currentBudget ? $currentBudget->total_budget : 0,
-            'current_month_progress' => $currentBudget ? $currentBudget->progress_percentage : 0,
-            'current_month_total_items' => $currentBudget ? $currentBudget->total_items_count : 0,
-            'current_month_completed_items' => $currentBudget ? $currentBudget->completed_items_count : 0,
-        ];
-
-        // Available years untuk link ke laporan
-        $availableYears = Budget::selectRaw('DISTINCT year')
-            ->orderBy('year', 'desc')
+        $availableYears = BudgetItem::selectRaw('DISTINCT year')
+            ->orderByDesc('year')
             ->pluck('year');
 
         if ($availableYears->isEmpty()) {
-            $availableYears = collect([date('Y')]);
+            $availableYears = collect([$year]);
         }
 
-        return view('budgets.index', compact('budgets', 'stats', 'selectedYear', 'availableYears'));
+        return view('budgets.index', compact('budgets', 'matrix', 'categoryOrder', 'year', 'availableYears'));
     }
 
-    public function create(): View
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  CREATE
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function create(Request $request): View
     {
-        // Get months that already have budget for current year
-        $currentYear = date('Y');
-        $usedMonths = Budget::where('year', $currentYear)->pluck('month')->toArray();
+        $currentYear = (int) $request->input('year', date('Y'));
+        $preMonth    = (int) $request->input('month', 0);
 
-        return view('budgets.create', compact('usedMonths', 'currentYear'));
+        $usedMonths = BudgetItem::where('year', $currentYear)
+            ->distinct()
+            ->pluck('month')
+            ->toArray();
+
+        $allCategories = BudgetItem::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        return view('budgets.create', compact('usedMonths', 'currentYear', 'preMonth', 'allCategories'));
     }
 
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  STORE
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2020|max:2100',
-            'notes' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.item_name' => 'required|string|max:255',
+            'month'                    => 'required|integer|min:1|max:12',
+            'year'                     => 'required|integer|min:2020|max:2100',
+            'items'                    => 'required|array|min:1',
+            'items.*.item_name'        => 'required|string|max:255',
             'items.*.estimated_amount' => 'required|numeric|min:0',
-            'items.*.notes' => 'nullable|string|max:500',
-            'items.*.category' => 'nullable|string|max:255',
-        ], [
-            'items.required' => 'Minimal harus ada 1 item pengeluaran',
-            'items.min' => 'Minimal harus ada 1 item pengeluaran',
-        ]);
+            'items.*.notes'            => 'nullable|string|max:500',
+            'items.*.category'         => 'nullable|string|max:255',
+        ], ['items.required' => 'Minimal harus ada 1 item pengeluaran']);
 
-        // Check if budget already exists
-        $exists = Budget::where('month', $validated['month'])
+        // Cek duplikat bulan
+        $exists = BudgetItem::where('month', $validated['month'])
             ->where('year', $validated['year'])
             ->exists();
 
         if ($exists) {
-            return back()->withErrors([
-                'month' => 'Budget untuk bulan dan tahun ini sudah ada!'
-            ])->withInput();
+            return back()
+                ->withErrors(['month' => 'Budget untuk bulan dan tahun ini sudah ada!'])
+                ->withInput();
         }
 
         DB::beginTransaction();
         try {
-            // Create budget
-            $budget = Budget::create([
-                'month' => $validated['month'],
-                'year' => $validated['year'],
-                'notes' => $validated['notes'] ?? null,
-                'total_budget' => 0,
-            ]);
-
-            // Create budget items
             foreach ($validated['items'] as $itemData) {
                 BudgetItem::create([
-                    'budget_id' => $budget->id,
-                    'category' => $itemData['category'] ?? null,
-                    'item_name' => $itemData['item_name'],
+                    'month'            => $validated['month'],
+                    'year'             => $validated['year'],
+                    'category'         => $itemData['category'] ?? null,
+                    'item_name'        => $itemData['item_name'],
                     'estimated_amount' => $itemData['estimated_amount'],
-                    'notes' => $itemData['notes'] ?? null,
+                    'notes'            => $itemData['notes'] ?? null,
                 ]);
             }
-
-            // Update total budget
-            $budget->updateTotalBudget();
-
             DB::commit();
 
-            return redirect()->route('budgets.show', $budget)
+            return redirect()
+                ->route('budgets.show', [$validated['year'], $validated['month']])
                 ->with('success', 'Budget berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan budget'])
+            return back()
+                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
                 ->withInput();
         }
     }
 
-    public function show(Budget $budget): View
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  SHOW
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function show(int $year, int $month): View
     {
-        $budget->load(['items' => function ($query) {
-            $query->orderBy('is_completed', 'asc')
-                ->orderBy('id', 'asc');
-        }]);
+        $items = BudgetItem::where('year', $year)
+            ->where('month', $month)
+            ->orderBy('category')
+            ->orderBy('id')
+            ->get();
 
-        // Dapatkan budget bulan sebelumnya
-        $prevMonth = $budget->month - 1;
-        $prevYear = $budget->year;
-        if ($prevMonth < 1) {
-            $prevMonth = 12;
-            $prevYear = $budget->year - 1;
-        }
-        $prevBudget = Budget::where('month', $prevMonth)
-            ->where('year', $prevYear)
-            ->first();
+        abort_if($items->isEmpty(), 404);
 
-        // Dapatkan budget bulan berikutnya
-        $nextMonth = $budget->month + 1;
-        $nextYear = $budget->year;
-        if ($nextMonth > 12) {
-            $nextMonth = 1;
-            $nextYear = $budget->year + 1;
-        }
-        $nextBudget = Budget::where('month', $nextMonth)
-            ->where('year', $nextYear)
-            ->first();
+        $budget = new BudgetPeriod($month, $year, $items);
 
-        // Dapatkan semua kategori dari semua budget untuk suggestion
+        // Bulan sebelumnya (kolom kiri)
+        $prevM = $month - 1; $prevY = $year;
+        if ($prevM < 1) { $prevM = 12; $prevY = $year - 1; }
+        $prevItems  = BudgetItem::where('year', $prevY)->where('month', $prevM)
+            ->orderBy('category')->orderBy('id')->get();
+        $prevBudget = $prevItems->isNotEmpty() ? new BudgetPeriod($prevM, $prevY, $prevItems) : null;
+
+        // Bulan berikutnya (navigasi)
+        $nextM = $month + 1; $nextY = $year;
+        if ($nextM > 12) { $nextM = 1; $nextY = $year + 1; }
+        $nextExists = BudgetItem::where('year', $nextY)->where('month', $nextM)->exists();
+        $nextBudget = $nextExists ? new BudgetPeriod($nextM, $nextY) : null;
+
         $allCategories = BudgetItem::whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
@@ -218,221 +188,301 @@ class BudgetController extends Controller
         return view('budgets.show', compact('budget', 'prevBudget', 'nextBudget', 'allCategories'));
     }
 
-    public function edit(Budget $budget): View
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  STORE ITEM (AJAX — tambah item ke bulan yg sudah ada)
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function storeItem(Request $request, int $year, int $month): JsonResponse
     {
-        $budget->load('items');
+        try {
+            $validated = $request->validate([
+                'item_name'        => 'required|string|max:255',
+                'estimated_amount' => 'required|numeric|min:0',
+                'category'         => 'nullable|string|max:255',
+                'notes'            => 'nullable|string|max:500',
+            ]);
 
-        // Get used months except current budget month
-        $usedMonths = Budget::where('year', $budget->year)
-            ->where('id', '!=', $budget->id)
+            $item = BudgetItem::create([
+                'month'            => $month,
+                'year'             => $year,
+                'category'         => $validated['category'] ?: null,
+                'item_name'        => $validated['item_name'],
+                'estimated_amount' => $validated['estimated_amount'],
+                'notes'            => $validated['notes'] ?? null,
+                'is_completed'     => false,
+            ]);
+
+            $newTotal = BudgetItem::where('month', $month)->where('year', $year)
+                ->sum('estimated_amount');
+
+            return response()->json([
+                'success'   => true,
+                'item'      => [
+                    'id'               => $item->id,
+                    'item_name'        => $item->item_name,
+                    'estimated_amount' => $item->estimated_amount,
+                    'formatted_amount' => $item->formatted_amount,
+                    'notes'            => $item->notes,
+                    'category'         => $item->category,
+                    'is_completed'     => false,
+                ],
+                'new_total' => $newTotal,
+                'message'   => 'Item berhasil ditambahkan!',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  DESTROY ITEM (AJAX)
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function destroyItem(BudgetItem $item): JsonResponse
+    {
+        try {
+            $month = $item->month;
+            $year  = $item->year;
+            $item->delete();
+
+            $newTotal = BudgetItem::where('month', $month)->where('year', $year)
+                ->sum('estimated_amount');
+
+            return response()->json([
+                'success'   => true,
+                'new_total' => $newTotal,
+                'message'   => 'Item berhasil dihapus!',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  EDIT
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function edit(int $year, int $month): View
+    {
+        $items = BudgetItem::where('year', $year)
+            ->where('month', $month)
+            ->orderBy('category')
+            ->orderBy('id')
+            ->get();
+
+        abort_if($items->isEmpty(), 404);
+
+        $budget = new BudgetPeriod($month, $year, $items);
+
+        $usedMonths = BudgetItem::where('year', $year)
+            ->where('month', '!=', $month)
+            ->distinct()
             ->pluck('month')
             ->toArray();
 
         return view('budgets.edit', compact('budget', 'usedMonths'));
     }
 
-    public function update(Request $request, Budget $budget): RedirectResponse
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  UPDATE
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function update(Request $request, int $year, int $month): RedirectResponse
     {
         $validated = $request->validate([
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2020|max:2100',
-            'notes' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'nullable|exists:budget_items,id',
-            'items.*.category' => 'nullable|string|max:255',
-            'items.*.item_name' => 'required|string|max:255',
+            'month'                    => 'required|integer|min:1|max:12',
+            'year'                     => 'required|integer|min:2020|max:2100',
+            'items'                    => 'required|array|min:1',
+            'items.*.id'               => 'nullable|exists:budget_items,id',
+            'items.*.category'         => 'nullable|string|max:255',
+            'items.*.item_name'        => 'required|string|max:255',
             'items.*.estimated_amount' => 'required|numeric|min:0',
-            'items.*.notes' => 'nullable|string|max:500',
+            'items.*.notes'            => 'nullable|string|max:500',
         ]);
 
-        // Check if budget already exists (except current)
-        $exists = Budget::where('month', $validated['month'])
-            ->where('year', $validated['year'])
-            ->where('id', '!=', $budget->id)
-            ->exists();
+        $newMonth = (int) $validated['month'];
+        $newYear  = (int) $validated['year'];
 
-        if ($exists) {
-            return back()->withErrors([
-                'month' => 'Budget untuk bulan dan tahun ini sudah ada!'
-            ])->withInput();
+        // Cek konflik jika bulan/tahun berubah
+        if ($newMonth !== $month || $newYear !== $year) {
+            $conflict = BudgetItem::where('month', $newMonth)
+                ->where('year', $newYear)
+                ->exists();
+
+            if ($conflict) {
+                return back()
+                    ->withErrors(['month' => 'Budget untuk bulan dan tahun tersebut sudah ada!'])
+                    ->withInput();
+            }
         }
 
         DB::beginTransaction();
         try {
-            // Update budget
-            $budget->update([
-                'month' => $validated['month'],
-                'year' => $validated['year'],
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            // Track existing item IDs
-            $existingItemIds = collect($validated['items'])
+            // IDs yang ada di form (untuk keep)
+            $formIds = collect($validated['items'])
                 ->pluck('id')
                 ->filter()
+                ->values()
                 ->toArray();
 
-            // Delete items that are not in the request
-            $budget->items()
-                ->whereNotIn('id', $existingItemIds)
-                ->delete();
+            // Hapus item yang tidak ada di form
+            $deleteQuery = BudgetItem::where('month', $month)->where('year', $year);
+            if (!empty($formIds)) {
+                $deleteQuery->whereNotIn('id', $formIds);
+            }
+            $deleteQuery->delete();
 
-            // Update or create items
+            // Update atau buat item
             foreach ($validated['items'] as $itemData) {
-                if (isset($itemData['id'])) {
-                    // Update existing item
-                    $item = BudgetItem::find($itemData['id']);
-                    if ($item && $item->budget_id == $budget->id) {
-                        $item->update([
-                            'category' => $itemData['category'] ?? null,
-                            'item_name' => $itemData['item_name'],
-                            'estimated_amount' => $itemData['estimated_amount'],
-                            'notes' => $itemData['notes'] ?? null,
-                        ]);
-                    }
+                $payload = [
+                    'month'            => $newMonth,
+                    'year'             => $newYear,
+                    'category'         => $itemData['category'] ?? null,
+                    'item_name'        => $itemData['item_name'],
+                    'estimated_amount' => $itemData['estimated_amount'],
+                    'notes'            => $itemData['notes'] ?? null,
+                ];
+
+                if (!empty($itemData['id'])) {
+                    BudgetItem::where('id', $itemData['id'])
+                        ->where('month', $month)
+                        ->where('year', $year)
+                        ->update($payload);
                 } else {
-                    // Create new item
-                    BudgetItem::create([
-                        'budget_id' => $budget->id,
-                        'category' => $itemData['category'] ?? null,
-                        'item_name' => $itemData['item_name'],
-                        'estimated_amount' => $itemData['estimated_amount'],
-                        'notes' => $itemData['notes'] ?? null,
-                    ]);
+                    BudgetItem::create($payload);
                 }
             }
 
-            // Update total budget
-            $budget->updateTotalBudget();
-
             DB::commit();
 
-            return redirect()->route('budgets.show', $budget)
+            return redirect()
+                ->route('budgets.show', [$newYear, $newMonth])
                 ->with('success', 'Budget berhasil diperbarui!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui budget'])
+            return back()
+                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
                 ->withInput();
         }
     }
 
-    public function destroy(Budget $budget): RedirectResponse
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  DESTROY (hapus semua item satu bulan)
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function destroy(int $year, int $month): RedirectResponse
     {
-        $budget->delete();
+        BudgetItem::where('month', $month)->where('year', $year)->delete();
 
-        return redirect()->route('budgets.index')
+        return redirect()
+            ->route('budgets.index')
             ->with('success', 'Budget berhasil dihapus!');
     }
 
-    // Toggle item completion
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  TOGGLE ITEM COMPLETE
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function toggleItemComplete(BudgetItem $budgetItem): JsonResponse
     {
         try {
             $budgetItem->toggleComplete();
 
             return response()->json([
-                'success' => true,
+                'success'      => true,
                 'is_completed' => $budgetItem->is_completed,
                 'completed_at' => $budgetItem->completed_date,
-                'message' => $budgetItem->is_completed
+                'message'      => $budgetItem->is_completed
                     ? 'Item ditandai selesai!'
                     : 'Item ditandai belum selesai!',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengubah status item',
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan'], 500);
         }
     }
 
-    // Bulk toggle completion
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  BULK TOGGLE COMPLETE
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function bulkToggleComplete(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'item_ids' => 'required|array|min:1',
-                'item_ids.*' => 'exists:budget_items,id',
+                'item_ids'      => 'required|array|min:1',
+                'item_ids.*'    => 'exists:budget_items,id',
                 'mark_complete' => 'required|boolean',
             ]);
 
-            $count = 0;
-            foreach ($validated['item_ids'] as $itemId) {
-                $item = BudgetItem::find($itemId);
-                if ($item) {
-                    $item->is_completed = $validated['mark_complete'];
-                    $item->completed_at = $validated['mark_complete'] ? now() : null;
-                    $item->save();
-                    $count++;
-                }
-            }
+            $count = BudgetItem::whereIn('id', $validated['item_ids'])->update([
+                'is_completed' => $validated['mark_complete'],
+                'completed_at' => $validated['mark_complete'] ? now() : null,
+            ]);
 
             return response()->json([
                 'success' => true,
-                'count' => $count,
+                'count'   => $count,
                 'message' => $validated['mark_complete']
                     ? "{$count} item ditandai selesai!"
                     : "{$count} item ditandai belum selesai!",
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengubah status item',
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan'], 500);
         }
     }
 
-    // Update single item
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  UPDATE ITEM (AJAX)
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function updateItem(Request $request, BudgetItem $budgetItem): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'item_name' => 'required|string|max:255',
+                'item_name'        => 'required|string|max:255',
                 'estimated_amount' => 'required|numeric|min:0',
-                'notes' => 'nullable|string|max:500',
-                'category' => 'nullable|string|max:255',
+                'notes'            => 'nullable|string|max:500',
+                'category'         => 'nullable|string|max:255',
             ]);
 
             $budgetItem->update($validated);
 
             return response()->json([
                 'success' => true,
-                'item' => [
-                    'id' => $budgetItem->id,
-                    'item_name' => $budgetItem->item_name,
+                'item'    => [
+                    'id'               => $budgetItem->id,
+                    'item_name'        => $budgetItem->item_name,
                     'estimated_amount' => $budgetItem->estimated_amount,
                     'formatted_amount' => $budgetItem->formatted_amount,
-                    'notes' => $budgetItem->notes,
-                    'category' => $budgetItem->category,
+                    'notes'            => $budgetItem->notes,
+                    'category'         => $budgetItem->category,
                 ],
                 'message' => 'Item berhasil diperbarui!',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat memperbarui item',
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan'], 500);
         }
     }
 
-    // Toggle category completion
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  TOGGLE CATEGORY COMPLETE
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function toggleCategoryComplete(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'budget_id' => 'required|exists:budgets,id',
-                'category' => 'required|string',
+                'month'         => 'required|integer|min:1|max:12',
+                'year'          => 'required|integer',
+                'category'      => 'required|string',
                 'mark_complete' => 'required|boolean',
             ]);
 
-            $category = $validated['category'] === 'Tanpa Kategori' ? null : $validated['category'];
+            $cat   = $validated['category'] === 'Tanpa Kategori' ? null : $validated['category'];
+            $query = BudgetItem::where('month', $validated['month'])
+                ->where('year', $validated['year']);
 
-            $query = BudgetItem::where('budget_id', $validated['budget_id']);
-
-            if ($category === null) {
+            if ($cat === null) {
                 $query->whereNull('category');
             } else {
-                $query->where('category', $category);
+                $query->where('category', $cat);
             }
 
             $count = $query->update([
@@ -440,15 +490,9 @@ class BudgetController extends Controller
                 'completed_at' => $validated['mark_complete'] ? now() : null,
             ]);
 
-            // Update budget total
-            $budget = Budget::find($validated['budget_id']);
-            if ($budget) {
-                $budget->updateTotalBudget();
-            }
-
             return response()->json([
                 'success' => true,
-                'count' => $count,
+                'count'   => $count,
                 'message' => $validated['mark_complete']
                     ? "Kategori ditandai selesai! ({$count} item)"
                     : "Kategori dibatalkan! ({$count} item)",
@@ -461,251 +505,204 @@ class BudgetController extends Controller
         }
     }
 
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  REPORT
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function report(Request $request, $year = null): View
     {
-        $selectedYear = $year ?? Budget::max('year') ?? date('Y');
+        $selectedYear = (int) ($year ?? BudgetItem::max('year') ?? date('Y'));
 
-        // Get all budgets for the year
-        $budgets = Budget::with('items')
-            ->byYear($selectedYear)
-            ->orderBy('month')
-            ->get();
+        // Load semua items tahun ini (single query)
+        $allItems = BudgetItem::where('year', $selectedYear)->get();
 
-        // Overall Statistics
+        // Buat BudgetPeriod per bulan
+        $months  = $allItems->pluck('month')->unique()->sort()->values();
+        $budgets = $months->map(
+            fn($m) => new BudgetPeriod($m, $selectedYear, $allItems->where('month', $m)->values())
+        );
+
+        $totalItems     = $allItems->count();
+        $completedItems = $allItems->where('is_completed', true)->count();
+
         $stats = [
-            'total_budgets' => $budgets->count(),
-            'total_budget_year' => $budgets->sum('total_budget'),
-            'avg_budget_month' => $budgets->avg('total_budget'),
-            'highest_budget' => $budgets->max('total_budget'),
-            'lowest_budget' => $budgets->min('total_budget'),
-            'total_items' => $budgets->sum(fn($b) => $b->items->count()),
-            'completed_items' => $budgets->sum(fn($b) => $b->completed_items_count),
-            'completion_rate' => $budgets->sum(fn($b) => $b->items->count()) > 0
-                ? round(($budgets->sum(fn($b) => $b->completed_items_count) / $budgets->sum(fn($b) => $b->items->count())) * 100, 1)
-                : 0,
+            'total_budgets'      => $budgets->count(),
+            'total_budget_year'  => $budgets->sum(fn($b) => $b->total_budget),
+            'avg_budget_month'   => $budgets->count() > 0
+                                     ? $budgets->sum(fn($b) => $b->total_budget) / $budgets->count()
+                                     : 0,
+            'highest_budget'     => $budgets->max(fn($b) => $b->total_budget) ?? 0,
+            'lowest_budget'      => $budgets->min(fn($b) => $b->total_budget) ?? 0,
+            'total_items'        => $totalItems,
+            'completed_items'    => $completedItems,
+            'completion_rate'    => $totalItems > 0
+                                     ? round(($completedItems / $totalItems) * 100, 1)
+                                     : 0,
         ];
 
-        // Monthly data for chart
-        $monthlyData = $budgets->map(function ($budget) {
-            return [
-                'month' => $budget->month,
-                'month_name' => $budget->month_name,
-                'total' => $budget->total_budget,
-                'items_count' => $budget->items->count(),
-                'completed_count' => $budget->completed_items_count,
-                'completion_rate' => $budget->progress_percentage,
-            ];
-        });
+        $monthlyData = $budgets->map(fn($b) => [
+            'month'           => $b->month,
+            'month_name'      => $b->month_name,
+            'total'           => $b->total_budget,
+            'items_count'     => $b->total_items_count,
+            'completed_count' => $b->completed_items_count,
+            'completion_rate' => $b->progress_percentage,
+        ]);
 
-        // All items untuk analisis
-        $allItems = $budgets->flatMap(fn($b) => $b->items);
+        $itemGroups = $allItems->groupBy('item_name')->map(fn($items, $name) => [
+            'name'      => $name,
+            'count'     => $items->count(),
+            'total'     => $items->sum('estimated_amount'),
+            'avg'       => $items->avg('estimated_amount'),
+            'completed' => $items->where('is_completed', true)->count(),
+        ])->sortByDesc('total')->take(15);
 
-        // Group by item name (same items across months)
-        $itemGroups = $allItems->groupBy('item_name')->map(function ($items, $name) {
-            return [
-                'name' => $name,
-                'count' => $items->count(),
-                'total' => $items->sum('estimated_amount'),
-                'avg' => $items->avg('estimated_amount'),
+        $monthlyComparison = $budgets->map(fn($b) => [
+            'month_name'      => $b->period,
+            'total'           => $b->total_budget,
+            'items_count'     => $b->total_items_count,
+            'completed_count' => $b->completed_items_count,
+            'progress'        => $b->progress_percentage,
+        ])->values()->toArray();
+
+        $categorizedData = $allItems
+            ->groupBy(fn($item) => $item->category ?? 'Tanpa Kategori')
+            ->map(fn($items) => [
+                'total'     => $items->sum('estimated_amount'),
+                'count'     => $items->count(),
                 'completed' => $items->where('is_completed', true)->count(),
-            ];
-        })->sortByDesc('total')->take(15);
+            ])
+            ->sortByDesc('total');
 
-        // Monthly comparison - menampilkan total tiap bulan
-        $monthlyComparison = [];
-        foreach ($budgets as $budget) {
-            $monthlyComparison[] = [
-                'month_name' => $budget->month_name,
-                'total' => $budget->total_budget,
-                'items_count' => $budget->items->count(),
-                'completed_count' => $budget->completed_items_count,
-                'progress' => $budget->progress_percentage,
-            ];
-        }
-
-        // Kategorisasi Items berdasarkan field kategori di database
-        $categorizedData = $allItems->groupBy(function ($item) {
-            return $item->category ?? 'Tanpa Kategori';
-        })->map(function ($items, $categoryName) {
-            return [
-                'total' => $items->sum('estimated_amount'),
-                'count' => $items->count(),
-                'completed' => $items->where('is_completed', true)->count(),
-            ];
-        })->sortByDesc('total');
-
-        // Available years
-        $availableYears = Budget::selectRaw('DISTINCT year')
-            ->orderBy('year', 'desc')
+        $availableYears = BudgetItem::selectRaw('DISTINCT year')
+            ->orderByDesc('year')
             ->pluck('year');
 
         return view('budgets.report', compact(
-            'budgets',
-            'stats',
-            'monthlyData',
-            'itemGroups',
-            'monthlyComparison',
-            'categorizedData',
-            'selectedYear',
-            'availableYears'
+            'budgets', 'stats', 'monthlyData', 'itemGroups',
+            'monthlyComparison', 'categorizedData', 'selectedYear', 'availableYears'
         ));
     }
 
-    /**
-     * Export budget items to Excel
-     */
-    public function exportExcel(Budget $budget): BinaryFileResponse
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  EXPORT EXCEL
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function exportExcel(int $year, int $month): BinaryFileResponse
     {
-        $service = new BudgetExcelService();
-        $filepath = $service->export($budget);
+        $items = BudgetItem::where('year', $year)->where('month', $month)
+            ->orderBy('category')->orderBy('id')->get();
 
-        $filename = 'budget_' . $budget->period . '.xlsx';
+        abort_if($items->isEmpty(), 404);
+
+        $budget   = new BudgetPeriod($month, $year, $items);
+        $service  = new BudgetExcelService();
+        $filepath = $service->export($budget);
+        $filename = 'budget_' . str_replace(' ', '_', $budget->period) . '.xlsx';
 
         return response()->download($filepath, $filename)->deleteFileAfterSend(true);
     }
 
-    /**
-     * Import budget items from Excel
-     */
-    public function importExcel(Request $request, Budget $budget): RedirectResponse
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  IMPORT EXCEL
+     * ══════════════════════════════════════════════════════════════════════════ */
+    public function importExcel(Request $request, int $year, int $month): RedirectResponse
     {
         $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls|max:5120', // Max 5MB
-        ], [
-            'excel_file.required' => 'File Excel harus diupload',
-            'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
-            'excel_file.max' => 'Ukuran file maksimal 5MB',
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
         ]);
 
-        $file = $request->file('excel_file');
-
-        // Use the uploaded file's temp path directly
+        $file     = $request->file('excel_file');
         $tempPath = $file->getRealPath();
 
-        // If getRealPath fails, try to move the file manually
         if (!$tempPath || !file_exists($tempPath)) {
-            // Create temp directory if not exists
-            $tempDir = storage_path('app' . DIRECTORY_SEPARATOR . 'temp');
-            if (!file_exists($tempDir)) {
-                mkdir($tempDir, 0755, true);
+            $tempDir  = storage_path('app/temp');
+            if (!file_exists($tempDir)) mkdir($tempDir, 0755, true);
+            $fname    = 'import_' . time() . '_' . $file->getClientOriginalName();
+            $tempPath = $tempDir . '/' . $fname;
+            if (!$file->move($tempDir, $fname)) {
+                return redirect()->route('budgets.show', [$year, $month])
+                    ->with('error', 'Gagal menyimpan file.');
             }
-
-            // Move uploaded file to our temp directory
-            $filename = 'import_' . time() . '_' . $file->getClientOriginalName();
-            $tempPath = $tempDir . DIRECTORY_SEPARATOR . $filename;
-
-            if (!$file->move($tempDir, $filename)) {
-                return redirect()->route('budgets.show', $budget)
-                    ->with('error', 'Gagal menyimpan file. Silakan coba lagi.');
-            }
-        }
-
-        // Verify file exists
-        if (!file_exists($tempPath)) {
-            return redirect()->route('budgets.show', $budget)
-                ->with('error', 'File tidak ditemukan. Silakan coba lagi.');
         }
 
         $service = new BudgetExcelService();
-        $result = $service->import($budget, $tempPath);
+        $result  = $service->import($month, $year, $tempPath);
 
-        // Delete temp file if we created it in storage
-        if (strpos($tempPath, storage_path()) !== false && file_exists($tempPath)) {
+        if (str_starts_with($tempPath, storage_path()) && file_exists($tempPath)) {
             @unlink($tempPath);
         }
 
+        $redirect = redirect()->route('budgets.show', [$year, $month]);
+
         if ($result['success']) {
-            $message = $result['message'];
+            $msg = $result['message'];
             if (!empty($result['errors'])) {
-                $message .= ' Peringatan: ' . implode(', ', array_slice($result['errors'], 0, 3));
+                $msg .= ' Peringatan: ' . implode(', ', array_slice($result['errors'], 0, 3));
                 if (count($result['errors']) > 3) {
-                    $message .= ' dan ' . (count($result['errors']) - 3) . ' error lainnya.';
+                    $msg .= ' dan ' . (count($result['errors']) - 3) . ' error lainnya.';
                 }
             }
-            return redirect()->route('budgets.show', $budget)
-                ->with('success', $message);
-        } else {
-            return redirect()->route('budgets.show', $budget)
-                ->with('error', $result['message']);
+            return $redirect->with('success', $msg);
         }
+
+        return $redirect->with('error', $result['message']);
     }
 
-    /**
-     * Export all budgets to Excel
-     */
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  EXPORT ALL EXCEL
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function exportAllExcel(): BinaryFileResponse
     {
-        $service = new BudgetExcelService();
+        $service  = new BudgetExcelService();
         $filepath = $service->exportAll();
 
-        $filename = 'all_budgets_' . date('Y-m-d') . '.xlsx';
-
-        return response()->download($filepath, $filename)->deleteFileAfterSend(true);
+        return response()
+            ->download($filepath, 'all_budgets_' . date('Y-m-d') . '.xlsx')
+            ->deleteFileAfterSend(true);
     }
 
-    /**
-     * Import all budgets from Excel
-     */
+    /* ══════════════════════════════════════════════════════════════════════════
+     *  IMPORT ALL EXCEL
+     * ══════════════════════════════════════════════════════════════════════════ */
     public function importAllExcel(Request $request): RedirectResponse
     {
         $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls|max:10240', // Max 10MB
-        ], [
-            'excel_file.required' => 'File Excel harus diupload',
-            'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
-            'excel_file.max' => 'Ukuran file maksimal 10MB',
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
-        $file = $request->file('excel_file');
-
-        // Use the uploaded file's temp path directly
+        $file     = $request->file('excel_file');
         $tempPath = $file->getRealPath();
 
-        // If getRealPath fails, try to move the file manually
         if (!$tempPath || !file_exists($tempPath)) {
-            // Create temp directory if not exists
-            $tempDir = storage_path('app' . DIRECTORY_SEPARATOR . 'temp');
-            if (!file_exists($tempDir)) {
-                mkdir($tempDir, 0755, true);
-            }
-
-            // Move uploaded file to our temp directory
-            $filename = 'import_all_' . time() . '_' . $file->getClientOriginalName();
-            $tempPath = $tempDir . DIRECTORY_SEPARATOR . $filename;
-
-            if (!$file->move($tempDir, $filename)) {
+            $tempDir  = storage_path('app/temp');
+            if (!file_exists($tempDir)) mkdir($tempDir, 0755, true);
+            $fname    = 'import_all_' . time() . '_' . $file->getClientOriginalName();
+            $tempPath = $tempDir . '/' . $fname;
+            if (!$file->move($tempDir, $fname)) {
                 return redirect()->route('budgets.index')
-                    ->with('error', 'Gagal menyimpan file. Silakan coba lagi.');
+                    ->with('error', 'Gagal menyimpan file.');
             }
-        }
-
-        // Verify file exists
-        if (!file_exists($tempPath)) {
-            return redirect()->route('budgets.index')
-                ->with('error', 'File tidak ditemukan. Silakan coba lagi.');
         }
 
         $service = new BudgetExcelService();
-        $result = $service->importAll($tempPath);
+        $result  = $service->importAll($tempPath);
 
-        // Delete temp file if we created it in storage
-        if (strpos($tempPath, storage_path()) !== false && file_exists($tempPath)) {
+        if (str_starts_with($tempPath, storage_path()) && file_exists($tempPath)) {
             @unlink($tempPath);
         }
 
+        $redirect = redirect()->route('budgets.index');
+
         if ($result['success']) {
-            $message = $result['message'];
+            $msg = $result['message'];
             if (!empty($result['errors'])) {
-                $message .= ' Peringatan: ' . implode(', ', array_slice($result['errors'], 0, 3));
+                $msg .= ' Peringatan: ' . implode(', ', array_slice($result['errors'], 0, 3));
                 if (count($result['errors']) > 3) {
-                    $message .= ' dan ' . (count($result['errors']) - 3) . ' error lainnya.';
+                    $msg .= ' dan ' . (count($result['errors']) - 3) . ' error lainnya.';
                 }
             }
-            return redirect()->route('budgets.index')
-                ->with('success', $message);
-        } else {
-            return redirect()->route('budgets.index')
-                ->with('error', $result['message']);
+            return $redirect->with('success', $msg);
         }
+
+        return $redirect->with('error', $result['message']);
     }
 }

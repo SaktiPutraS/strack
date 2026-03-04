@@ -256,6 +256,48 @@
             color: #0369a1;
         }
 
+        .info-sections {
+            margin-bottom: 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            font-size: 11.5px;
+        }
+
+        .info-sections-title {
+            background-color: #0ea5e9;
+            color: white;
+            padding: 6px 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: bold;
+            padding: 6px 10px;
+            width: 165px;
+            min-width: 165px;
+            border-right: 1px solid #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .info-text {
+            padding: 6px 10px;
+            line-height: 1.5;
+            flex: 1;
+        }
+
         @media print {
             body {
                 -webkit-print-color-adjust: exact;
@@ -403,6 +445,31 @@
             </div>
         @endif
 
+        <!-- Informasi Tambahan -->
+        <div class="info-sections">
+            <div class="info-sections-title">Syarat & Ketentuan</div>
+            <div class="info-item">
+                <div class="info-label">Cara Pembayaran</div>
+                <div class="info-text">Pembayaran dibagi menjadi dua tahap: Uang Muka (DP) sebesar <strong>30%</strong> dibayarkan sebelum pengerjaan dimulai sebagai tanda kesepakatan, dan Pelunasan sebesar <strong>70%</strong> dibayarkan setelah website selesai dan siap diserahterimakan kepada klien.</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Masa Berlaku Penawaran</div>
+                <div class="info-text">Harga dalam dokumen ini berlaku hingga <strong>{{ $project->created_at->addDays(30)->format('d F Y') }}</strong>. Setelah melewati tanggal tersebut, harga dapat berubah menyesuaikan kondisi saat itu.</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Cakupan Pekerjaan</div>
+                <div class="info-text">Harga yang tercantum hanya mencakup halaman dan fitur yang sudah disebutkan di atas. Permintaan penambahan halaman atau fitur baru di luar daftar tersebut akan dikenakan biaya terpisah yang akan diinformasikan terlebih dahulu sebelum dikerjakan.</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Informasi Pembayaran</div>
+                <div class="info-text">
+                    🟦 <strong>BCA</strong> : 7140472617 &nbsp;|&nbsp;
+                    🟧 <strong>Seabank</strong> : 901551898940<br>
+                    a.n Setiawan Edi Prayogo
+                </div>
+            </div>
+        </div>
+
         <!-- Signature Section -->
         <div class="signature-section">
             <div class="signature-box">
@@ -425,16 +492,6 @@
             </div>
         </div>
 
-        <!-- Validity Information -->
-        <div class="validity-info">
-            <h4>Informasi Penting</h4>
-            <div class="validity-details">
-                Quotation ini berlaku hingga <strong>{{ $project->created_at->addDays(30)->format('d F Y') }}</strong><br>
-                Untuk konfirmasi dan diskusi lebih lanjut, silakan hubungi:<br>
-                <strong>WhatsApp: 0857-1008-9494</strong><br>
-                <strong>Email: admin@btools.id</strong>
-            </div>
-        </div>
     </div>
 
     <script>

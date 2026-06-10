@@ -294,13 +294,30 @@
 
         function confirmDelete() {
             if ({{ $project->payments->count() }} > 0) {
-                alert('Tidak dapat menghapus proyek yang sudah memiliki pembayaran!');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tidak dapat menghapus',
+                    text: 'Proyek yang sudah memiliki pembayaran tidak dapat dihapus!',
+                    confirmButtonColor: '#8B5CF6'
+                });
                 return;
             }
 
-            if (confirm('Apakah Anda yakin ingin menghapus proyek ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
-                document.getElementById('delete-form').submit();
-            }
+            Swal.fire({
+                title: 'Hapus proyek ini?',
+                text: 'Tindakan ini tidak dapat dibatalkan!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-trash me-1"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form').submit();
+                }
+            });
         }
     </script>
 

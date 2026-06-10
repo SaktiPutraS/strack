@@ -4,6 +4,50 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-06-10 (testing & aktivasi Midtrans)
+
+### Yang diuji & hasilnya
+- **Tagih Klien (sandbox)**: tombol jalan, link Snap sandbox Rp1.000 berhasil dibuat
+  (order STRACK-192-...). Integrasi + kredensial terbukti benar.
+- **Webhook end-to-end di lokal (terisolasi, lalu dibersihkan)**: SEMUA LOLOS.
+  - Notifikasi "settlement" -> HTTP 200, payment_request jadi PAID + paid_at terisi.
+  - Project otomatis jadi **Lunas** (paid_amount = total_value), Payment tercatat
+    (Rp1.000, type FINAL, method "QRIS (Midtrans)").
+  - Idempotency: kirim ulang notifikasi tidak bikin Payment dobel.
+  - Signature salah -> ditolak 403.
+  - Cara uji: skrip bootstrap Laravel + Request::create ke route asli (lewat router +
+    middleware, termasuk pengecualian CSRF). Tidak butuh ngrok/URL publik.
+- **Coba production**: user ganti ke key production + IS_PRODUCTION=true. Link production
+  (app.midtrans.com) BERHASIL dibuat (order STRACK-193), TAPI saat dibuka muncul
+  **"No payment channels available"**.
+
+### Temuan penting
+- "No payment channels available" = **akun production belum diaktivasi / belum ada metode
+  pembayaran yang disetujui**. Ini murni urusan akun Midtrans, BUKAN bug kode.
+- User sedang proses aktivasi: menyetujui S&K biaya (QRIS 0,7%, VA flat Rp4.000, GoPay 2% -
+  semua dipotong per transaksi sukses) lalu klik "Ajukan". Menunggu review Midtrans.
+
+### Catatan biaya (untuk referensi)
+- QRIS 0,7% (persentase) vs VA Rp4.000 (flat). Titik impas ~Rp570.000: di bawah QRIS lebih
+  murah, di atas VA lebih murah. Snap menampilkan semua metode yang diaktifkan.
+
+### PENDING (lanjut sesi berikutnya)
+1. **Tunggu aktivasi akun Midtrans production + QRIS/VA aktif** (cek dashboard: tidak ada
+   banner "Activate"/"In Review", menu Payment menampilkan QRIS hijau).
+2. Setelah aktif: deploy ke hosting -> kode + `.env` production (`MIDTRANS_IS_PRODUCTION=true`)
+   + jalankan `database/sql/2026_06_10_payment_gateway.sql` di phpMyAdmin + set URL notifikasi
+   production ke `https://strack.my.id/webhooks/payment/midtrans`.
+3. Tes Rp1.000 asli di hosting dgn project fiktif sampai status auto-Lunas.
+4. **KEAMANAN**: Server Key production sempat ter-paste di chat -> regenerate di Settings ->
+   Access Keys setelah beres.
+5. **Cara deploy ke Hostinger belum ditentukan** (Git pull / upload manual / FTP) - tanyakan.
+6. Sisa data uji di DB lokal: payment_request PENDING order STRACK-192 (project nyata 192,
+   nominal 1000) & STRACK-193. Tidak mengganggu, akan expire sendiri; boleh dihapus manual.
+7. `.env` LOKAL saat ini berisi key production + IS_PRODUCTION=false (kombinasi tidak konsisten,
+   tapi sempat menghasilkan link sandbox saat key masih sandbox). Rapikan sesuai kebutuhan tes.
+
+---
+
 ## Sesi 2026-06-10 (lanjutan) - Fitur Pembayaran Otomatis (Midtrans)
 
 ### Ringkasan

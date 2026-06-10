@@ -35,6 +35,13 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-06-10 (testing & aktivasi Midtrans)
+Webhook auto-Lunas sudah DIUJI end-to-end di lokal dan LOLOS (settlement -> Lunas, idempotent,
+tolak signature palsu). Sandbox: link Rp1.000 berhasil. Production: link berhasil dibuat tapi
+"No payment channels available" karena akun production BELUM diaktivasi. Penghalang sekarang
+murni aktivasi akun + QRIS/VA di Midtrans (bukan kode). Pending lengkap (deploy hosting,
+regenerate server key, cara deploy Hostinger) ada di DOKUMENTASI.md.
+
 ### 2026-06-10 (lanjutan) - Fitur Pembayaran Otomatis (Midtrans)
 Tombol "Tagih Klien" -> QRIS/payment link Midtrans (Snap sandbox) -> kirim WA -> webhook
 verifikasi signature -> projects.payment_status auto jadi PAID + catat Payment. Detail +

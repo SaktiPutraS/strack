@@ -196,6 +196,25 @@ class DashboardController extends Controller
                 });
             });
 
+        // Daftar proyek belum selesai (lintas bulan), urut dari deadline terlewat sampai paling jauh
+        $unfinishedProjects = Project::with('client')
+            ->whereIn('status', ['WAITING', 'PROGRESS'])
+            ->whereNotNull('deadline')
+            ->orderBy('deadline')
+            ->get()
+            ->map(function ($project) {
+                return [
+                    'id' => $project->id,
+                    'title' => $project->title,
+                    'client_name' => $project->client->name ?? '-',
+                    'deadline' => $project->deadline->format('Y-m-d'),
+                    'total_value' => $project->total_value,
+                    'status' => $project->status,
+                    'url' => route('projects.show', $project),
+                ];
+            })
+            ->values();
+
         return view('dashboard.index', [
             'proyekMenunggu' => $proyekMenunggu,
             'proyekProgress' => $proyekProgress,
@@ -214,6 +233,7 @@ class DashboardController extends Controller
             'calendarData' => $calendarData,
             'calendarNotes' => $calendarNotes,
             'projectDeadlines' => $projectDeadlines, // NEW
+            'unfinishedProjects' => $unfinishedProjects, // NEW: daftar proyek belum selesai
         ]);
     }
 

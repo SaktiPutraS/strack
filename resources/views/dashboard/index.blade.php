@@ -257,19 +257,40 @@
                     </div>
                 </div>
                 <div class="card-body p-3 p-md-4">
-                    <div class="calendar-wrapper">
-                        <div class="calendar-container">
-                            <div class="calendar-header">
-                                <div class="calendar-day-header">Min</div>
-                                <div class="calendar-day-header">Sen</div>
-                                <div class="calendar-day-header">Sel</div>
-                                <div class="calendar-day-header">Rab</div>
-                                <div class="calendar-day-header">Kam</div>
-                                <div class="calendar-day-header">Jum</div>
-                                <div class="calendar-day-header">Sab</div>
+                    <div class="row g-4">
+                        <!-- Kalender (3 bagian) -->
+                        <div class="col-12 col-lg-9">
+                            <div class="calendar-wrapper">
+                                <div class="calendar-container">
+                                    <div class="calendar-header">
+                                        <div class="calendar-day-header">Min</div>
+                                        <div class="calendar-day-header">Sen</div>
+                                        <div class="calendar-day-header">Sel</div>
+                                        <div class="calendar-day-header">Rab</div>
+                                        <div class="calendar-day-header">Kam</div>
+                                        <div class="calendar-day-header">Jum</div>
+                                        <div class="calendar-day-header">Sab</div>
+                                    </div>
+                                    <div class="calendar-body" id="calendarBody">
+                                        <!-- Calendar days will be populated by JavaScript -->
+                                    </div>
+                                </div>
                             </div>
-                            <div class="calendar-body" id="calendarBody">
-                                <!-- Calendar days will be populated by JavaScript -->
+                        </div>
+
+                        <!-- Daftar proyek belum selesai (1 bagian) -->
+                        <div class="col-12 col-lg-3">
+                            <div class="unfinished-panel">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="fw-bold mb-0">
+                                        <i class="bi bi-list-task text-purple me-1"></i>Proyek Belum Selesai
+                                    </h6>
+                                    <span class="badge bg-purple-soft" id="unfinishedCount">0</span>
+                                </div>
+                                <p class="text-muted small mb-3">Urut dari deadline terlewat sampai paling jauh</p>
+                                <div id="unfinishedList" class="unfinished-list">
+                                    <!-- Diisi oleh JavaScript -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -646,6 +667,81 @@
                 projectDeadlines = projectDeadlinesRaw;
             }
 
+            // Data proyek belum selesai untuk panel samping
+            let unfinishedProjects = @json($unfinishedProjects);
+            if (!Array.isArray(unfinishedProjects)) {
+                unfinishedProjects = unfinishedProjects ? Object.values(unfinishedProjects) : [];
+            }
+
+            // Helper escape HTML agar aman dari karakter spesial
+            function escapeHtml(text) {
+                return String(text)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            // Format nilai rupiah singkat (mis. 1,5 jt / 2 M)
+            function formatRupiahSingkat(value) {
+                const n = parseInt(value || 0);
+                if (n >= 1000000000) return 'Rp ' + (n / 1000000000).toFixed(n % 1000000000 === 0 ? 0 : 1).replace('.', ',') + ' M';
+                if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1).replace('.', ',') + ' jt';
+                if (n >= 1000) return 'Rp ' + (n / 1000).toFixed(0) + ' rb';
+                return 'Rp ' + n.toLocaleString('id-ID');
+            }
+
+            // Render daftar proyek belum selesai (urut deadline terlewat -> paling jauh)
+            function renderUnfinishedList() {
+                const list = document.getElementById('unfinishedList');
+                const countBadge = document.getElementById('unfinishedCount');
+                if (!list) return;
+
+                countBadge.textContent = unfinishedProjects.length;
+
+                if (unfinishedProjects.length === 0) {
+                    list.innerHTML = '<p class="text-muted text-center small py-3"><i class="bi bi-check2-circle me-1"></i>Tidak ada proyek aktif</p>';
+                    return;
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                list.innerHTML = unfinishedProjects.map(project => {
+                    const deadline = new Date(project.deadline);
+                    deadline.setHours(0, 0, 0, 0);
+                    const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                    let colorClass = 'border-primary';
+                    let statusText = '';
+                    if (daysUntil < 0) {
+                        colorClass = 'border-danger';
+                        statusText = `<span class="text-danger fw-semibold">Terlewat ${Math.abs(daysUntil)} hari</span>`;
+                    } else if (daysUntil === 0) {
+                        colorClass = 'border-warning';
+                        statusText = '<span class="text-warning fw-semibold">Hari ini</span>';
+                    } else if (daysUntil <= 3) {
+                        colorClass = 'border-warning';
+                        statusText = `<span class="text-warning fw-semibold">${daysUntil} hari lagi</span>`;
+                    } else {
+                        statusText = `<span class="text-muted">${daysUntil} hari lagi</span>`;
+                    }
+
+                    const tglFmt = deadline.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+                    return `
+                        <a href="${project.url}" class="unfinished-item ${colorClass}">
+                            <div class="fw-semibold text-truncate">${escapeHtml(project.title || 'Tanpa nama')}</div>
+                            <div class="small text-muted text-truncate"><i class="bi bi-building me-1"></i>${escapeHtml(project.client_name || '-')}</div>
+                            <div class="d-flex justify-content-between align-items-center mt-1 small">
+                                <span><i class="bi bi-calendar3 me-1"></i>${tglFmt}</span>
+                                <span class="fw-semibold text-purple">${formatRupiahSingkat(project.total_value)}</span>
+                            </div>
+                            <div class="small mt-1">${statusText}</div>
+                        </a>`;
+                }).join('');
+            }
+
             const calendarBody = document.getElementById('calendarBody');
             const calendarTitle = document.getElementById('calendarTitle');
             const prevMonthBtn = document.getElementById('prevMonth');
@@ -744,10 +840,19 @@
                                 icon = 'clock';
                             }
 
-                            const safeName = (project.title || 'Tanpa nama')
-                                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            const safeName = escapeHtml(project.title || 'Tanpa nama');
+                            const safeClient = escapeHtml(project.client_name || '-');
+                            const nilai = parseInt(project.total_value || 0).toLocaleString('id-ID');
+                            const tooltip = `${safeName} - ${safeClient} - Rp ${nilai}`;
 
-                            return `<div class="deadline-preview ${colorClass}" title="${safeName}"><i class="bi bi-${icon}"></i> <span class="deadline-name">${safeName}</span></div>`;
+                            return `
+                                <div class="deadline-preview ${colorClass}" title="${tooltip}">
+                                    <i class="bi bi-${icon}"></i>
+                                    <div class="deadline-info">
+                                        <span class="deadline-name">${safeName}</span>
+                                        <span class="deadline-client">${safeClient}</span>
+                                    </div>
+                                </div>`;
                         }).join('');
                     }
 
@@ -1024,6 +1129,7 @@
 
             // Initial render
             renderCalendar();
+            renderUnfinishedList();
 
             // Clickable project cards - redirect to projects page with filter
             const clickableCards = document.querySelectorAll('.clickable-card');
@@ -1268,7 +1374,7 @@
                     display: flex;
                     flex-direction: column;
                     position: relative;
-                    min-height: 80px;
+                    min-height: 95px;
                 }
 
                 .calendar-day:hover {
@@ -1301,14 +1407,14 @@
                 }
 
                 .note-preview, .deadline-preview {
-                    font-size: 0.7rem;
-                    padding: 3px 6px;
+                    font-size: 0.8rem;
+                    padding: 4px 7px;
                     border-radius: 6px;
                     color: white;
-                    margin-top: 2px;
+                    margin-top: 3px;
                     display: flex;
                     align-items: center;
-                    gap: 4px;
+                    gap: 5px;
                     font-weight: 500;
                     overflow: hidden;
                     max-width: 100%;
@@ -1316,9 +1422,29 @@
 
                 .deadline-preview i {
                     flex-shrink: 0;
+                    font-size: 0.85rem;
+                }
+
+                .deadline-preview .deadline-info {
+                    display: flex;
+                    flex-direction: column;
+                    line-height: 1.15;
+                    overflow: hidden;
+                    min-width: 0;
                 }
 
                 .deadline-preview .deadline-name {
+                    font-size: 0.82rem;
+                    font-weight: 700;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .deadline-preview .deadline-client {
+                    font-size: 0.72rem;
+                    font-weight: 400;
+                    opacity: 0.9;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -1328,6 +1454,51 @@
                 .note-preview.bg-warning, .deadline-preview.bg-warning,
                 .badge.bg-warning {
                     color: #1f2937 !important;
+                }
+
+                /* Panel daftar proyek belum selesai */
+                .unfinished-panel {
+                    background: rgba(139, 92, 246, 0.04);
+                    border: 1px solid rgba(139, 92, 246, 0.12);
+                    border-radius: 14px;
+                    padding: 16px;
+                    height: 100%;
+                }
+
+                .unfinished-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    max-height: 520px;
+                    overflow-y: auto;
+                    padding-right: 4px;
+                }
+
+                .unfinished-item {
+                    display: block;
+                    text-decoration: none;
+                    color: #374151;
+                    background: #fff;
+                    border: 1px solid rgba(0, 0, 0, 0.06);
+                    border-left: 4px solid #8B5CF6;
+                    border-radius: 10px;
+                    padding: 10px 12px;
+                    transition: all 0.15s ease;
+                }
+
+                .unfinished-item:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+                    color: #374151;
+                }
+
+                .unfinished-item.border-danger { border-left-color: #dc3545; }
+                .unfinished-item.border-warning { border-left-color: #ffc107; }
+                .unfinished-item.border-primary { border-left-color: #8B5CF6; }
+
+                .bg-purple-soft {
+                    background: rgba(139, 92, 246, 0.15);
+                    color: #6d28d9;
                 }
 
                 .legend-dot {

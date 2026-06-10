@@ -142,18 +142,19 @@ class Payment extends Model
     {
         parent::boot();
 
-        // Update project's paid_amount when payment is saved
+        // Update project's paid_amount + payment_status when payment is saved
         static::saved(function ($payment) {
             $project = $payment->project;
             $project->paid_amount = $project->payments()->sum('amount');
+            $project->payment_status = $project->syncPaymentStatus(false);
             $project->saveQuietly();
         });
 
-        // Update project's paid_amount when payment is deleted
+        // Update project's paid_amount + payment_status when payment is deleted
         static::deleted(function ($payment) {
-            // Update project paid amount
             $project = $payment->project;
             $project->paid_amount = $project->payments()->sum('amount');
+            $project->payment_status = $project->syncPaymentStatus(false);
             $project->saveQuietly();
         });
     }

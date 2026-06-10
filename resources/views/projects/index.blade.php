@@ -274,6 +274,11 @@
                                                     <i class="bi bi-x-circle-fill me-1"></i>DIBATALKAN
                                                 </span>
                                             @endif
+                                            <div class="mt-1">
+                                                <span class="badge bg-{{ $project->payment_status_color }}">
+                                                    <i class="bi bi-cash-coin me-1"></i>{{ $project->payment_status_label }}
+                                                </span>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

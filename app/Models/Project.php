@@ -22,6 +22,7 @@ class Project extends Model
         'dp_amount',
         'paid_amount',
         'status',
+        'payment_status',
         'deadline',
         'notes',
         'testimoni',
@@ -51,6 +52,67 @@ class Project extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Relationship: Project has many payment requests (tagihan/QRIS)
+     */
+    public function paymentRequests(): HasMany
+    {
+        return $this->hasMany(PaymentRequest::class);
+    }
+
+    /**
+     * Tagihan PENDING terakhir yang masih bisa dibayar
+     */
+    public function activePaymentRequest(): ?PaymentRequest
+    {
+        return $this->paymentRequests()
+            ->where('status', 'PENDING')
+            ->latest()
+            ->get()
+            ->first(fn ($pr) => $pr->is_payable);
+    }
+
+    /**
+     * Hitung ulang payment_status dari paid_amount vs total_value.
+     * Dipanggil otomatis lewat boot Payment, tapi bisa juga manual.
+     */
+    public function syncPaymentStatus(bool $persist = true): string
+    {
+        $status = match (true) {
+            $this->total_value > 0 && $this->paid_amount >= $this->total_value => 'PAID',
+            $this->paid_amount > 0 => 'PARTIAL',
+            default => 'UNPAID',
+        };
+
+        if ($persist && $this->payment_status !== $status) {
+            $this->payment_status = $status;
+            $this->saveQuietly();
+        }
+
+        return $status;
+    }
+
+    /**
+     * Badge UI untuk payment_status
+     */
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'PAID' => 'Lunas',
+            'PARTIAL' => 'Sebagian',
+            default => 'Belum Bayar',
+        };
+    }
+
+    public function getPaymentStatusColorAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'PAID' => 'success',
+            'PARTIAL' => 'warning',
+            default => 'secondary',
+        };
     }
 
     /**

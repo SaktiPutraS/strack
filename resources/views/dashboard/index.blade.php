@@ -93,29 +93,53 @@
         <!-- Asset Overview Card -->
         <div class="col-12 col-lg-6">
             <div class="card luxury-card border-0 h-100">
-                <div class="card-header bg-white border-0 p-3 p-md-4">
-                    <h5 class="fw-bold mb-1">
-                        <i class="bi bi-wallet2 me-2 text-purple"></i>Total Asset
-                    </h5>
-                    <h3 class="mb-0 text-purple fw-bold">{{ number_format($pieData['total'], 0, ',', '.') }}</h3>
-                </div>
-                <div class="card-body p-3 p-md-4">
-                    <div class="row g-2 g-md-3">
+                <!-- Bank Octo & Piutang — ditampilkan besar karena paling sering dicek -->
+                <div class="card-header bg-white border-0 p-3 p-md-4 pb-3">
+                    <p class="text-muted fw-bold mb-3" style="font-size:0.7rem;letter-spacing:0.8px;text-transform:uppercase;">
+                        <i class="bi bi-eye me-1 text-purple"></i>Saldo Utama
+                    </p>
+                    <div class="row g-3">
                         <!-- Bank Octo -->
                         <div class="col-6">
-                            <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
-                                style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.05), rgba(220, 38, 38, 0.1)); border-color: rgba(220, 38, 38, 0.2) !important;">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="asset-icon rounded-circle p-1 p-md-2" style="background: rgba(220, 38, 38, 0.15);">
-                                        <i class="bi bi-bank text-danger"></i>
-                                    </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div style="width:30px;height:30px;background:rgba(220,38,38,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-bank text-danger" style="font-size:0.85rem;"></i>
                                 </div>
-                                <p class="text-muted mb-1 asset-label">Bank Octo</p>
-                                <h6 class="fw-bold mb-1 text-danger asset-value">{{ number_format($saldoBank, 0, ',', '.') }}</h6>
-                                <small class="text-muted asset-percent">{{ round(($saldoBank / $pieData['total']) * 100, 1) }}%</small>
+                                <span class="text-muted fw-semibold" style="font-size:0.78rem;">Bank Octo</span>
                             </div>
+                            <div class="fw-bold text-danger" style="font-size:clamp(1.15rem,3.5vw,1.6rem);line-height:1.1;letter-spacing:-0.5px;word-break:break-all;">
+                                {{ number_format($saldoBank, 0, ',', '.') }}
+                            </div>
+                            <small class="text-muted" style="font-size:0.7rem;">{{ round(($saldoBank / $pieData['total']) * 100, 1) }}% dari total</small>
                         </div>
+                        <!-- Piutang -->
+                        <div class="col-6">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div style="width:30px;height:30px;background:rgba(139,92,246,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-receipt text-purple" style="font-size:0.85rem;"></i>
+                                </div>
+                                <span class="text-muted fw-semibold" style="font-size:0.78rem;">Piutang</span>
+                            </div>
+                            <div class="fw-bold text-purple" style="font-size:clamp(1.15rem,3.5vw,1.6rem);line-height:1.1;letter-spacing:-0.5px;word-break:break-all;">
+                                {{ number_format($totalPiutang, 0, ',', '.') }}
+                            </div>
+                            <small class="text-muted" style="font-size:0.7rem;">{{ round(($totalPiutang / $pieData['total']) * 100, 1) }}% dari total</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-2">
+                    <!-- Total Asset — ringkasan kecil -->
+                    <div class="d-flex align-items-center justify-content-between px-3 py-2 rounded-3 mb-3"
+                        style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.12);">
+                        <span class="text-muted fw-semibold" style="font-size:0.78rem;">
+                            <i class="bi bi-wallet2 me-1 text-purple"></i>Total Asset
+                        </span>
+                        <span class="text-purple fw-bold" style="font-size:0.9rem;">
+                            {{ number_format($pieData['total'], 0, ',', '.') }}
+                        </span>
+                    </div>
 
+                    <div class="row g-2 g-md-3">
                         <!-- Cash -->
                         <div class="col-6">
                             <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
@@ -128,21 +152,6 @@
                                 <p class="text-muted mb-1 asset-label">Cash</p>
                                 <h6 class="fw-bold mb-1 text-success asset-value">{{ number_format($saldoCash, 0, ',', '.') }}</h6>
                                 <small class="text-muted asset-percent">{{ round(($saldoCash / $pieData['total']) * 100, 1) }}%</small>
-                            </div>
-                        </div>
-
-                        <!-- Piutang -->
-                        <div class="col-6">
-                            <div class="asset-detail-card p-2 p-md-3 border rounded-3 h-100"
-                                style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(139, 92, 246, 0.1)); border-color: rgba(139, 92, 246, 0.2) !important;">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="asset-icon rounded-circle p-1 p-md-2" style="background: rgba(139, 92, 246, 0.15);">
-                                        <i class="bi bi-receipt text-purple"></i>
-                                    </div>
-                                </div>
-                                <p class="text-muted mb-1 asset-label">Piutang</p>
-                                <h6 class="fw-bold mb-1 text-purple asset-value">{{ number_format($totalPiutang, 0, ',', '.') }}</h6>
-                                <small class="text-muted asset-percent">{{ round(($totalPiutang / $pieData['total']) * 100, 1) }}%</small>
                             </div>
                         </div>
 

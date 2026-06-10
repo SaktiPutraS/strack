@@ -336,6 +336,11 @@ class ExpenseController extends Controller
 
         Expense::create($validated);
 
+        if ($request->input('action') === 'save_next') {
+            return redirect()->route('expenses.create')
+                ->with('success', 'Pengeluaran berhasil disimpan! Silakan tambah pengeluaran berikutnya.');
+        }
+
         return redirect()->route('expenses.index')
             ->with('success', 'Pengeluaran berhasil ditambahkan!');
     }

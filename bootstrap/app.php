@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'simpleauth' => SimpleAuth::class,
         ]);
+
+        // Webhook gateway tidak mengirim CSRF token -> dikecualikan
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

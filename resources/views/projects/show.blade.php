@@ -8,6 +8,9 @@
                 <div>
                     <h1 class="h2 fw-bold text-purple mb-1">
                         <i class="bi bi-folder2-open me-2"></i>{{ $project->title }}
+                        <span class="badge bg-{{ $project->payment_status_color }} align-middle ms-2" style="font-size:0.6em;">
+                            <i class="bi bi-cash-coin me-1"></i>{{ $project->payment_status_label }}
+                        </span>
                     </h1>
                     <p class="text-muted mb-0">Detail lengkap proyek untuk {{ $project->client->name }}</p>
                 </div>
@@ -294,6 +297,14 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="d-grid gap-3">
+                        @if ($project->remaining_amount > 0 && $project->status !== 'CANCELLED')
+                            <button type="button" class="btn btn-purple text-white d-flex align-items-center justify-content-center"
+                                style="background:linear-gradient(135deg,#8B5CF6,#A855F7);border:none;"
+                                onclick="tagihKlien()">
+                                <i class="bi bi-qr-code me-2"></i>Tagih Klien (QRIS)
+                            </button>
+                        @endif
+
                         @if ($project->status !== 'FINISHED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING')
                             <button class="btn btn-success d-flex align-items-center justify-content-center" onclick="updateStatus('FINISHED')">
                                 <i class="bi bi-check-circle me-2"></i>Tandai Selesai
@@ -402,6 +413,49 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal hasil tagihan -->
+    <div class="modal fade" id="tagihModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius:16px;">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-purple">
+                        <i class="bi bi-qr-code me-2"></i>Tagihan Siap Dikirim
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <p class="text-muted mb-1">Nominal tagihan</p>
+                        <h3 class="fw-bold text-purple mb-0" id="tagihAmount">-</h3>
+                        <small class="text-muted">Order: <span id="tagihOrderId">-</span></small>
+                    </div>
+
+                    <label class="form-label text-muted fw-semibold small">Link Pembayaran (QRIS dinamis)</label>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="tagihLink" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyTagihLink()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="#" id="tagihWaBtn" target="_blank" class="btn btn-success d-flex align-items-center justify-content-center">
+                            <i class="bi bi-whatsapp me-2"></i>Kirim ke WhatsApp Klien
+                        </a>
+                        <a href="#" id="tagihOpenBtn" target="_blank" class="btn btn-outline-primary d-flex align-items-center justify-content-center">
+                            <i class="bi bi-box-arrow-up-right me-2"></i>Buka Halaman Bayar
+                        </a>
+                    </div>
+
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Status proyek akan otomatis jadi <strong>Lunas</strong>
+                        begitu klien menyelesaikan pembayaran.
+                    </p>
                 </div>
             </div>
         </div>
@@ -545,6 +599,77 @@
                             button.disabled = false;
                         });
                 }
+            });
+        }
+
+        // ── Tagih Klien: generate QRIS/payment link via Midtrans ──
+        function tagihKlien() {
+            const remaining = {{ (int) $project->remaining_amount }};
+
+            Swal.fire({
+                title: 'Tagih Klien',
+                html: 'Masukkan nominal tagihan (default sisa tagihan):',
+                input: 'number',
+                inputValue: remaining,
+                inputAttributes: { min: 1, max: remaining },
+                showCancelButton: true,
+                confirmButtonColor: '#8B5CF6',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-qr-code me-1"></i> Buat Tagihan',
+                cancelButtonText: 'Batal',
+                showLoaderOnConfirm: true,
+                preConfirm: (amount) => {
+                    return fetch(`{{ route('projects.charge', $project) }}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({ amount: amount })
+                        })
+                        .then(async (response) => {
+                            const data = await response.json();
+                            if (!response.ok || !data.success) {
+                                throw new Error(data.message || 'Gagal membuat tagihan');
+                            }
+                            return data.data;
+                        })
+                        .catch((error) => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    const d = result.value;
+                    document.getElementById('tagihAmount').textContent = d.formatted_amount;
+                    document.getElementById('tagihOrderId').textContent = d.order_id;
+                    document.getElementById('tagihLink').value = d.payment_url || '';
+                    document.getElementById('tagihOpenBtn').href = d.payment_url || '#';
+
+                    const waBtn = document.getElementById('tagihWaBtn');
+                    if (d.whatsapp_url) {
+                        waBtn.href = d.whatsapp_url;
+                        waBtn.classList.remove('disabled');
+                    } else {
+                        waBtn.href = '#';
+                        waBtn.classList.add('disabled');
+                    }
+
+                    new bootstrap.Modal(document.getElementById('tagihModal')).show();
+                }
+            });
+        }
+
+        function copyTagihLink() {
+            const input = document.getElementById('tagihLink');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                Swal.fire({
+                    toast: true, position: 'top-end', icon: 'success',
+                    title: 'Link disalin', showConfirmButton: false, timer: 1500
+                });
             });
         }
     </script>

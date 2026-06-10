@@ -16,7 +16,13 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\CalendarNoteController;
 use App\Http\Controllers\SupplyController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\PaymentWebhookController;
 use Illuminate\Support\Facades\Route;
+
+// Webhook gateway pembayaran (TANPA auth, diverifikasi via signature, CSRF dikecualikan)
+Route::post('webhooks/payment/midtrans', [PaymentWebhookController::class, 'midtrans'])
+    ->name('webhooks.midtrans');
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -49,6 +55,9 @@ Route::middleware('simpleauth')->group(function () {
 
     Route::resource('payments', PaymentController::class);
     Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');
+
+    // Tagih Klien -> generate tagihan Midtrans (QRIS/payment link)
+    Route::post('projects/{project}/charge', [BillingController::class, 'charge'])->name('projects.charge');
 
     Route::get('expenses/analysis', [ExpenseController::class, 'analysis'])->name('expenses.analysis');
     Route::get('expenses/export/excel', [ExpenseController::class, 'exportExcel'])->name('expenses.export.excel');

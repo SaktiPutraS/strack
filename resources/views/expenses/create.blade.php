@@ -55,6 +55,7 @@
     <div class="row justify-content-center">
         <div class="col-12 col-xl-8">
             <form action="{{ route('expenses.store') }}" method="POST" id="expense-form">
+                <input type="hidden" name="action" id="formAction" value="save">
                 @csrf
 
                 <!-- Basic Information Card -->
@@ -197,9 +198,12 @@
                             <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary btn-lg">
                                 <i class="bi bi-arrow-left me-2"></i>Kembali
                             </a>
-                            <div class="d-flex gap-3">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-primary btn-lg" id="saveNextBtn">
+                                    <i class="bi bi-arrow-right-circle me-2"></i>Simpan & Lanjut
+                                </button>
                                 <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                                    <i class="bi bi-check-circle me-2"></i>Simpan Pengeluaran
+                                    <i class="bi bi-check-circle me-2"></i>Simpan
                                 </button>
                             </div>
                         </div>
@@ -223,6 +227,8 @@
             const expenseAmount = document.getElementById('expenseAmount');
             const previewBalanceAfter = document.getElementById('previewBalanceAfter');
             const submitBtn = document.getElementById('submitBtn');
+            const saveNextBtn = document.getElementById('saveNextBtn');
+            const formAction = document.getElementById('formAction');
 
             const bankBalance = {{ $currentBankBalance }};
             const cashBalance = {{ $currentCashBalance }};
@@ -283,15 +289,23 @@
             amountInput.addEventListener('input', validateAmount);
             updateBalanceInfo();
 
+            // Tombol Simpan & Lanjut — set action lalu submit
+            saveNextBtn.addEventListener('click', function() {
+                formAction.value = 'save_next';
+                document.getElementById('expense-form').requestSubmit();
+            });
+
             // Form validation
             document.getElementById('expense-form').addEventListener('submit', function(e) {
                 const selectedSource = document.querySelector('input[name="source"]:checked').value;
                 const currentBalance = selectedSource === 'BANK' ? bankBalance : cashBalance;
                 const amount = parseFloat(amountInput.value) || 0;
                 const sourceName = selectedSource === 'BANK' ? 'Bank Octo' : 'Cash';
+                const isSaveNext = formAction.value === 'save_next';
 
                 if (amount <= 0) {
                     e.preventDefault();
+                    formAction.value = 'save';
                     Swal.fire({
                         icon: 'error',
                         title: 'Jumlah Tidak Valid',
@@ -303,6 +317,7 @@
 
                 if (amount > currentBalance) {
                     e.preventDefault();
+                    formAction.value = 'save';
                     Swal.fire({
                         icon: 'error',
                         title: 'Saldo Tidak Cukup',
@@ -312,9 +327,13 @@
                     return;
                 }
 
-                const submitBtn = e.target.querySelector('button[type="submit"]');
-                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Menyimpan...';
-                submitBtn.disabled = true;
+                if (isSaveNext) {
+                    saveNextBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Menyimpan...';
+                    saveNextBtn.disabled = true;
+                } else {
+                    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Menyimpan...';
+                    submitBtn.disabled = true;
+                }
             });
         });
     </script>

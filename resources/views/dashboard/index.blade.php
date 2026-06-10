@@ -726,12 +726,35 @@
                         dayElement.classList.add('has-event');
                     }
 
+                    // Tampilkan nama proyek langsung di sel kalender
+                    let projectsPreview = '';
+                    if (hasProjects) {
+                        projectsPreview = dayProjects.map(project => {
+                            const deadline = new Date(project.deadline);
+                            deadline.setHours(0, 0, 0, 0);
+                            const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                            let colorClass = 'bg-primary';
+                            let icon = 'calendar-event';
+                            if (daysUntil < 0) {
+                                colorClass = 'bg-danger';
+                                icon = 'exclamation-triangle';
+                            } else if (daysUntil <= 3) {
+                                colorClass = 'bg-warning';
+                                icon = 'clock';
+                            }
+
+                            const safeName = (project.title || 'Tanpa nama')
+                                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+                            return `<div class="deadline-preview ${colorClass}" title="${safeName}"><i class="bi bi-${icon}"></i> <span class="deadline-name">${safeName}</span></div>`;
+                        }).join('');
+                    }
+
                     dayElement.innerHTML = `
                 <span class="day-number">${day}</span>
-                ${hasNotes ? `<div class="note-preview bg-success"><i class="bi bi-journal-text"></i> ${dayNotes.length}</div>` : ''}
-                ${hasOverdueProjects ? `<div class="deadline-preview bg-danger"><i class="bi bi-exclamation-triangle"></i> ${dayProjects.length}</div>` : ''}
-                ${!hasOverdueProjects && hasUpcomingProjects ? `<div class="deadline-preview bg-warning"><i class="bi bi-calendar-event"></i> ${dayProjects.length}</div>` : ''}
-                ${!hasOverdueProjects && !hasUpcomingProjects && hasProjects ? `<div class="deadline-preview bg-primary"><i class="bi bi-calendar-event"></i> ${dayProjects.length}</div>` : ''}
+                ${hasNotes ? `<div class="note-preview bg-success"><i class="bi bi-journal-text"></i> ${dayNotes.length} catatan</div>` : ''}
+                ${projectsPreview}
             `;
 
                     dayElement.addEventListener('click', () => openDayModal(year, month, day));
@@ -815,17 +838,17 @@
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <i class="bi bi-${statusIcon} text-${badgeClass.replace('bg-', '')}"></i>
-                                        <h6 class="mb-0 fw-bold">${project.project_name}</h6>
+                                        <h6 class="mb-0 fw-bold">${project.title || 'Tanpa nama'}</h6>
                                     </div>
                                     <p class="text-muted mb-1 small">
-                                        <i class="bi bi-building me-1"></i>${project.client.company_name}
+                                        <i class="bi bi-building me-1"></i>${project.client_name || '-'}
                                     </p>
                                 </div>
                                 <span class="badge ${badgeClass}">${badgeText}</span>
                             </div>
                             <div class="d-flex gap-2 small text-muted">
                                 <span><i class="bi bi-calendar3 me-1"></i>${new Date(project.deadline).toLocaleDateString('id-ID')}</span>
-                                <span><i class="bi bi-tag me-1"></i>Rp ${parseInt(project.total_value).toLocaleString('id-ID')}</span>
+                                <span><i class="bi bi-tag me-1"></i>Rp ${parseInt(project.total_value || 0).toLocaleString('id-ID')}</span>
                             </div>
                         </div>
                     </div>
@@ -1287,10 +1310,18 @@
                     align-items: center;
                     gap: 4px;
                     font-weight: 500;
+                    overflow: hidden;
+                    max-width: 100%;
+                }
+
+                .deadline-preview i {
+                    flex-shrink: 0;
+                }
+
+                .deadline-preview .deadline-name {
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    max-width: 100%;
                 }
 
                 /* Latar kuning butuh teks gelap agar tetap terbaca */

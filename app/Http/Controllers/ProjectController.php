@@ -792,7 +792,8 @@ class ProjectController extends Controller
                     return [
                         'id' => $project->id,
                         'title' => $project->title,
-                        'client_name' => $project->client->name,
+                        'client_name' => $project->client->name ?? '-',
+                        'total_value' => $project->total_value,
                         'type' => $project->type,
                         'status' => $project->status,
                         'deadline' => $project->deadline->format('Y-m-d'),

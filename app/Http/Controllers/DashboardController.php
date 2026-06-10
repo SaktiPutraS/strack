@@ -178,9 +178,22 @@ class DashboardController extends Controller
             ->whereYear('deadline', $calendarData['currentYear'])
             ->whereMonth('deadline', $calendarData['currentMonthNumber'])
             ->whereIn('status', ['WAITING', 'PROGRESS'])
+            ->orderBy('deadline')
             ->get()
             ->groupBy(function ($project) {
                 return $project->deadline->day;
+            })
+            ->map(function ($dayProjects) {
+                return $dayProjects->map(function ($project) {
+                    return [
+                        'id' => $project->id,
+                        'title' => $project->title,
+                        'client_name' => $project->client->name ?? '-',
+                        'deadline' => $project->deadline->format('Y-m-d'),
+                        'total_value' => $project->total_value,
+                        'url' => route('projects.show', $project),
+                    ];
+                });
             });
 
         return view('dashboard.index', [

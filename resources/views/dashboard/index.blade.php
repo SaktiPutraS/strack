@@ -1293,6 +1293,12 @@
                     max-width: 100%;
                 }
 
+                /* Latar kuning butuh teks gelap agar tetap terbaca */
+                .note-preview.bg-warning, .deadline-preview.bg-warning,
+                .badge.bg-warning {
+                    color: #1f2937 !important;
+                }
+
                 .legend-dot {
                     width: 10px;
                     height: 10px;

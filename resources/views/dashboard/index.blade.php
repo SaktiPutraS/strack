@@ -734,10 +734,17 @@
                             <div class="fw-semibold text-truncate">${escapeHtml(project.title || 'Tanpa nama')}</div>
                             <div class="small text-muted text-truncate"><i class="bi bi-building me-1"></i>${escapeHtml(project.client_name || '-')}</div>
                             <div class="d-flex justify-content-between align-items-center mt-1 small">
-                                <span><i class="bi bi-calendar3 me-1"></i>${tglFmt}</span>
+                                <span class="text-muted"><i class="bi bi-tag me-1"></i>Nilai</span>
                                 <span class="fw-semibold text-purple">${formatRupiahSingkat(project.total_value)}</span>
                             </div>
-                            <div class="small mt-1">${statusText}</div>
+                            <div class="d-flex justify-content-between align-items-center small">
+                                <span class="text-muted"><i class="bi bi-cash-coin me-1"></i>Piutang</span>
+                                <span class="fw-semibold text-danger">${formatRupiahSingkat(project.remaining_amount)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1 small">
+                                <span><i class="bi bi-calendar3 me-1"></i>${tglFmt}</span>
+                                ${statusText}
+                            </div>
                         </a>`;
                 }).join('');
             }
@@ -843,14 +850,19 @@
                             const safeName = escapeHtml(project.title || 'Tanpa nama');
                             const safeClient = escapeHtml(project.client_name || '-');
                             const nilai = parseInt(project.total_value || 0).toLocaleString('id-ID');
-                            const tooltip = `${safeName} - ${safeClient} - Rp ${nilai}`;
+                            const piutang = parseInt(project.remaining_amount || 0).toLocaleString('id-ID');
+                            const tooltip = `${safeName} - ${safeClient} - Nilai Rp ${nilai} - Piutang Rp ${piutang}`;
 
                             return `
                                 <div class="deadline-preview ${colorClass}" title="${tooltip}">
-                                    <i class="bi bi-${icon}"></i>
-                                    <div class="deadline-info">
+                                    <div class="deadline-head">
+                                        <i class="bi bi-${icon}"></i>
                                         <span class="deadline-name">${safeName}</span>
-                                        <span class="deadline-client">${safeClient}</span>
+                                    </div>
+                                    <span class="deadline-client">${safeClient}</span>
+                                    <div class="deadline-money">
+                                        <span><i class="bi bi-tag"></i> ${formatRupiahSingkat(project.total_value)}</span>
+                                        <span><i class="bi bi-cash-coin"></i> ${formatRupiahSingkat(project.remaining_amount)}</span>
                                     </div>
                                 </div>`;
                         }).join('');
@@ -951,9 +963,10 @@
                                 </div>
                                 <span class="badge ${badgeClass}">${badgeText}</span>
                             </div>
-                            <div class="d-flex gap-2 small text-muted">
+                            <div class="d-flex flex-wrap gap-2 small text-muted">
                                 <span><i class="bi bi-calendar3 me-1"></i>${new Date(project.deadline).toLocaleDateString('id-ID')}</span>
-                                <span><i class="bi bi-tag me-1"></i>Rp ${parseInt(project.total_value || 0).toLocaleString('id-ID')}</span>
+                                <span><i class="bi bi-tag me-1"></i>Nilai Rp ${parseInt(project.total_value || 0).toLocaleString('id-ID')}</span>
+                                <span class="text-danger"><i class="bi bi-cash-coin me-1"></i>Piutang Rp ${parseInt(project.remaining_amount || 0).toLocaleString('id-ID')}</span>
                             </div>
                         </div>
                     </div>
@@ -1364,7 +1377,6 @@
                 }
 
                 .calendar-day {
-                    aspect-ratio: 1;
                     border: 1px solid rgba(139, 92, 246, 0.1);
                     border-radius: 12px;
                     padding: 8px;
@@ -1374,7 +1386,8 @@
                     display: flex;
                     flex-direction: column;
                     position: relative;
-                    min-height: 95px;
+                    min-height: 110px;
+                    overflow: hidden;
                 }
 
                 .calendar-day:hover {
@@ -1406,7 +1419,7 @@
                     margin-bottom: 4px;
                 }
 
-                .note-preview, .deadline-preview {
+                .note-preview {
                     font-size: 0.8rem;
                     padding: 4px 7px;
                     border-radius: 6px;
@@ -1420,17 +1433,30 @@
                     max-width: 100%;
                 }
 
-                .deadline-preview i {
-                    flex-shrink: 0;
-                    font-size: 0.85rem;
-                }
-
-                .deadline-preview .deadline-info {
+                .deadline-preview {
+                    font-size: 0.8rem;
+                    padding: 5px 7px;
+                    border-radius: 6px;
+                    color: white;
+                    margin-top: 3px;
                     display: flex;
                     flex-direction: column;
-                    line-height: 1.15;
+                    gap: 1px;
+                    font-weight: 500;
                     overflow: hidden;
+                    max-width: 100%;
+                }
+
+                .deadline-preview .deadline-head {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
                     min-width: 0;
+                }
+
+                .deadline-preview .deadline-head i {
+                    flex-shrink: 0;
+                    font-size: 0.85rem;
                 }
 
                 .deadline-preview .deadline-name {
@@ -1448,6 +1474,19 @@
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                }
+
+                .deadline-preview .deadline-money {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 2px 8px;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                    margin-top: 1px;
+                }
+
+                .deadline-preview .deadline-money i {
+                    font-size: 0.7rem;
                 }
 
                 /* Latar kuning butuh teks gelap agar tetap terbaca */

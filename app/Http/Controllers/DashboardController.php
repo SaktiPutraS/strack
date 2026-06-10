@@ -191,6 +191,7 @@ class DashboardController extends Controller
                         'client_name' => $project->client->name ?? '-',
                         'deadline' => $project->deadline->format('Y-m-d'),
                         'total_value' => $project->total_value,
+                        'remaining_amount' => $project->remaining_amount, // piutang
                         'url' => route('projects.show', $project),
                     ];
                 });
@@ -209,6 +210,7 @@ class DashboardController extends Controller
                     'client_name' => $project->client->name ?? '-',
                     'deadline' => $project->deadline->format('Y-m-d'),
                     'total_value' => $project->total_value,
+                    'remaining_amount' => $project->remaining_amount, // piutang
                     'status' => $project->status,
                     'url' => route('projects.show', $project),
                 ];

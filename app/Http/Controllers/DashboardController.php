@@ -71,15 +71,14 @@ class DashboardController extends Controller
             return 'Rp ' . number_format($amount, 0, ',', '.');
         };
 
-        // Data untuk line chart (per minggu dalam setahun ini, di mulai dari juli)
-        $startOfYear = Carbon::now()->startOfYear()->addMonths(6);
-        if ($startOfYear->month < 7) {
-            $startOfYear->subYear();
+        // Data untuk line chart (per minggu dalam tahun fiskal berjalan, dimulai dari Juli)
+        // Cek bulan SEKARANG sebelum dimodifikasi: kalau belum Juli, tahun fiskal mulai Juli tahun lalu.
+        $currentMonth = Carbon::now()->month;
+        $startOfYear = Carbon::now()->startOfYear()->addMonths(6); // 1 Juli tahun ini
+        if ($currentMonth < 7) {
+            $startOfYear->subYear(); // sebelum Juli -> mulai 1 Juli tahun lalu
         }
-        $endOfYear = Carbon::now()->endOfYear()->addMonths(6);
-        if ($endOfYear->month < 7) {
-            $endOfYear->subYear();
-        }
+        $endOfYear = $startOfYear->copy()->addYear()->subDay(); // 30 Juni tahun berikutnya
 
         $currentDate = Carbon::now();
 

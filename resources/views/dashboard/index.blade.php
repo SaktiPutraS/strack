@@ -224,7 +224,7 @@
                             </h4>
                             <p class="text-muted mb-0">Catatan pribadi dan deadline proyek dalam satu tampilan</p>
                         </div>
-                        <div class="d-flex align-items-center gap-3">
+                        <div class="d-none d-lg-flex align-items-center gap-3">
                             <button class="btn btn-sm btn-outline-primary" id="prevMonth">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
@@ -260,7 +260,8 @@
                     <div class="row g-4">
                         <!-- Kalender (3 bagian) -->
                         <div class="col-12 col-lg-9">
-                            <div class="calendar-wrapper">
+                            <!-- Tampilan bulanan (desktop / tablet) -->
+                            <div class="calendar-wrapper d-none d-lg-block">
                                 <div class="calendar-container">
                                     <div class="calendar-header">
                                         <div class="calendar-day-header">Min</div>
@@ -274,6 +275,22 @@
                                     <div class="calendar-body" id="calendarBody">
                                         <!-- Calendar days will be populated by JavaScript -->
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Tampilan mingguan (ponsel) -->
+                            <div class="week-view d-lg-none">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <button class="btn btn-sm btn-outline-primary" id="prevWeek">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <h6 class="mb-0 fw-bold text-purple text-center" id="weekTitle">Minggu Ini</h6>
+                                    <button class="btn btn-sm btn-outline-primary" id="nextWeek">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                </div>
+                                <div id="weekBody" class="week-body">
+                                    <!-- Diisi oleh JavaScript -->
                                 </div>
                             </div>
                         </div>
@@ -731,15 +748,15 @@
 
                     return `
                         <a href="${project.url}" class="unfinished-item ${colorClass}">
-                            <div class="fw-semibold text-truncate">${escapeHtml(project.title || 'Tanpa nama')}</div>
-                            <div class="small text-muted text-truncate"><i class="bi bi-building me-1"></i>${escapeHtml(project.client_name || '-')}</div>
+                            <div class="fw-semibold text-truncate">${escapeHtml(project.client_name || '-')}</div>
+                            <div class="small text-muted text-truncate"><i class="bi bi-folder me-1"></i>${escapeHtml(project.title || 'Tanpa nama')}</div>
                             <div class="d-flex justify-content-between align-items-center mt-1 small">
                                 <span class="text-muted"><i class="bi bi-tag me-1"></i>Nilai</span>
                                 <span class="fw-semibold text-purple">${formatRupiahSingkat(project.total_value)}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center small">
                                 <span class="text-muted"><i class="bi bi-cash-coin me-1"></i>Piutang</span>
-                                <span class="fw-semibold text-danger">${formatRupiahSingkat(project.remaining_amount)}</span>
+                                <span class="fw-semibold text-piutang">${formatRupiahSingkat(project.remaining_amount)}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-1 small">
                                 <span><i class="bi bi-calendar3 me-1"></i>${tglFmt}</span>
@@ -747,6 +764,122 @@
                             </div>
                         </a>`;
                 }).join('');
+            }
+
+            // ===== Tampilan mingguan (khusus ponsel) =====
+            const dayNamesFull = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+            function getMonday(d) {
+                const date = new Date(d);
+                date.setHours(0, 0, 0, 0);
+                const day = date.getDay(); // 0=Minggu .. 6=Sabtu
+                const diff = (day === 0 ? -6 : 1 - day); // mundur ke Senin
+                date.setDate(date.getDate() + diff);
+                return date;
+            }
+
+            function toDateKey(d) {
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            }
+
+            let currentWeekStart = getMonday(new Date());
+
+            function renderWeekView() {
+                const weekBody = document.getElementById('weekBody');
+                const weekTitle = document.getElementById('weekTitle');
+                if (!weekBody) return;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const start = new Date(currentWeekStart);
+                const end = new Date(currentWeekStart);
+                end.setDate(end.getDate() + 6);
+
+                weekTitle.textContent =
+                    `${start.getDate()} ${shortMonths[start.getMonth()]} - ${end.getDate()} ${shortMonths[end.getMonth()]} ${end.getFullYear()}`;
+
+                let html = '';
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(currentWeekStart);
+                    d.setDate(d.getDate() + i);
+                    d.setHours(0, 0, 0, 0);
+                    const key = toDateKey(d);
+                    const isToday = d.getTime() === today.getTime();
+
+                    const dayProjects = unfinishedProjects.filter(p => p.deadline === key);
+                    const dayNotes = calendarNotes.filter(n => n.date === key);
+
+                    let projectsHtml = dayProjects.map(project => {
+                        const deadline = new Date(project.deadline);
+                        deadline.setHours(0, 0, 0, 0);
+                        const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                        let colorClass = 'border-primary';
+                        let badgeCls = 'bg-primary';
+                        let badge = 'Normal';
+                        if (daysUntil < 0) {
+                            colorClass = 'border-danger';
+                            badgeCls = 'bg-danger';
+                            badge = `Terlewat ${Math.abs(daysUntil)} hari`;
+                        } else if (daysUntil === 0) {
+                            colorClass = 'border-warning';
+                            badgeCls = 'bg-warning';
+                            badge = 'Hari ini';
+                        } else if (daysUntil <= 3) {
+                            colorClass = 'border-warning';
+                            badgeCls = 'bg-warning';
+                            badge = `${daysUntil} hari lagi`;
+                        }
+
+                        return `
+                            <a href="${project.url}" class="week-project ${colorClass}">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <span class="fw-semibold text-truncate">${escapeHtml(project.client_name || '-')}</span>
+                                    <span class="badge ${badgeCls} flex-shrink-0">${badge}</span>
+                                </div>
+                                <div class="small text-muted text-truncate"><i class="bi bi-folder me-1"></i>${escapeHtml(project.title || 'Tanpa nama')}</div>
+                                <div class="d-flex justify-content-between small mt-1">
+                                    <span><i class="bi bi-tag me-1"></i>${formatRupiahSingkat(project.total_value)}</span>
+                                    <span class="text-piutang"><i class="bi bi-cash-coin me-1"></i>${formatRupiahSingkat(project.remaining_amount)}</span>
+                                </div>
+                            </a>`;
+                    }).join('');
+
+                    const notesHtml = dayNotes.length ?
+                        `<div class="week-note"><i class="bi bi-journal-text me-1"></i>${dayNotes.length} catatan pribadi</div>` :
+                        '';
+
+                    const emptyHtml = (!dayProjects.length && !dayNotes.length) ?
+                        '<span class="text-muted small fst-italic">Tidak ada agenda</span>' : '';
+
+                    html += `
+                        <div class="week-day ${isToday ? 'today' : ''}">
+                            <div class="week-day-head">
+                                <div>
+                                    <span class="week-day-name">${dayNamesFull[d.getDay()]}</span>
+                                    <span class="week-day-date">${d.getDate()} ${shortMonths[d.getMonth()]}</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-light week-add-note" data-date="${key}" title="Tambah catatan">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            <div class="week-day-body">
+                                ${projectsHtml}
+                                ${notesHtml}
+                                ${emptyHtml}
+                            </div>
+                        </div>`;
+                }
+                weekBody.innerHTML = html;
+
+                weekBody.querySelectorAll('.week-add-note').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const parts = this.dataset.date.split('-');
+                        openDayModal(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    });
+                });
             }
 
             const calendarBody = document.getElementById('calendarBody');
@@ -851,18 +984,18 @@
                             const safeClient = escapeHtml(project.client_name || '-');
                             const nilai = parseInt(project.total_value || 0).toLocaleString('id-ID');
                             const piutang = parseInt(project.remaining_amount || 0).toLocaleString('id-ID');
-                            const tooltip = `${safeName} - ${safeClient} - Nilai Rp ${nilai} - Piutang Rp ${piutang}`;
+                            const tooltip = `${safeClient} - ${safeName} - Nilai Rp ${nilai} - Piutang Rp ${piutang}`;
 
                             return `
                                 <div class="deadline-preview ${colorClass}" title="${tooltip}">
                                     <div class="deadline-head">
                                         <i class="bi bi-${icon}"></i>
-                                        <span class="deadline-name">${safeName}</span>
+                                        <span class="deadline-name">${safeClient}</span>
                                     </div>
-                                    <span class="deadline-client">${safeClient}</span>
+                                    <span class="deadline-client">${safeName}</span>
                                     <div class="deadline-money">
                                         <span><i class="bi bi-tag"></i> ${formatRupiahSingkat(project.total_value)}</span>
-                                        <span><i class="bi bi-cash-coin"></i> ${formatRupiahSingkat(project.remaining_amount)}</span>
+                                        <span class="deadline-piutang"><i class="bi bi-cash-coin"></i> ${formatRupiahSingkat(project.remaining_amount)}</span>
                                     </div>
                                 </div>`;
                         }).join('');
@@ -889,7 +1022,8 @@
 
                 // Filter notes and projects for this day
                 const dayNotes = calendarNotes.filter(note => note.date === dateStr);
-                const dayProjects = projectDeadlines[day] || [];
+                // Ambil proyek dari daftar lintas bulan agar akurat (termasuk tampilan mingguan)
+                const dayProjects = unfinishedProjects.filter(p => p.deadline === dateStr);
 
                 // Populate notes list
                 const notesList = document.getElementById('notesList');
@@ -955,10 +1089,10 @@
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <i class="bi bi-${statusIcon} text-${badgeClass.replace('bg-', '')}"></i>
-                                        <h6 class="mb-0 fw-bold">${project.title || 'Tanpa nama'}</h6>
+                                        <h6 class="mb-0 fw-bold">${project.client_name || '-'}</h6>
                                     </div>
                                     <p class="text-muted mb-1 small">
-                                        <i class="bi bi-building me-1"></i>${project.client_name || '-'}
+                                        <i class="bi bi-folder me-1"></i>${project.title || 'Tanpa nama'}
                                     </p>
                                 </div>
                                 <span class="badge ${badgeClass}">${badgeText}</span>
@@ -966,7 +1100,7 @@
                             <div class="d-flex flex-wrap gap-2 small text-muted">
                                 <span><i class="bi bi-calendar3 me-1"></i>${new Date(project.deadline).toLocaleDateString('id-ID')}</span>
                                 <span><i class="bi bi-tag me-1"></i>Nilai Rp ${parseInt(project.total_value || 0).toLocaleString('id-ID')}</span>
-                                <span class="text-danger"><i class="bi bi-cash-coin me-1"></i>Piutang Rp ${parseInt(project.remaining_amount || 0).toLocaleString('id-ID')}</span>
+                                <span class="text-piutang"><i class="bi bi-cash-coin me-1"></i>Piutang Rp ${parseInt(project.remaining_amount || 0).toLocaleString('id-ID')}</span>
                             </div>
                         </div>
                     </div>
@@ -1107,6 +1241,7 @@
                     .then(data => {
                         calendarNotes = data.notes || [];
                         renderCalendar();
+                        renderWeekView();
 
                         // After rendering calendar with notes, reload the current modal if open
                         const modalElement = document.getElementById('calendarModal');
@@ -1129,7 +1264,7 @@
                     });
             }
 
-            // Navigation buttons
+            // Navigation buttons (bulanan)
             prevMonthBtn.addEventListener('click', function() {
                 currentDate.setMonth(currentDate.getMonth() - 1);
                 loadCalendarData();
@@ -1140,9 +1275,38 @@
                 loadCalendarData();
             });
 
+            // Navigation buttons (mingguan - ponsel)
+            // Sinkronkan bulan yang dimuat dengan minggu aktif agar catatan ikut termuat
+            function syncWeek() {
+                const mid = new Date(currentWeekStart);
+                mid.setDate(mid.getDate() + 3); // tengah minggu (Kamis) untuk menentukan bulan dominan
+                if (mid.getMonth() !== currentDate.getMonth() || mid.getFullYear() !== currentDate.getFullYear()) {
+                    currentDate = new Date(mid.getFullYear(), mid.getMonth(), 1);
+                    loadCalendarData(); // memuat ulang catatan + deadline, lalu render ulang week view
+                } else {
+                    renderWeekView();
+                }
+            }
+
+            const prevWeekBtn = document.getElementById('prevWeek');
+            const nextWeekBtn = document.getElementById('nextWeek');
+            if (prevWeekBtn) {
+                prevWeekBtn.addEventListener('click', function() {
+                    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+                    syncWeek();
+                });
+            }
+            if (nextWeekBtn) {
+                nextWeekBtn.addEventListener('click', function() {
+                    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+                    syncWeek();
+                });
+            }
+
             // Initial render
             renderCalendar();
             renderUnfinishedList();
+            renderWeekView();
 
             // Clickable project cards - redirect to projects page with filter
             const clickableCards = document.querySelectorAll('.clickable-card');
@@ -1489,6 +1653,25 @@
                     font-size: 0.7rem;
                 }
 
+                /* Nilai piutang: hijau dengan garis tepi putih agar tetap terbaca di latar warna sel */
+                .deadline-preview .deadline-piutang,
+                .deadline-preview .deadline-piutang i {
+                    color: #22c55e;
+                    font-weight: 700;
+                    text-shadow:
+                        -1px -1px 0 #fff,
+                         1px -1px 0 #fff,
+                        -1px  1px 0 #fff,
+                         1px  1px 0 #fff;
+                }
+
+                /* Piutang di latar terang (modal hari, tampilan mingguan, panel proyek) */
+                .text-piutang,
+                .text-piutang i {
+                    color: #16a34a !important;
+                    font-weight: 600;
+                }
+
                 /* Latar kuning butuh teks gelap agar tetap terbaca */
                 .note-preview.bg-warning, .deadline-preview.bg-warning,
                 .badge.bg-warning {
@@ -1538,6 +1721,94 @@
                 .bg-purple-soft {
                     background: rgba(139, 92, 246, 0.15);
                     color: #6d28d9;
+                }
+
+                /* Tampilan mingguan (ponsel) */
+                .week-body {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
+                .week-day {
+                    border: 1px solid rgba(139, 92, 246, 0.12);
+                    border-radius: 12px;
+                    background: #fff;
+                    overflow: hidden;
+                }
+
+                .week-day.today {
+                    border-color: #8B5CF6;
+                    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+                }
+
+                .week-day-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+                    padding: 8px 12px;
+                    background: rgba(139, 92, 246, 0.06);
+                }
+
+                .week-day.today .week-day-head {
+                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(168, 85, 247, 0.12));
+                }
+
+                .week-day-name {
+                    font-weight: 700;
+                    color: #374151;
+                    font-size: 0.9rem;
+                }
+
+                .week-day-date {
+                    color: #8B5CF6;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    margin-left: 6px;
+                }
+
+                .week-add-note {
+                    border-radius: 8px;
+                    padding: 2px 8px;
+                    line-height: 1.2;
+                }
+
+                .week-day-body {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 10px 12px;
+                }
+
+                .week-project {
+                    display: block;
+                    text-decoration: none;
+                    color: #374151;
+                    background: #fff;
+                    border: 1px solid rgba(0, 0, 0, 0.06);
+                    border-left: 4px solid #8B5CF6;
+                    border-radius: 10px;
+                    padding: 9px 11px;
+                    transition: all 0.15s ease;
+                }
+
+                .week-project:hover {
+                    box-shadow: 0 3px 10px rgba(139, 92, 246, 0.15);
+                    color: #374151;
+                }
+
+                .week-project.border-danger { border-left-color: #dc3545; }
+                .week-project.border-warning { border-left-color: #ffc107; }
+                .week-project.border-primary { border-left-color: #8B5CF6; }
+
+                .week-note {
+                    background: rgba(25, 135, 84, 0.08);
+                    color: #198754;
+                    border-radius: 8px;
+                    padding: 6px 10px;
+                    font-size: 0.8rem;
+                    font-weight: 600;
                 }
 
                 .legend-dot {

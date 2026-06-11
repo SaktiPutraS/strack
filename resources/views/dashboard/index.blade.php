@@ -702,10 +702,10 @@
             // Format nilai rupiah singkat (mis. 1,5 jt / 2 M)
             function formatRupiahSingkat(value) {
                 const n = parseInt(value || 0);
-                if (n >= 1000000000) return 'Rp ' + (n / 1000000000).toFixed(n % 1000000000 === 0 ? 0 : 1).replace('.', ',') + ' M';
-                if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1).replace('.', ',') + ' jt';
-                if (n >= 1000) return 'Rp ' + (n / 1000).toFixed(0) + ' rb';
-                return 'Rp ' + n.toLocaleString('id-ID');
+                if (n >= 1000000000) return (n / 1000000000).toFixed(n % 1000000000 === 0 ? 0 : 1).replace('.', ',') + ' M';
+                if (n >= 1000000) return (n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1).replace('.', ',') + ' jt';
+                if (n >= 1000) return (n / 1000).toFixed(0) + ' rb';
+                return n.toLocaleString('id-ID');
             }
 
             // Render daftar proyek belum selesai (urut deadline terlewat -> paling jauh)
@@ -984,7 +984,7 @@
                             const safeClient = escapeHtml(project.client_name || '-');
                             const nilai = parseInt(project.total_value || 0).toLocaleString('id-ID');
                             const piutang = parseInt(project.remaining_amount || 0).toLocaleString('id-ID');
-                            const tooltip = `${safeClient} - ${safeName} - Nilai Rp ${nilai} - Piutang Rp ${piutang}`;
+                            const tooltip = `${safeClient} - ${safeName} - Nilai ${nilai} - Piutang ${piutang}`;
 
                             return `
                                 <div class="deadline-preview ${colorClass}" title="${tooltip}">
@@ -1099,8 +1099,8 @@
                             </div>
                             <div class="d-flex flex-wrap gap-2 small text-muted">
                                 <span><i class="bi bi-calendar3 me-1"></i>${new Date(project.deadline).toLocaleDateString('id-ID')}</span>
-                                <span><i class="bi bi-tag me-1"></i>Nilai Rp ${parseInt(project.total_value || 0).toLocaleString('id-ID')}</span>
-                                <span class="text-piutang"><i class="bi bi-cash-coin me-1"></i>Piutang Rp ${parseInt(project.remaining_amount || 0).toLocaleString('id-ID')}</span>
+                                <span><i class="bi bi-tag me-1"></i>Nilai ${parseInt(project.total_value || 0).toLocaleString('id-ID')}</span>
+                                <span class="text-piutang"><i class="bi bi-cash-coin me-1"></i>Piutang ${parseInt(project.remaining_amount || 0).toLocaleString('id-ID')}</span>
                             </div>
                         </div>
                     </div>
@@ -1653,16 +1653,11 @@
                     font-size: 0.7rem;
                 }
 
-                /* Nilai piutang: hijau dengan garis tepi putih agar tetap terbaca di latar warna sel */
+                /* Nilai piutang: teks hijau */
                 .deadline-preview .deadline-piutang,
                 .deadline-preview .deadline-piutang i {
                     color: #22c55e;
                     font-weight: 700;
-                    text-shadow:
-                        -1px -1px 0 #fff,
-                         1px -1px 0 #fff,
-                        -1px  1px 0 #fff,
-                         1px  1px 0 #fff;
                 }
 
                 /* Piutang di latar terang (modal hari, tampilan mingguan, panel proyek) */

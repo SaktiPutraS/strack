@@ -311,6 +311,15 @@
                             </button>
                         @endif
 
+                        @if ($project->status !== 'CANCELLED' && $project->status !== 'CANCELED')
+                            <a href="{{ $project->client->whatsapp_link }}&text={{ rawurlencode('hallo ka, maaf mau confirm, berarti untuk tugasnnya sudah selesai yah. karna mau saya close projectnnya 🙏🏼') }}"
+                                target="_blank"
+                                class="btn btn-success d-flex align-items-center justify-content-center"
+                                style="background:linear-gradient(135deg,#16a34a,#22c55e);border:none;">
+                                <i class="bi bi-patch-check me-2"></i>Konfirmasi Selesai ke Client
+                            </a>
+                        @endif
+
                         @if ($project->status === 'WAITING')
                             <button class="btn btn-primary d-flex align-items-center justify-content-center" onclick="updateStatus('PROGRESS')">
                                 <i class="bi bi-play-circle me-2"></i>Mulai Proyek

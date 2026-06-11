@@ -1653,11 +1653,17 @@
                     font-size: 0.7rem;
                 }
 
-                /* Nilai piutang: teks hijau */
+                /* Nilai piutang di sel kalender: teks putih (latar sel berwarna) */
                 .deadline-preview .deadline-piutang,
                 .deadline-preview .deadline-piutang i {
-                    color: #22c55e;
+                    color: #fff;
                     font-weight: 700;
+                }
+
+                /* Sel kuning butuh teks gelap agar tetap terbaca */
+                .deadline-preview.bg-warning .deadline-piutang,
+                .deadline-preview.bg-warning .deadline-piutang i {
+                    color: #1f2937;
                 }
 
                 /* Piutang di latar terang (modal hari, tampilan mingguan, panel proyek) */

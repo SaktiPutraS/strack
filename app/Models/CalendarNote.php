@@ -26,6 +26,14 @@ class CalendarNote extends Model
             ->get()
             ->keyBy(function ($note) {
                 return $note->date->day;
+            })
+            ->map(function ($note) {
+                return [
+                    'id' => $note->id,
+                    'date' => $note->date->format('Y-m-d'),
+                    'title' => $note->title,
+                    'content' => $note->content,
+                ];
             });
     }
 

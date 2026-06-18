@@ -847,9 +847,9 @@
                             </a>`;
                     }).join('');
 
-                    const notesHtml = dayNotes.length ?
-                        `<div class="week-note"><i class="bi bi-journal-text me-1"></i>${dayNotes.length} catatan pribadi</div>` :
-                        '';
+                    const notesHtml = dayNotes.map(note =>
+                        `<div class="week-note"><i class="bi bi-journal-text me-1"></i>${escapeHtml(note.title || 'Catatan')}</div>`
+                    ).join('');
 
                     const emptyHtml = (!dayProjects.length && !dayNotes.length) ?
                         '<span class="text-muted small fst-italic">Tidak ada agenda</span>' : '';
@@ -1003,7 +1003,7 @@
 
                     dayElement.innerHTML = `
                 <span class="day-number">${day}</span>
-                ${hasNotes ? `<div class="note-preview bg-success"><i class="bi bi-journal-text"></i> ${dayNotes.length} catatan</div>` : ''}
+                ${dayNotes.map(note => `<div class="note-preview bg-success" title="${escapeHtml(note.title || '')}"><i class="bi bi-journal-text"></i> <span class="note-title">${escapeHtml(note.title || 'Catatan')}</span></div>`).join('')}
                 ${projectsPreview}
             `;
 
@@ -1036,11 +1036,11 @@
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
-                                <h6 class="mb-1 fw-bold">${note.title}</h6>
-                                ${note.description ? `<p class="text-muted mb-0 small">${note.description}</p>` : ''}
+                                <h6 class="mb-1 fw-bold">${escapeHtml(note.title || '')}</h6>
+                                ${note.content ? `<p class="text-muted mb-0 small">${escapeHtml(note.content)}</p>` : ''}
                             </div>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary btn-sm" onclick="editNote(${note.id}, '${note.title}', '${note.description || ''}')">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editNote(${note.id})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-outline-danger btn-sm" onclick="deleteNote(${note.id})">
@@ -1129,7 +1129,7 @@
                 const noteId = noteIdInput.value;
                 const date = document.getElementById('noteDate').value;
                 const title = noteTitleInput.value;
-                const description = noteDescriptionInput.value;
+                const content = noteDescriptionInput.value;
 
                 const url = noteId ? `/calendar-notes/${noteId}` : '/calendar-notes';
                 const method = noteId ? 'PUT' : 'POST';
@@ -1143,7 +1143,7 @@
                         body: JSON.stringify({
                             date,
                             title,
-                            description
+                            content
                         })
                     })
                     .then(response => response.json())
@@ -1171,10 +1171,12 @@
                     });
             });
 
-            window.editNote = function(id, title, description) {
-                noteIdInput.value = id;
-                noteTitleInput.value = title;
-                noteDescriptionInput.value = description || '';
+            window.editNote = function(id) {
+                const note = calendarNotes.find(n => String(n.id) === String(id));
+                if (!note) return;
+                noteIdInput.value = note.id;
+                noteTitleInput.value = note.title || '';
+                noteDescriptionInput.value = note.content || '';
                 submitBtnText.textContent = 'Update Catatan';
                 cancelEditBtn.style.display = 'inline-block';
 
@@ -1239,7 +1241,17 @@
                 fetch(`/calendar-notes/month/${year}/${month}`)
                     .then(response => response.json())
                     .then(data => {
-                        calendarNotes = data.notes || [];
+                        // getMonthNotes mengembalikan objek ber-key per tanggal (keyBy day),
+                        // bukan array. Normalkan ke array agar .filter() tidak error
+                        // (kalau tidak, renderCalendar throw dan seluruh kalender jadi kosong).
+                        const rawNotes = data.notes;
+                        if (Array.isArray(rawNotes)) {
+                            calendarNotes = rawNotes;
+                        } else if (rawNotes && typeof rawNotes === 'object') {
+                            calendarNotes = Object.values(rawNotes);
+                        } else {
+                            calendarNotes = [];
+                        }
                         renderCalendar();
                         renderWeekView();
 
@@ -1595,6 +1607,17 @@
                     font-weight: 500;
                     overflow: hidden;
                     max-width: 100%;
+                }
+
+                .note-preview .note-title {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    min-width: 0;
+                }
+
+                .note-preview i {
+                    flex-shrink: 0;
                 }
 
                 .deadline-preview {

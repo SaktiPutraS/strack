@@ -35,6 +35,19 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-06-11 (perbaikan dashboard + tombol konfirmasi selesai)
+Sudah commit + push ke `main` (`0adbc26`, `c28b15c`, `fd62725`). Detail di DOKUMENTASI.md.
+- Bugfix grafik "Pendapatan & Pengeluaran Mingguan" yang kosong: `DashboardController.php`
+  salah hitung awal tahun fiskal (cek `->month < 7` setelah `addMonths(6)` jadi tak pernah jalan).
+  Fix: cek bulan `now` SEBELUM dimodifikasi.
+- Kalender (`dashboard/index.blade.php`): urutan info -> nama KLIEN dulu lalu nama proyek
+  (konsisten di sel, modal, mingguan, panel, tooltip). Nilai piutang jadi PUTIH (hijau tak
+  terbaca di latar sel; sel kuning tetap gelap). Hapus prefiks "Rp" pada nilai/piutang kalender.
+- `projects/show.blade.php`: tombol "Konfirmasi Selesai ke Client" -> buka WhatsApp klien dgn
+  pesan konfirmasi penutupan proyek terisi otomatis.
+- Catatan: tool commit jalan di BASH; here-string PowerShell `@'...'@` menyisipkan `@` ke pesan -
+  pakai multiple `-m` biasa.
+
 ### 2026-06-10 (testing & aktivasi Midtrans)
 Webhook auto-Lunas sudah DIUJI end-to-end di lokal dan LOLOS (settlement -> Lunas, idempotent,
 tolak signature palsu). Sandbox: link Rp1.000 berhasil. Production: link berhasil dibuat tapi

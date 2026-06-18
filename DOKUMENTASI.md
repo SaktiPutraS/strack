@@ -4,6 +4,70 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-06-11 (perbaikan dashboard + tombol konfirmasi selesai)
+
+### Ringkasan
+Penyesuaian tampilan kalender/dashboard dan satu fitur kecil di detail proyek. Semua
+perubahan SUDAH di-commit & di-push ke `origin/main` (GitHub SaktiPutraS/strack).
+
+### Yang dikerjakan
+1. **Bugfix grafik "Pendapatan & Pengeluaran Mingguan" (nilai tidak muncul)**
+   - Akar masalah di `DashboardController.php`: hitung awal tahun fiskal pakai
+     `Carbon::now()->startOfYear()->addMonths(6)` lalu cek `->month < 7`. Setelah +6 bulan,
+     bulannya selalu Juli, jadi cek tidak pernah jalan -> `$startOfYear` = 1 Juli tahun ini
+     (di masa depan, krn skrg Juni). Akibatnya `while` loop tak pernah jalan, `$weeklyData` kosong.
+   - Fix: simpan `$currentMonth = Carbon::now()->month` SEBELUM dimodifikasi, baru cek `< 7`.
+     `$endOfYear` diubah jadi `$startOfYear->copy()->addYear()->subDay()`.
+   - Diverifikasi: untuk 2026-06-11 menghasilkan fiskal 2025-07-01 s/d 2026-06-30 -> loop terisi.
+
+2. **Kalender: urutan info -> nama KLIEN dulu, nama PROYEK di bawah**
+   - User lebih familiar dgn nama klien. Diterapkan konsisten di SEMUA tampilan dalam kartu
+     "Kalender & Deadline Proyek": sel kalender (desktop), modal detail hari, tampilan mingguan
+     (ponsel), panel "proyek belum selesai", dan tooltip sel.
+
+3. **Warna nilai piutang**
+   - Iterasi: merah (awal) -> hijau+outline putih -> hijau polos -> **PUTIH** (final).
+     Alasan: hijau tidak terbaca di latar sel yang berwarna. Sel kuning (deadline mendekat)
+     dikecualikan -> teks gelap agar tetap terbaca.
+   - Latar terang (modal hari, mingguan, panel proyek) TETAP hijau (`.text-piutang`), karena
+     putih akan tak terlihat di latar putih.
+
+4. **Hapus prefiks "Rp"** pada nilai proyek & piutang di tampilan kalender (sudah pasti rupiah).
+   - Dihapus dari helper JS `formatRupiahSingkat` (hanya dipakai utk nilai/piutang proyek di
+     kalender), teks modal hari, dan tooltip. Kartu aset atas dashboard pakai helper PHP terpisah,
+     jadi TETAP menampilkan "Rp".
+
+5. **Tombol "Konfirmasi Selesai ke Client" di detail proyek** (`projects/show.blade.php`, Aksi Cepat)
+   - Link WhatsApp ke klien dgn pesan terisi otomatis:
+     "hallo ka, maaf mau confirm, berarti untuk tugasnnya sudah selesai yah. karna mau saya
+     close projectnnya 🙏🏼"
+   - Pakai `client->whatsapp_link` (sudah ada, format `api.whatsapp.com/send?phone=...`) + `&text=`
+     hasil `rawurlencode`. Muncul selama status proyek bukan CANCELLED/CANCELED.
+
+### Keputusan penting
+- Piutang di kalender = putih (bukan hijau), karena keterbacaan di latar sel berwarna.
+- "Rp" hanya dihapus di konteks kalender (nilai/piutang proyek), bukan di kartu aset.
+- Urutan klien-dulu diterapkan menyeluruh di kartu kalender demi konsistensi (bukan hanya 1 view).
+
+### File tersentuh (sudah commit + push)
+- `app/Http/Controllers/DashboardController.php` (fix tahun fiskal weeklyData)
+- `resources/views/dashboard/index.blade.php` (urutan klien/proyek, warna piutang, hapus Rp)
+- `resources/views/projects/show.blade.php` (tombol Konfirmasi Selesai ke Client)
+- Commits: `0adbc26`, `c28b15c`, `fd62725` (semua di `main`).
+
+### Catatan teknis
+- Tool commit jalan di BASH (bukan PowerShell). Here-string PowerShell `@'...'@` TIDAK berlaku
+  dan menyisipkan `@` literal ke pesan commit. Gunakan multiple `-m` flag biasa.
+- Push lancar tanpa login ulang: kredensial via Git Credential Manager sudah tersimpan.
+
+### Pending / belum dikonfirmasi user
+- User belum cek hasilnya secara visual (tombol konfirmasi + warna piutang putih + grafik mingguan).
+  Tunggu feedback sesi berikutnya kalau ada yang perlu disesuaikan.
+- Pekerjaan Midtrans dari sesi 2026-06-10 MASIH pending (lihat entri di bawah): aktivasi akun
+  production + deploy hosting + apply delta SQL + set webhook + regenerate server key.
+
+---
+
 ## Sesi 2026-06-10 (testing & aktivasi Midtrans)
 
 ### Yang diuji & hasilnya

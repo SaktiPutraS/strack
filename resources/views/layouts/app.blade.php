@@ -38,6 +38,8 @@
             transform: translateX(-100%);
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1060;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar.show {
@@ -378,6 +380,119 @@
                 padding: 12px 15px;
                 font-size: 14px;
             }
+        }
+
+        /* ===== Penyempurnaan navigasi sidebar ===== */
+        .sidebar nav {
+            flex: 1 1 auto;
+        }
+
+        /* Menu utama: ikon lebar tetap agar label sejajar rapi */
+        .sidebar .nav-pills .nav-link {
+            display: flex;
+            align-items: center;
+            color: #5b6472;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+            border-radius: 12px;
+            margin: 0.15rem 0;
+            padding: 0.7rem 0.85rem;
+            position: relative;
+            transition: background 0.18s ease, color 0.18s ease;
+        }
+
+        .sidebar .nav-pills .nav-link i {
+            width: 1.4rem;
+            margin-right: 0.6rem !important;
+            font-size: 1.05rem;
+            line-height: 1;
+            text-align: center;
+            flex-shrink: 0;
+            opacity: 0.8;
+            transition: opacity 0.18s ease;
+        }
+
+        .sidebar .nav-pills .nav-link:hover {
+            background: rgba(139, 92, 246, 0.07);
+            color: #7c3aed;
+        }
+
+        .sidebar .nav-pills .nav-link:hover i {
+            opacity: 1;
+        }
+
+        .sidebar .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.16), rgba(168, 85, 247, 0.09));
+            color: #6d28d9;
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.12);
+        }
+
+        .sidebar .nav-pills .nav-link.active i {
+            opacity: 1;
+        }
+
+        /* Penanda aktif di tepi kiri (hanya menu utama) */
+        .sidebar > nav > .nav-pills > .nav-item > .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0.15rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 1.15rem;
+            border-radius: 3px;
+            background: linear-gradient(180deg, #8B5CF6, #A855F7);
+        }
+
+        /* Caret grup: rata kanan + berputar saat terbuka */
+        .sidebar .dropdown-toggle::after {
+            margin-left: auto;
+            border-top-color: currentColor;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar .dropdown-toggle[aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+
+        /* Sub-menu: garis pemandu + skala font yang konsisten & disengaja */
+        .sidebar .collapse > .nav-pills {
+            margin-left: 0.4rem;
+            padding-left: 0.55rem;
+            border-left: 1.5px solid rgba(139, 92, 246, 0.14);
+        }
+
+        .sidebar .collapse .nav-link {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+            margin: 0.1rem 0;
+            color: #6b7280;
+        }
+
+        .sidebar .collapse .nav-link i {
+            width: 1.25rem;
+            margin-right: 0.5rem !important;
+            font-size: 0.95rem;
+        }
+
+        .sidebar .collapse .nav-link.active {
+            box-shadow: none;
+        }
+
+        /* Header logo + tombol logout */
+        .sidebar .border-bottom.border-purple {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
+        }
+
+        .sidebar .btn-outline-primary {
+            font-weight: 600;
+            padding: 0.55rem;
+            border-radius: 12px;
         }
     </style>
 </head>

@@ -311,7 +311,7 @@
                             </button>
                         @endif
 
-                        @if ($project->status !== 'CANCELLED' && $project->status !== 'CANCELED')
+                        @if ($project->status !== 'CANCELLED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING')
                             <a href="{{ $project->client->whatsapp_link }}&text={{ rawurlencode('hallo ka, maaf mau confirm, berarti untuk tugasnnya sudah selesai yah. karna mau saya close projectnnya 🙏🏼') }}"
                                 target="_blank"
                                 class="btn btn-success d-flex align-items-center justify-content-center"

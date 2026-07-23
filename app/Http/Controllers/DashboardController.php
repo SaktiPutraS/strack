@@ -14,8 +14,6 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
-use App\Models\Task;
-use App\Models\TaskAssignment;
 
 class DashboardController extends Controller
 {
@@ -23,7 +21,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         if (!session('role') || session('role') !== 'admin') {
-            return redirect()->route('dashboard.user');
+            return redirect()->route('login');
         }
 
         $agent = new Agent();
@@ -235,89 +233,6 @@ class DashboardController extends Controller
             'calendarNotes' => $calendarNotes,
             'projectDeadlines' => $projectDeadlines, // NEW
             'unfinishedProjects' => $unfinishedProjects, // NEW: daftar proyek belum selesai
-        ]);
-    }
-
-    public function userIndex(Request $request)
-    {
-        $agent = new Agent();
-        $isMobile = $agent->isMobile();
-        $today = Carbon::today();
-        $userId = session('role');
-
-        // Get today's tasks for current user
-        $todayTasks = Task::getTasksForDate($today);
-        $assignments = collect();
-
-        foreach ($todayTasks as $task) {
-            $assignment = $task->getAssignmentForUserAndDate($userId, $today);
-
-            if (!$assignment) {
-                $assignment = TaskAssignment::create([
-                    'task_id' => $task->id,
-                    'user_id' => $userId,
-                    'assigned_date' => $today,
-                    'status' => 'pending'
-                ]);
-                $assignment->load('task');
-            }
-
-            $assignments->push($assignment);
-        }
-
-        // Calculate statistics
-        $todayStats = [
-            'total' => $assignments->count(),
-            'pending' => $assignments->where('status', 'pending')->count(),
-            'submitted' => $assignments->where('status', 'dikerjakan')->count(),
-            'completed' => $assignments->where('status', 'valid')->count(),
-        ];
-
-        // Calculate progress percentage
-        $progressPercentage = $todayStats['total'] > 0
-            ? round(($todayStats['completed'] / $todayStats['total']) * 100)
-            : 0;
-
-        // Get next pending task
-        $nextTask = $assignments->where('status', 'pending')->first();
-
-        // NEW: Data kalender catatan untuk bulan ini
-        $currentMonth = Carbon::now();
-        $calendarData = [
-            'currentMonth' => $currentMonth->format('F Y'),
-            'currentYear' => $currentMonth->year,
-            'currentMonthNumber' => $currentMonth->month,
-            'firstDayOfMonth' => $currentMonth->copy()->startOfMonth(),
-            'lastDayOfMonth' => $currentMonth->copy()->endOfMonth(),
-            'today' => Carbon::today(),
-        ];
-
-        // Ambil catatan untuk bulan ini
-        $calendarNotes = \App\Models\CalendarNote::getNotesForMonth(
-            $userId,
-            $calendarData['currentYear'],
-            $calendarData['currentMonthNumber']
-        );
-
-        // NEW: Ambil project deadlines untuk bulan ini (semua proyek, tidak hanya milik user)
-        $projectDeadlines = Project::with('client')
-            ->whereYear('deadline', $calendarData['currentYear'])
-            ->whereMonth('deadline', $calendarData['currentMonthNumber'])
-            ->whereIn('status', ['WAITING', 'PROGRESS'])
-            ->get()
-            ->groupBy(function ($project) {
-                return $project->deadline->day;
-            });
-
-        return view('dashboard.index-user', [
-            'isMobile' => $isMobile,
-            'todayStats' => $todayStats,
-            'progressPercentage' => $progressPercentage,
-            'todayTasks' => $assignments,
-            'nextTask' => $nextTask,
-            'calendarData' => $calendarData, // NEW
-            'calendarNotes' => $calendarNotes, // NEW
-            'projectDeadlines' => $projectDeadlines, // NEW
         ]);
     }
 }

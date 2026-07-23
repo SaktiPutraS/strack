@@ -12,9 +12,7 @@ use App\Http\Controllers\BankTransferController;
 use App\Http\Controllers\CashWithdrawalController;
 use App\Http\Controllers\GoldTransactionController;
 use App\Http\Controllers\FinancialReportController;
-use App\Http\Controllers\TaskController;
 use App\Http\Controllers\CalendarNoteController;
-use App\Http\Controllers\SupplyController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\PaymentWebhookController;
@@ -78,37 +76,12 @@ Route::middleware('simpleauth')->group(function () {
         Route::get('reports', [FinancialReportController::class, 'index'])->name('financial-reports.index');
     });
 
-    Route::prefix('tasks')->name('tasks.')->group(function () {
-        Route::get('/', [TaskController::class, 'index'])->name('index');
-        Route::get('/create', [TaskController::class, 'create'])->name('create');
-        Route::post('/', [TaskController::class, 'store'])->name('store');
-        Route::get('/{task}', [TaskController::class, 'show'])->name('show');
-        Route::get('/{task}/edit', [TaskController::class, 'edit'])->name('edit');
-        Route::put('/{task}', [TaskController::class, 'update'])->name('update');
-        Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
-
-        Route::get('/export/excel', [TaskController::class, 'exportExcel'])->name('export-excel');
-
-        Route::get('/validation/pending', [TaskController::class, 'validation'])->name('validation');
-        Route::post('/assignments/{assignment}/validate', [TaskController::class, 'validateAssignment'])->name('validate-assignment');
-
-        Route::get('/assignments/{assignment}/download', [TaskController::class, 'downloadAttachment'])->name('download-attachment');
-    });
-
     Route::prefix('api')->group(function () {
         Route::post('clients', [ClientController::class, 'store'])->name('api.clients.store');
 
         Route::get('gold/portfolio', [GoldTransactionController::class, 'getPortfolio'])->name('api.gold.portfolio');
 
         Route::get('balances', [ExpenseController::class, 'getBalances'])->name('api.balances');
-    });
-
-    Route::get('/dashboard-user', [DashboardController::class, 'userIndex'])->name('dashboard.user');
-
-    Route::prefix('tasks-user')->name('tasks.user.')->group(function () {
-        Route::get('/', [TaskController::class, 'userIndex'])->name('index');
-        Route::get('/assignments/{assignment}', [TaskController::class, 'userShow'])->name('show');
-        Route::post('/assignments/{assignment}/submit', [TaskController::class, 'userSubmit'])->name('submit');
     });
 
     Route::prefix('sierra-berak')->name('sierra-berak.')->group(function () {
@@ -126,13 +99,6 @@ Route::middleware('simpleauth')->group(function () {
     Route::delete('/calendar-notes/{id}', [CalendarNoteController::class, 'destroy'])->name('calendar-notes.destroy');
 
     Route::get('/projects/deadlines/month/{year}/{month}', [ProjectController::class, 'getMonthDeadlines'])->name('projects.deadlines.month');
-
-    Route::resource('supplies', SupplyController::class);
-    Route::get('supplies/{supply}/use', [SupplyController::class, 'showUseForm'])->name('supplies.use-form');
-    Route::post('supplies/{supply}/use', [SupplyController::class, 'recordUsage'])->name('supplies.record-usage');
-    Route::delete('supply-usages/{usage}', [SupplyController::class, 'deleteUsage'])->name('supply-usages.destroy');
-    Route::get('supplies/{supply}/add-stock', [SupplyController::class, 'showAddStockForm'])->name('supplies.add-stock-form');
-    Route::post('supplies/{supply}/add-stock', [SupplyController::class, 'addStock'])->name('supplies.add-stock');
 
     // ── Budgets CRUD (year & month sebagai param, tidak pakai model binding) ──
     Route::get('budgets',                      [BudgetController::class, 'index'])->name('budgets.index');

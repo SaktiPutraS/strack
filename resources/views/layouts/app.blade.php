@@ -501,11 +501,7 @@
     <div class="d-flex">
         <aside class="sidebar position-fixed top-0 start-0 vh-100 overflow-auto" id="sidebar">
             <div class="p-4 border-bottom border-purple text-center">
-                @if (session('role') === 'admin')
-                    <a href="{{ route('dashboard') }}" class="text-decoration-none">
-                    @else
-                        <a href="{{ route('dashboard.user') }}" class="text-decoration-none">
-                @endif
+                <a href="{{ route('dashboard') }}" class="text-decoration-none">
                 <h4 class="fw-bold text-purple mb-0 p-0">
                     <img src="{{ asset('Logo.png') }}" alt="STRACK Logo" class="d-inline-block align-middle me-2" style="width: 200px">
                 </h4>
@@ -626,34 +622,6 @@
                             </a>
                         </li>
 
-                        {{-- Perlengkapan --}}
-                        <li class="nav-item">
-                            <a href="{{ route('supplies.index') }}" class="nav-link {{ request()->routeIs('supplies.*') ? 'active' : '' }}">
-                                <i class="bi bi-box-seam me-2"></i>Perlengkapan
-                            </a>
-                        </li>
-
-
-                        {{-- Tasks --}}
-                        <li class="nav-item">
-                            <a href="{{ route('tasks.index') }}" class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
-                                <i class="bi bi-list-task me-2"></i>Tugas
-                            </a>
-                        </li>
-
-                    @endif
-
-                    @if (session('role') === 'user')
-                        <li class="nav-item">
-                            <a href="{{ route('dashboard.user') }}" class="nav-link {{ request()->routeIs('dashboard.user') ? 'active' : '' }}">
-                                <i class="bi bi-house-door me-2"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('tasks.user.index') }}" class="nav-link {{ request()->routeIs('tasks.user.*') ? 'active' : '' }}">
-                                <i class="bi bi-list-task me-2"></i>Tugas
-                            </a>
-                        </li>
                     @endif
 
                     @if (session('role') === 'admin')

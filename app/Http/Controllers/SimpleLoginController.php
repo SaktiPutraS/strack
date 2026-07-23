@@ -20,11 +20,6 @@ class SimpleLoginController extends Controller
             session(['role' => 'admin']);
             session(['admin_id' => 1]);
             return redirect('/dashboard-admin');
-        } elseif ($password === '120906') {
-            session(['simple_logged_in' => true]);
-            session(['role' => 'user']);
-            session(['user_id' => 1]);
-            return redirect('/dashboard-user');
         } else {
             return back()->with('error', 'PIN yang Anda masukkan salah!');
         }

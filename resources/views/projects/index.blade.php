@@ -32,7 +32,7 @@
                 <i class="bi bi-bar-chart me-2 text-purple"></i>Statistik Proyek
             </h5>
         </div>
-        <div class="col-6 col-xl-2 col-lg-3 col-md-4">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="card luxury-card stat-card stat-card-warning h-100 clickable-card" data-filter="status=WAITING">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -43,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-xl-2 col-lg-3 col-md-4">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="card luxury-card stat-card stat-card-purple h-100 clickable-card" data-filter="status=PROGRESS">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -54,7 +54,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-xl-2 col-lg-3 col-md-4">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="card luxury-card stat-card h-100 clickable-card" data-filter="status=LEAD">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">
@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <div class="col-6 col-lg-3 col-md-4">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="card luxury-card stat-card stat-card-success h-100 clickable-card" data-filter="month=current">
                 <div class="card-body text-center p-1">
                     <div class="luxury-icon mx-auto mb-2">
@@ -79,7 +79,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3 col-md-4">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="card luxury-card stat-card stat-card-danger h-100 clickable-card" data-filter="piutang=true">
                 <div class="card-body text-center p-1">
                     <div class="luxury-icon mx-auto mb-2">
@@ -92,7 +92,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-xl-2 col-lg-3 col-md-4">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="card luxury-card stat-card stat-card-info h-100 clickable-card" data-filter="testimoni=false">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2">

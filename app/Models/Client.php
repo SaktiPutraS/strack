@@ -53,7 +53,11 @@ class Client extends Model
      */
     public function getTotalProjectValueAttribute(): float
     {
-        return $this->projects()->sum('total_value');
+        // Nilai proyek dibatalkan (CANCELLED) dan penawaran belum deal (LEAD)
+        // tidak dihitung sebagai nilai proyek/penjualan klien.
+        return $this->projects()
+            ->whereNotIn('status', ['CANCELLED', 'LEAD'])
+            ->sum('total_value');
     }
 
     /**

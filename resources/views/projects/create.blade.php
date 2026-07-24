@@ -94,6 +94,21 @@
                                 @enderror
                             </div>
 
+                            <!-- Status Awal -->
+                            <div class="col-lg-4">
+                                <label for="status" class="form-label fw-semibold">
+                                    Status Awal
+                                </label>
+                                <select name="status" id="status" class="form-select form-select-lg @error('status') is-invalid @enderror">
+                                    <option value="WAITING" {{ old('status', 'WAITING') == 'WAITING' ? 'selected' : '' }}>Menunggu</option>
+                                    <option value="LEAD" {{ old('status') == 'LEAD' ? 'selected' : '' }}>Penawaran (belum deal)</option>
+                                </select>
+                                <div class="form-text">Pilih "Penawaran" untuk mencatat proyek yang belum deal. Nilainya tidak dihitung sebagai penjualan.</div>
+                                @error('status')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <!-- Project Title -->
                             <div class="col-12">
                                 <label for="title" class="form-label fw-semibold">

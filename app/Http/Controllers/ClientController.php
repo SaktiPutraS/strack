@@ -76,6 +76,7 @@ class ClientController extends Controller
             ->get();
 
         $projectsByStatus = [
+            'lead' => $client->projects()->where('status', 'LEAD')->count(),
             'waiting' => $client->projects()->where('status', 'WAITING')->count(),
             'progress' => $client->projects()->where('status', 'PROGRESS')->count(),
             'finished' => $client->projects()->where('status', 'FINISHED')->count(),

@@ -94,6 +94,7 @@ class ProjectController extends Controller
             'progress' => Project::where('status', 'PROGRESS')->count(),
             'finished' => Project::where('status', 'FINISHED')->count(),
             'cancelled' => Project::where('status', 'CANCELLED')->count(),
+            'lead' => Project::where('status', 'LEAD')->count(),
         ];
 
         $testimoniStats = [
@@ -106,13 +107,16 @@ class ProjectController extends Controller
         $totalPiutang = Project::whereIn('status', ['WAITING', 'PROGRESS'])
             ->sum(DB::raw('total_value - paid_amount'));
 
+        // Nilai proyek bulan ini: proyek dibatalkan (CANCELLED) dan penawaran belum deal (LEAD)
+        // TIDAK dihitung sebagai penjualan.
         $totalNilaiBulanIni = Project::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
+            ->whereNotIn('status', ['CANCELLED', 'LEAD'])
             ->sum('total_value');
 
         $clients = Client::orderBy('name')->get();
         $projectTypes = Project::distinct()->pluck('type')->filter();
-        $statuses = ['WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
+        $statuses = ['LEAD', 'WAITING', 'PROGRESS', 'FINISHED', 'CANCELLED'];
 
         $formatCurrency = function ($amount) {
             if ($amount >= 1000000000) {
@@ -324,6 +328,10 @@ class ProjectController extends Controller
         $sheet->setCellValue('B' . $summaryRow, $projects->count());
 
         $summaryRow++;
+        $sheet->setCellValue('A' . $summaryRow, 'Penawaran:');
+        $sheet->setCellValue('B' . $summaryRow, $projects->where('status', 'LEAD')->count());
+
+        $summaryRow++;
         $sheet->setCellValue('A' . $summaryRow, 'Menunggu:');
         $sheet->setCellValue('B' . $summaryRow, $projects->where('status', 'WAITING')->count());
 
@@ -420,11 +428,13 @@ class ProjectController extends Controller
             'deadline' => 'required|date',
             'notes' => 'nullable|string',
             'testimoni' => 'nullable|boolean',
+            'status' => 'nullable|in:WAITING,LEAD',
         ]);
 
         $validated['dp_amount'] = $validated['dp_amount'] ?? 0;
         $validated['paid_amount'] = 0;
-        $validated['status'] = 'WAITING';
+        // Status awal: Menunggu (default) atau Penawaran (proyek belum deal).
+        $validated['status'] = $validated['status'] ?? 'WAITING';
         $validated['testimoni'] = $validated['testimoni'] ?? false;
 
         $project = Project::create($validated);
@@ -478,7 +488,7 @@ class ProjectController extends Controller
             'type' => 'required|in:' . implode(',', $validTypes),
             'total_value' => 'required|numeric|min:0',
             'deadline' => 'required|date',
-            'status' => 'required|in:WAITING,PROGRESS,FINISHED,CANCELLED',
+            'status' => 'required|in:LEAD,WAITING,PROGRESS,FINISHED,CANCELLED',
             'notes' => 'nullable|string',
             'testimoni' => 'nullable|boolean',
         ]);
@@ -507,7 +517,7 @@ class ProjectController extends Controller
     public function updateStatus(Request $request, Project $project): JsonResponse
     {
         $validated = $request->validate([
-            'status' => 'required|in:WAITING,PROGRESS,FINISHED,CANCELLED'
+            'status' => 'required|in:LEAD,WAITING,PROGRESS,FINISHED,CANCELLED'
         ]);
 
         $oldStatus = $project->status;

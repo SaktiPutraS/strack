@@ -51,6 +51,10 @@
                             <span class="badge bg-success bg-opacity-10 text-success border border-success">
                                 <i class="bi bi-check-circle-fill me-1"></i>SELESAI
                             </span>
+                        @elseif($project->status == 'LEAD')
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">
+                                <i class="bi bi-tag me-1"></i>PENAWARAN
+                            </span>
                         @else
                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">
                                 <i class="bi bi-x-circle-fill me-1"></i>DIBATALKAN
@@ -297,7 +301,13 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="d-grid gap-3">
-                        @if ($project->remaining_amount > 0 && $project->status !== 'CANCELLED')
+                        @if ($project->status === 'LEAD')
+                            <button class="btn btn-primary d-flex align-items-center justify-content-center" onclick="updateStatus('WAITING')">
+                                <i class="bi bi-check2-circle me-2"></i>Deal - Jadikan Proyek
+                            </button>
+                        @endif
+
+                        @if ($project->remaining_amount > 0 && $project->status !== 'CANCELLED' && $project->status !== 'LEAD')
                             <button type="button" class="btn btn-purple text-white d-flex align-items-center justify-content-center"
                                 style="background:linear-gradient(135deg,#8B5CF6,#A855F7);border:none;"
                                 onclick="tagihKlien()">
@@ -305,13 +315,13 @@
                             </button>
                         @endif
 
-                        @if ($project->status !== 'FINISHED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING')
+                        @if ($project->status !== 'FINISHED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING' && $project->status !== 'LEAD')
                             <button class="btn btn-success d-flex align-items-center justify-content-center" onclick="updateStatus('FINISHED')">
                                 <i class="bi bi-check-circle me-2"></i>Tandai Selesai
                             </button>
                         @endif
 
-                        @if ($project->status !== 'CANCELLED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING')
+                        @if ($project->status !== 'CANCELLED' && $project->status !== 'CANCELED' && $project->status !== 'WAITING' && $project->status !== 'LEAD')
                             <a href="{{ $project->client->whatsapp_link }}&text={{ rawurlencode('hallo ka, maaf mau confirm, berarti untuk tugasnnya sudah selesai yah. karna mau saya close projectnnya 🙏🏼') }}"
                                 target="_blank"
                                 class="btn btn-success d-flex align-items-center justify-content-center"
@@ -475,6 +485,7 @@
     <script>
         function updateStatus(newStatus) {
             const statusLabels = {
+                'WAITING': 'MENUNGGU',
                 'PROGRESS': 'PROGRESS',
                 'FINISHED': 'SELESAI'
             };

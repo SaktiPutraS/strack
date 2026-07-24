@@ -286,9 +286,12 @@ class FinancialReportController extends Controller
 
     private function generateLaporanPenjualan(string $startDate, string $endDate): array
     {
-        // Project yang dibuat dalam periode
+        // Project yang dibuat dalam periode.
+        // Kecualikan proyek dibatalkan (CANCELLED) dan penawaran belum deal (LEAD):
+        // keduanya bukan penjualan, jadi tidak masuk laporan penjualan.
         $projectsInPeriod = Project::with(['client', 'payments'])
             ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereNotIn('status', ['CANCELLED', 'LEAD'])
             ->orderBy('created_at', 'desc')
             ->get();
 

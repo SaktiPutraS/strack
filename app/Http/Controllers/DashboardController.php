@@ -126,8 +126,11 @@ class DashboardController extends Controller
         ];
 
         for ($month = 1; $month <= 12; $month++) {
+            // Nilai proyek per bulan: kecualikan proyek dibatalkan (CANCELLED) dan
+            // penawaran belum deal (LEAD) agar tidak terhitung sebagai penjualan.
             $projectValue = Project::whereMonth('created_at', $month)
                 ->whereYear('created_at', $tahunIni)
+                ->whereNotIn('status', ['CANCELLED', 'LEAD'])
                 ->sum('total_value');
 
             $monthlyRevenueData[] = [

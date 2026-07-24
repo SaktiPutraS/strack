@@ -148,6 +148,12 @@
                     <div class="row g-3">
                         <div class="col-6 col-md-3">
                             <div class="text-center">
+                                <div class="fw-bold text-secondary display-6">{{ $projectsByStatus['lead'] }}</div>
+                                <small class="text-muted">Penawaran</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="text-center">
                                 <div class="fw-bold text-warning display-6">{{ $projectsByStatus['waiting'] }}</div>
                                 <small class="text-muted">Menunggu</small>
                             </div>

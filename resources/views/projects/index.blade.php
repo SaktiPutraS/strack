@@ -54,6 +54,17 @@
                 </div>
             </div>
         </div>
+        <div class="col-6 col-xl-2 col-lg-3 col-md-4">
+            <div class="card luxury-card stat-card h-100 clickable-card" data-filter="status=LEAD">
+                <div class="card-body text-center p-3">
+                    <div class="luxury-icon mx-auto mb-2">
+                        <i class="bi bi-tag-fill text-secondary fs-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-secondary mb-1">{{ $projectStats['lead'] }}</h3>
+                    <small class="text-muted fw-semibold">Penawaran</small>
+                </div>
+            </div>
+        </div>
 
         <div class="col-6 col-lg-3 col-md-4">
             <div class="card luxury-card stat-card stat-card-success h-100 clickable-card" data-filter="month=current">
@@ -269,6 +280,10 @@
                                                 <span class="badge bg-success bg-opacity-10 text-success border border-success">
                                                     <i class="bi bi-check-circle-fill me-1"></i>SELESAI
                                                 </span>
+                                            @elseif($project->status == 'LEAD')
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">
+                                                    <i class="bi bi-tag me-1"></i>PENAWARAN
+                                                </span>
                                             @else
                                                 <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">
                                                     <i class="bi bi-x-circle-fill me-1"></i>DIBATALKAN
@@ -307,6 +322,10 @@
                                         @elseif($project->status == 'FINISHED')
                                             <span class="badge bg-success bg-opacity-10 text-success border border-success">
                                                 <i class="bi bi-check-circle-fill me-1"></i>SELESAI
+                                            </span>
+                                        @elseif($project->status == 'LEAD')
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">
+                                                <i class="bi bi-tag me-1"></i>PENAWARAN
                                             </span>
                                         @else
                                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">

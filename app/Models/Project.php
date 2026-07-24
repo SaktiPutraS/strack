@@ -163,6 +163,7 @@ class Project extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
+            'LEAD' => 'gray',
             'WAITING' => 'yellow',
             'PROGRESS' => 'blue',
             'FINISHED' => 'green',
@@ -177,6 +178,7 @@ class Project extends Model
     public function getStatusIconAttribute(): string
     {
         return match ($this->status) {
+            'LEAD' => 'tag',
             'WAITING' => 'clock',
             'PROGRESS' => 'play',
             'FINISHED' => 'check-circle',

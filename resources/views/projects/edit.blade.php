@@ -116,6 +116,7 @@
                                     Status Proyek <span class="text-danger">*</span>
                                 </label>
                                 <select name="status" id="status" class="form-select form-select-lg @error('status') is-invalid @enderror" required>
+                                    <option value="LEAD" {{ old('status', $project->status) == 'LEAD' ? 'selected' : '' }}>Penawaran (belum deal)</option>
                                     <option value="WAITING" {{ old('status', $project->status) == 'WAITING' ? 'selected' : '' }}>Menunggu</option>
                                     <option value="PROGRESS" {{ old('status', $project->status) == 'PROGRESS' ? 'selected' : '' }}>Dalam Progress
                                     </option>

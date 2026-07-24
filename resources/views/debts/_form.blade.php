@@ -35,11 +35,39 @@
 </div>
 
 <div class="col-md-6">
-    <label class="form-label fw-semibold">Jatuh Tempo</label>
-    <input type="date" name="due_date" class="form-control form-control-lg @error('due_date') is-invalid @enderror"
+    <label class="form-label fw-semibold d-block">Jatuh Tempo</label>
+    <div class="form-check form-switch mt-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="useDueDate" name="use_due_date" value="1"
+            {{ old('use_due_date', (isset($debt) && $debt->due_date) ? '1' : null) ? 'checked' : '' }}>
+        <label class="form-check-label" for="useDueDate">Pakai tanggal jatuh tempo (opsional)</label>
+    </div>
+    <input type="date" name="due_date" id="dueDateInput"
+        class="form-control form-control-lg mt-2 @error('due_date') is-invalid @enderror"
         value="{{ old('due_date', isset($debt) && $debt->due_date ? $debt->due_date->format('Y-m-d') : '') }}">
     @error('due_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
 </div>
+
+@push('scripts')
+    <script>
+        (function () {
+            const sw = document.getElementById('useDueDate');
+            const inp = document.getElementById('dueDateInput');
+            if (!sw || !inp) return;
+            function sync() {
+                if (sw.checked) {
+                    inp.classList.remove('d-none');
+                    inp.disabled = false;
+                } else {
+                    inp.classList.add('d-none');
+                    inp.disabled = true;
+                    inp.value = '';
+                }
+            }
+            sw.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+@endpush
 
 <div class="col-12">
     <label class="form-label fw-semibold">Catatan</label>

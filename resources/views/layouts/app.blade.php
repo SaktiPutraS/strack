@@ -629,6 +629,13 @@
                             </a>
                         </li>
 
+                        {{-- Menu Maintenance --}}
+                        <li class="nav-item">
+                            <a href="{{ route('maintenance.index') }}" class="nav-link {{ request()->routeIs('maintenance.*') ? 'active' : '' }}">
+                                <i class="bi bi-tools me-2"></i>Maintenance
+                            </a>
+                        </li>
+
                     @endif
 
                     @if (session('role') === 'admin')

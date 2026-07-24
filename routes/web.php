@@ -59,8 +59,10 @@ Route::middleware('simpleauth')->group(function () {
     Route::post('debts/{debt}/payments', [DebtPaymentController::class, 'store'])->name('debts.payments.store');
     Route::delete('debt-payments/{debtPayment}', [DebtPaymentController::class, 'destroy'])->name('debt-payments.destroy');
 
-    // ── Maintenance (catatan tugas perawatan) ─────────────────────────────────
-    Route::resource('maintenance', MaintenanceController::class)->except(['show']);
+    // ── Maintenance (checklist tugas perawatan) ───────────────────────────────
+    Route::resource('maintenance', MaintenanceController::class);
+    Route::post('maintenance/{maintenance}/complete', [MaintenanceController::class, 'complete'])->name('maintenance.complete');
+    Route::delete('maintenance-logs/{maintenanceLog}', [MaintenanceController::class, 'destroyLog'])->name('maintenance-logs.destroy');
 
     Route::resource('payments', PaymentController::class);
     Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');

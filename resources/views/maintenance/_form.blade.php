@@ -10,6 +10,9 @@
     $sMonths = old('schedule_months',
         ($task && $task->schedule_type === 'MONTH' && $val && !str_contains($val, '-')) ? explode(',', $val) : []);
     $sMonths = array_map('strval', (array) $sMonths);
+
+    $sIntervalKm = old('interval_km', $task->interval_km ?? '');
+    $sLastKm = old('last_km', $task->last_km ?? '');
 @endphp
 
 <div class="col-12">
@@ -26,6 +29,7 @@
         <option value="DATE" {{ $sType === 'DATE' ? 'selected' : '' }}>Tanggal</option>
         <option value="MONTH" {{ $sType === 'MONTH' ? 'selected' : '' }}>Bulan (bisa lebih dari satu)</option>
         <option value="YEAR" {{ $sType === 'YEAR' ? 'selected' : '' }}>Tahun</option>
+        <option value="ODOMETER" {{ $sType === 'ODOMETER' ? 'selected' : '' }}>Odometer (km)</option>
     </select>
 </div>
 
@@ -67,6 +71,24 @@
             class="form-control form-control-lg @error('schedule_year') is-invalid @enderror"
             value="{{ $sYear }}" placeholder="mis. 2026">
         @error('schedule_year')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+    </div>
+
+    <div class="sched-field" data-type="ODOMETER">
+        <div class="row g-2">
+            <div class="col-sm-6">
+                <label class="form-label small text-muted mb-1">Interval servis (km)</label>
+                <input type="number" name="interval_km" min="1" step="1" value="{{ $sIntervalKm }}"
+                    class="form-control form-control-lg @error('interval_km') is-invalid @enderror" placeholder="mis. 2000">
+                @error('interval_km')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-sm-6">
+                <label class="form-label small text-muted mb-1">Odometer servis terakhir (km, opsional)</label>
+                <input type="number" name="last_km" min="0" step="1" value="{{ $sLastKm }}"
+                    class="form-control form-control-lg @error('last_km') is-invalid @enderror" placeholder="mis. 12000">
+                @error('last_km')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            </div>
+        </div>
+        <div class="form-text">Servis berikutnya dihitung dari odometer terakhir + interval.</div>
     </div>
 </div>
 

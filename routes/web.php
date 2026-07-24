@@ -16,6 +16,8 @@ use App\Http\Controllers\CalendarNoteController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\DebtRecordController;
+use App\Http\Controllers\DebtPaymentController;
 use Illuminate\Support\Facades\Route;
 
 // Webhook gateway pembayaran (TANPA auth, diverifikasi via signature, CSRF dikecualikan)
@@ -50,6 +52,11 @@ Route::middleware('simpleauth')->group(function () {
         ->name('project-types.toggle');
 
     Route::resource('clients', ClientController::class);
+
+    // ── Catatan Hutang Piutang ────────────────────────────────────────────────
+    Route::resource('debts', DebtRecordController::class);
+    Route::post('debts/{debt}/payments', [DebtPaymentController::class, 'store'])->name('debts.payments.store');
+    Route::delete('debt-payments/{debtPayment}', [DebtPaymentController::class, 'destroy'])->name('debt-payments.destroy');
 
     Route::resource('payments', PaymentController::class);
     Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');

@@ -622,6 +622,13 @@
                             </a>
                         </li>
 
+                        {{-- Menu Catatan Hutang Piutang --}}
+                        <li class="nav-item">
+                            <a href="{{ route('debts.index') }}" class="nav-link {{ request()->routeIs('debts.*') || request()->routeIs('debt-payments.*') ? 'active' : '' }}">
+                                <i class="bi bi-cash-stack me-2"></i>Catatan Hutang Piutang
+                            </a>
+                        </li>
+
                     @endif
 
                     @if (session('role') === 'admin')

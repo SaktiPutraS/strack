@@ -25,7 +25,7 @@
             <div class="card luxury-card h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2"><i class="bi bi-arrow-down-left-circle text-success fs-4"></i></div>
-                    <h3 class="fw-bold text-success mb-1">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</h3>
+                    <h3 class="fw-bold text-success mb-1" style="font-size:clamp(1.1rem,5vw,1.5rem);word-break:break-word;">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</h3>
                     <small class="text-muted fw-semibold">Total Piutang (hak tagih)</small>
                 </div>
             </div>
@@ -34,7 +34,7 @@
             <div class="card luxury-card h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2"><i class="bi bi-arrow-up-right-circle text-danger fs-4"></i></div>
-                    <h3 class="fw-bold text-danger mb-1">Rp {{ number_format($totalHutang, 0, ',', '.') }}</h3>
+                    <h3 class="fw-bold text-danger mb-1" style="font-size:clamp(1.1rem,5vw,1.5rem);word-break:break-word;">Rp {{ number_format($totalHutang, 0, ',', '.') }}</h3>
                     <small class="text-muted fw-semibold">Total Hutang (kewajiban)</small>
                 </div>
             </div>
@@ -43,7 +43,7 @@
             <div class="card luxury-card h-100">
                 <div class="card-body text-center p-3">
                     <div class="luxury-icon mx-auto mb-2"><i class="bi bi-calculator text-purple fs-4"></i></div>
-                    <h3 class="fw-bold mb-1 {{ $selisih >= 0 ? 'text-success' : 'text-danger' }}">
+                    <h3 class="fw-bold mb-1 {{ $selisih >= 0 ? 'text-success' : 'text-danger' }}" style="font-size:clamp(1.1rem,5vw,1.5rem);word-break:break-word;">
                         {{ $selisih < 0 ? '-' : '' }}Rp {{ number_format(abs($selisih), 0, ',', '.') }}
                     </h3>
                     <small class="text-muted fw-semibold">Selisih (Piutang - Hutang)</small>

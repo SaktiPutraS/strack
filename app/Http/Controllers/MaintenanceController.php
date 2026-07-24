@@ -79,7 +79,12 @@ class MaintenanceController extends Controller
         $base['schedule_value'] = match ($base['schedule_type']) {
             'TEXT' => $request->validate(['schedule_text' => 'required|string|max:255'])['schedule_text'],
             'DATE' => Carbon::parse($request->validate(['schedule_date' => 'required|date'])['schedule_date'])->format('Y-m-d'),
-            'MONTH' => $request->validate(['schedule_month' => ['required', 'regex:/^\d{4}-\d{2}$/']])['schedule_month'],
+            'MONTH' => collect($request->validate([
+                'schedule_months' => 'required|array|min:1',
+                'schedule_months.*' => 'integer|min:1|max:12',
+            ], [
+                'schedule_months.required' => 'Pilih minimal satu bulan.',
+            ])['schedule_months'])->map(fn ($m) => (int) $m)->unique()->sort()->values()->implode(','),
             'YEAR' => (string) $request->validate(['schedule_year' => 'required|integer|min:1900|max:2200'])['schedule_year'],
         };
 

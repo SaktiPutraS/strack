@@ -3,8 +3,13 @@
     $val = $task->schedule_value ?? null;
     $sText  = old('schedule_text',  ($task && $task->schedule_type === 'TEXT')  ? $val : '');
     $sDate  = old('schedule_date',  ($task && $task->schedule_type === 'DATE')  ? $val : '');
-    $sMonth = old('schedule_month', ($task && $task->schedule_type === 'MONTH') ? $val : '');
     $sYear  = old('schedule_year',  ($task && $task->schedule_type === 'YEAR')  ? $val : '');
+
+    $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+        7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+    $sMonths = old('schedule_months',
+        ($task && $task->schedule_type === 'MONTH' && $val && !str_contains($val, '-')) ? explode(',', $val) : []);
+    $sMonths = array_map('strval', (array) $sMonths);
 @endphp
 
 <div class="col-12">
@@ -19,7 +24,7 @@
     <select name="schedule_type" id="scheduleType" class="form-select form-select-lg">
         <option value="TEXT" {{ $sType === 'TEXT' ? 'selected' : '' }}>Catatan (teks bebas)</option>
         <option value="DATE" {{ $sType === 'DATE' ? 'selected' : '' }}>Tanggal</option>
-        <option value="MONTH" {{ $sType === 'MONTH' ? 'selected' : '' }}>Bulan</option>
+        <option value="MONTH" {{ $sType === 'MONTH' ? 'selected' : '' }}>Bulan (bisa lebih dari satu)</option>
         <option value="YEAR" {{ $sType === 'YEAR' ? 'selected' : '' }}>Tahun</option>
     </select>
 </div>
@@ -40,9 +45,21 @@
     </div>
 
     <div class="sched-field" data-type="MONTH">
-        <input type="month" name="schedule_month" class="form-control form-control-lg @error('schedule_month') is-invalid @enderror"
-            value="{{ $sMonth }}">
-        @error('schedule_month')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        <div class="border rounded p-2">
+            <div class="row g-1">
+                @foreach ($monthNames as $num => $mn)
+                    <div class="col-6 col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="schedule_months[]" value="{{ $num }}"
+                                id="mon{{ $num }}" {{ in_array((string) $num, $sMonths, true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mon{{ $num }}">{{ $mn }}</label>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        <div class="form-text">Pilih satu atau beberapa bulan (berulang tiap tahun).</div>
+        @error('schedule_months')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 
     <div class="sched-field" data-type="YEAR">

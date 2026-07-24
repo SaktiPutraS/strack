@@ -71,8 +71,17 @@ class MaintenanceTask extends Model
                     $d = Carbon::parse($value);
                     return $d->day . ' ' . (self::MONTHS[$d->month] ?? '') . ' ' . $d->year;
                 case 'MONTH':
-                    [$y, $m] = array_pad(explode('-', $value), 2, null);
-                    return (self::MONTHS[(int) $m] ?? $value) . ' ' . $y;
+                    // Format lama (spesifik bulan+tahun): "YYYY-MM".
+                    if (str_contains($value, '-')) {
+                        [$y, $m] = array_pad(explode('-', $value), 2, null);
+                        return (self::MONTHS[(int) $m] ?? $value) . ' ' . $y;
+                    }
+                    // Format baru: satu atau beberapa bulan berulang, mis. "1,4,6,11".
+                    $names = collect(explode(',', $value))
+                        ->filter(fn ($x) => $x !== '')
+                        ->map(fn ($x) => self::MONTHS[(int) $x] ?? $x)
+                        ->implode(', ');
+                    return $names !== '' ? $names : '-';
                 case 'YEAR':
                     return $value;
                 case 'TEXT':

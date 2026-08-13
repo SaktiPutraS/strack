@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Ai\BotOrchestrator;
+use App\Services\Ai\TranscriptionService;
 use App\Services\Telegram\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,14 +12,15 @@ use Throwable;
 
 /**
  * Endpoint webhook Telegram. Alur:
- *   verifikasi secret -> whitelist chat_id -> proses pertanyaan (Text-to-SQL)
- *   -> balas ke Telegram. Selalu balas 200 agar Telegram tidak retry.
+ *   verifikasi secret -> whitelist chat_id -> (voice note ditranskrip dulu) ->
+ *   proses pesan -> balas ke Telegram. Selalu balas 200 agar Telegram tidak retry.
  */
 class TelegramWebhookController extends Controller
 {
     public function __construct(
         private TelegramService $telegram,
         private BotOrchestrator $orchestrator,
+        private TranscriptionService $transcription,
     ) {}
 
     public function handle(Request $request)
@@ -32,9 +34,10 @@ class TelegramWebhookController extends Controller
         $message = $request->input('message') ?? $request->input('edited_message');
         $chatId = data_get($message, 'chat.id');
         $text = trim((string) data_get($message, 'text', ''));
+        $voice = data_get($message, 'voice') ?? data_get($message, 'audio');
 
-        // Update tanpa pesan teks (join, sticker, dll) -> abaikan.
-        if (! $chatId || $text === '') {
+        // Update tanpa isi yang bisa diproses (join, sticker, dll) -> abaikan.
+        if (! $chatId || ($text === '' && ! $voice)) {
             return response('ok');
         }
 
@@ -44,6 +47,27 @@ class TelegramWebhookController extends Controller
             Log::warning('Telegram chat_id tidak diizinkan', ['chat_id' => $chatId]);
             $this->telegram->sendMessage($chatId, 'Maaf, Anda tidak memiliki akses ke bot ini.');
             return response('ok');
+        }
+
+        // 2b. Voice note -> transkrip jadi teks lebih dulu.
+        $isVoice = false;
+        if ($text === '' && $voice) {
+            $this->telegram->sendChatAction($chatId, 'typing');
+            try {
+                $audio = $this->telegram->downloadFile(data_get($voice, 'file_id'));
+                $text = trim($this->transcription->transcribe($audio));
+            } catch (Throwable $e) {
+                Log::warning('Telegram voice transkripsi gagal', ['error' => $e->getMessage()]);
+                $this->telegram->sendMessage($chatId, 'Maaf, saya gagal memproses voice note itu. Coba ketik atau ulangi.');
+                return response('ok');
+            }
+
+            if ($text === '') {
+                $this->telegram->sendMessage($chatId, 'Maaf, suara di voice note tidak terdengar jelas. Coba ulangi.');
+                return response('ok');
+            }
+
+            $isVoice = true;
         }
 
         // 3. Perintah dasar.
@@ -66,6 +90,10 @@ class TelegramWebhookController extends Controller
 
         try {
             $answer = $this->orchestrator->handle($chatId, $text);
+            // Untuk voice note, tampilkan hasil transkripsi agar user tahu yang saya dengar.
+            if ($isVoice) {
+                $answer = "🎤 \"{$text}\"\n\n{$answer}";
+            }
             $this->telegram->sendMessage($chatId, $answer);
         } catch (RuntimeException $e) {
             if ($e->getMessage() === '__TIDAK_BISA__') {

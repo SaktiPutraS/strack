@@ -45,6 +45,14 @@ return [
         'version'        => env('ANTHROPIC_VERSION', '2023-06-01'),
     ],
 
+    // Groq API (transkripsi voice note bot Telegram). Tier gratis, endpoint
+    // kompatibel OpenAI (Whisper). TERPISAH dari Anthropic.
+    'groq' => [
+        'api_key'   => env('GROQ_API_KEY'),
+        'stt_model' => env('GROQ_STT_MODEL', 'whisper-large-v3'),
+        'base_url'  => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+    ],
+
     // Bot Telegram tanya-jawab data strack. Keamanan: secret webhook +
     // whitelist chat_id (hanya id yang terdaftar boleh bertanya).
     'telegram' => [

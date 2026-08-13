@@ -4,6 +4,7 @@ namespace App\Services\Telegram;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 /**
  * Pembungkus tipis Telegram Bot API untuk mengirim balasan & indikator mengetik.
@@ -15,6 +16,29 @@ class TelegramService
         $token = config('services.telegram.bot_token');
 
         return "https://api.telegram.org/bot{$token}/{$method}";
+    }
+
+    /**
+     * Unduh isi biner sebuah file (mis. voice note) berdasarkan file_id.
+     */
+    public function downloadFile(string $fileId): string
+    {
+        $token = config('services.telegram.bot_token');
+
+        $info = Http::timeout(15)->get($this->apiUrl('getFile'), ['file_id' => $fileId]);
+        $path = $info->json('result.file_path');
+
+        if (! $path) {
+            throw new RuntimeException('Gagal mendapatkan file dari Telegram.');
+        }
+
+        $binary = Http::timeout(30)->get("https://api.telegram.org/file/bot{$token}/{$path}");
+
+        if ($binary->failed()) {
+            throw new RuntimeException('Gagal mengunduh file audio.');
+        }
+
+        return $binary->body();
     }
 
     public function sendMessage(int|string $chatId, string $text): void

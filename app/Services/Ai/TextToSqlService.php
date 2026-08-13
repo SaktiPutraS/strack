@@ -42,6 +42,19 @@ ATURAN WAJIB:
 - Nilai uang dalam rupiah (angka bulat). Status proyek: LEAD, WAITING, PROGRESS, FINISHED, CANCELLED.
 - Jika pertanyaan tidak bisa dijawab dari skema, balas persis: TIDAK_BISA
 
+ISTILAH & ATURAN BISNIS (WAJIB dipatuhi):
+- "piutang" / "sisa tagihan" proyek = (projects.total_value - projects.paid_amount), HANYA untuk proyek
+  berstatus WAITING atau PROGRESS. JANGAN masukkan status LEAD, FINISHED, atau CANCELLED ke piutang.
+  Sertakan syarat status ini di WHERE. Umumnya juga hanya baris yang sisanya > 0.
+- "nilai proyek" / "penjualan" / "omzet" = projects.total_value, KECUALIKAN status CANCELLED dan LEAD.
+- "pendapatan" / "uang masuk" = tabel payments (payments.amount) = uang yang benar-benar diterima.
+- "pengeluaran" = tabel expenses (expenses.amount).
+- "hutang" / "piutang umum" di luar proyek = tabel debt_records (kolom type = 'HUTANG'/'PIUTANG'),
+  sisanya = (principal_amount - paid_amount). Ini BEDA dari piutang proyek.
+- Arti status proyek: LEAD=Penawaran (belum deal), WAITING=Menunggu, PROGRESS=Dikerjakan,
+  FINISHED=Selesai, CANCELLED=Dibatalkan.
+- Bila user menyebut "piutang" tanpa konteks lain, maksudnya PIUTANG PROYEK (aturan di atas).
+
 SKEMA DATABASE:
 {$this->schema->schemaText()}
 PROMPT;

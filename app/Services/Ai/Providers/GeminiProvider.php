@@ -63,10 +63,11 @@ class GeminiProvider implements AiProvider
             $body['toolConfig'] = ['functionCallingConfig' => ['mode' => 'AUTO']];
         }
 
-        $url = rtrim($config['base_url'], '/') . '/models/' . $config['model']
-            . ':generateContent?key=' . $config['api_key'];
+        $url = rtrim($config['base_url'], '/') . '/models/' . $config['model'] . ':generateContent';
 
-        $response = Http::timeout(60)->post($url, $body);
+        $response = Http::timeout(60)
+            ->withHeaders(['X-goog-api-key' => $config['api_key']])
+            ->post($url, $body);
 
         if ($response->failed()) {
             $detail = $response->json('error.message') ?? $response->body();

@@ -49,7 +49,7 @@ return [
     // PRIMER bot (hemat biaya); Claude jadi cadangan bila Gemini gagal.
     'gemini' => [
         'api_key'  => env('GEMINI_API_KEY'),
-        'model'    => env('GEMINI_MODEL', 'gemini-flash-latest'),
+        'model'    => env('GEMINI_MODEL', 'gemini-flash-lite-latest'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
     ],
 

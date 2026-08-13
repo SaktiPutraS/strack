@@ -19,6 +19,10 @@ class BotOrchestrator
 
     private const PENDING_TTL_MINUTES = 5;
 
+    /** Riwayat percakapan singkat sebagai konteks (mis. rujukan "tadi/tersebut"). */
+    private const MAX_HISTORY = 6;
+    private const HISTORY_TTL_MINUTES = 30;
+
     public function __construct(
         private AnthropicClient $ai,
         private TextToSqlService $textToSql,
@@ -36,26 +40,28 @@ class BotOrchestrator
         if ($pending) {
             if (in_array($normalized, self::AFFIRM, true)) {
                 Cache::forget($pendingKey);
-                return $this->runPending($pending);
+                return $this->finish($chatId, $text, $this->runPending($pending));
             }
 
             if (in_array($normalized, self::DENY, true)) {
                 Cache::forget($pendingKey);
-                return 'Baik, dibatalkan.';
+                return $this->finish($chatId, $text, 'Baik, dibatalkan.');
             }
 
             // Selain ya/tidak -> anggap permintaan baru, buang yang tertunda.
             Cache::forget($pendingKey);
         }
 
-        // 2. Klasifikasi via AI + tool use.
+        // 2. Klasifikasi via AI + tool use (dengan riwayat singkat sebagai konteks).
+        $history = $this->loadHistory($chatId);
+
         $response = $this->ai->raw([
             'system' => [[
                 'type' => 'text',
                 'text' => $this->systemPrompt(),
                 'cache_control' => ['type' => 'ephemeral'],
             ]],
-            'messages' => [['role' => 'user', 'content' => $text]],
+            'messages' => array_merge($history, [['role' => 'user', 'content' => $text]]),
             'tools' => array_merge([$this->tanyaDataTool()], $this->registry->toolDefinitions()),
             'tool_choice' => ['type' => 'auto'],
             'max_tokens' => 1024,
@@ -66,25 +72,25 @@ class BotOrchestrator
         // Tidak memanggil tool -> AI menjawab/menanyakan sesuatu langsung.
         if (! $tool) {
             $reply = AnthropicClient::extractText($response);
-            return $reply !== '' ? $reply : 'Maaf, saya belum paham. Coba jelaskan lagi.';
+            return $this->finish($chatId, $text, $reply !== '' ? $reply : 'Maaf, saya belum paham. Coba jelaskan lagi.');
         }
 
         // Baca data.
         if ($tool['name'] === 'tanya_data') {
             $pertanyaan = $tool['input']['pertanyaan'] ?? $text;
-            return $this->textToSql->ask($pertanyaan);
+            return $this->finish($chatId, $text, $this->textToSql->ask($pertanyaan));
         }
 
         // Aksi tulis -> siapkan + minta konfirmasi.
         $action = $this->registry->find($tool['name']);
         if (! $action) {
-            return 'Maaf, aksi itu belum tersedia.';
+            return $this->finish($chatId, $text, 'Maaf, aksi itu belum tersedia.');
         }
 
         try {
             $prepared = $action->prepare($tool['input']);
         } catch (RuntimeException $e) {
-            return $e->getMessage();
+            return $this->finish($chatId, $text, $e->getMessage());
         }
 
         Cache::put($pendingKey, [
@@ -92,7 +98,28 @@ class BotOrchestrator
             'prepared' => $prepared,
         ], now()->addMinutes(self::PENDING_TTL_MINUTES));
 
-        return $action->preview($prepared);
+        return $this->finish($chatId, $text, $action->preview($prepared));
+    }
+
+    /** Simpan giliran ke riwayat lalu kembalikan balasan. */
+    private function finish(int|string $chatId, string $userText, string $reply): string
+    {
+        $history = $this->loadHistory($chatId);
+        $history[] = ['role' => 'user', 'content' => mb_substr($userText, 0, 1500)];
+        $history[] = ['role' => 'assistant', 'content' => mb_substr($reply, 0, 1500)];
+
+        // Simpan hanya beberapa giliran terakhir.
+        $history = array_slice($history, -self::MAX_HISTORY);
+
+        Cache::put('tg_history:' . $chatId, $history, now()->addMinutes(self::HISTORY_TTL_MINUTES));
+
+        return $reply;
+    }
+
+    /** @return array<int, array{role: string, content: string}> */
+    private function loadHistory(int|string $chatId): array
+    {
+        return Cache::get('tg_history:' . $chatId, []);
     }
 
     private function runPending(array $pending): string

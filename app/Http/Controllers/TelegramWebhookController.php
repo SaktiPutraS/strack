@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\Ai\TextToSqlService;
+use App\Services\Ai\BotOrchestrator;
 use App\Services\Telegram\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +18,7 @@ class TelegramWebhookController extends Controller
 {
     public function __construct(
         private TelegramService $telegram,
-        private TextToSqlService $textToSql,
+        private BotOrchestrator $orchestrator,
     ) {}
 
     public function handle(Request $request)
@@ -50,29 +50,33 @@ class TelegramWebhookController extends Controller
         if ($text === '/start' || $text === '/help') {
             $this->telegram->sendMessage(
                 $chatId,
-                "Halo! Saya bot data strack. Tanyakan apa saja soal keuangan/proyek, "
-                . "misalnya:\n- total pendapatan bulan ini\n- proyek yang masih WAITING\n"
-                . "- sisa piutang klien"
+                "Halo! Saya bot strack. Saya bisa:\n\n"
+                . "MENJAWAB pertanyaan data, misalnya:\n"
+                . "- total pendapatan bulan ini\n- proyek yang masih dikerjakan\n- sisa piutang\n\n"
+                . "MENCATAT/MENGUBAH data (selalu minta konfirmasi dulu), misalnya:\n"
+                . "- catat pengeluaran bensin 50rb dari cash\n- catat pembayaran DP 2jt proyek Website Starvvo\n"
+                . "- bayar hutang ke Budi 500rb\n- tandai proyek X selesai\n\n"
+                . "Setiap perubahan data akan saya konfirmasi dulu (balas *ya* untuk simpan)."
             );
             return response('ok');
         }
 
-        // 4. Proses pertanyaan.
+        // 4. Proses pesan (baca via Text-to-SQL / tulis via aksi + konfirmasi).
         $this->telegram->sendChatAction($chatId, 'typing');
 
         try {
-            $answer = $this->textToSql->ask($text);
+            $answer = $this->orchestrator->handle($chatId, $text);
             $this->telegram->sendMessage($chatId, $answer);
         } catch (RuntimeException $e) {
             if ($e->getMessage() === '__TIDAK_BISA__') {
-                $this->telegram->sendMessage($chatId, 'Maaf, pertanyaan itu belum bisa saya jawab dari data yang ada.');
+                $this->telegram->sendMessage($chatId, 'Maaf, itu belum bisa saya proses dari data yang ada.');
             } else {
                 Log::warning('Telegram bot guardrail/validasi', ['error' => $e->getMessage(), 'q' => $text]);
-                $this->telegram->sendMessage($chatId, 'Maaf, saya tidak bisa memproses pertanyaan itu dengan aman. Coba ubah kalimatnya.');
+                $this->telegram->sendMessage($chatId, 'Maaf, saya tidak bisa memproses itu dengan aman. Coba ubah kalimatnya.');
             }
         } catch (Throwable $e) {
             Log::error('Telegram bot error', ['error' => $e->getMessage(), 'q' => $text]);
-            $this->telegram->sendMessage($chatId, 'Maaf, terjadi kendala saat mengambil data. Coba lagi sebentar.');
+            $this->telegram->sendMessage($chatId, 'Maaf, terjadi kendala. Coba lagi sebentar.');
         }
 
         return response('ok');

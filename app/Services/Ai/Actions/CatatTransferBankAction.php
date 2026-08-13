@@ -8,8 +8,9 @@ use App\Models\Payment;
 use RuntimeException;
 
 /**
- * Tandai pembayaran proyek (yang belum ditransfer) sebagai sudah masuk Bank Octo.
- * Membuat BankTransfer per pembayaran lalu memperbarui saldo bank.
+ * Tandai pembayaran (yang belum ditransfer) sebagai sudah masuk Bank Octo.
+ * Bisa untuk SATU proyek tertentu, atau SEMUA pembayaran yang belum ditransfer
+ * bila proyek tidak disebut. Membuat BankTransfer per pembayaran lalu memperbarui saldo.
  */
 class CatatTransferBankAction extends WriteAction
 {
@@ -24,32 +25,47 @@ class CatatTransferBankAction extends WriteAction
     {
         return [
             'name' => $this->name(),
-            'description' => 'Catat bahwa pembayaran sebuah proyek sudah DITRANSFER masuk ke rekening Bank '
-                . 'Octo. Menandai semua pembayaran proyek itu yang belum ditransfer.',
+            'description' => 'Catat bahwa pembayaran sudah DITRANSFER masuk ke rekening Bank Octo. '
+                . 'Jika user menyebut proyek tertentu, isi "proyek". Jika user ingin mentransfer SEMUA '
+                . 'pembayaran yang belum ditransfer (tanpa menyebut proyek tertentu), KOSONGKAN "proyek". '
+                . 'Tanggal opsional (default hari ini) - jangan tanya tanggal kecuali user menyebutkannya.',
             'input_schema' => [
                 'type' => 'object',
                 'properties' => [
-                    'proyek' => ['type' => 'string', 'description' => 'Nama proyek atau nama klien.'],
+                    'proyek' => ['type' => 'string', 'description' => 'Nama proyek/klien. Kosongkan untuk SEMUA pembayaran yang belum ditransfer.'],
                     'tanggal' => ['type' => 'string', 'description' => 'Tanggal transfer Y-m-d, default hari ini.'],
                     'referensi' => ['type' => 'string', 'description' => 'Nomor referensi transfer (opsional).'],
                 ],
-                'required' => ['proyek'],
+                'required' => [],
             ],
         ];
     }
 
     public function prepare(array $input): array
     {
-        $project = $this->resolveProject((string) ($input['proyek'] ?? ''));
+        $proyek = trim((string) ($input['proyek'] ?? ''));
 
-        $payments = $project->payments()->where('is_transferred', false)->get();
+        if ($proyek !== '') {
+            // Mode satu proyek.
+            $project = $this->resolveProject($proyek);
+            $payments = $project->payments()->where('is_transferred', false)->get();
+            $scope = "proyek \"{$project->title}\"";
 
-        if ($payments->isEmpty()) {
-            throw new RuntimeException("Tidak ada pembayaran proyek \"{$project->title}\" yang belum ditransfer.");
+            if ($payments->isEmpty()) {
+                throw new RuntimeException("Tidak ada pembayaran {$scope} yang belum ditransfer.");
+            }
+        } else {
+            // Mode semua pembayaran belum ditransfer.
+            $payments = Payment::where('is_transferred', false)->get();
+            $scope = 'semua pembayaran yang belum ditransfer';
+
+            if ($payments->isEmpty()) {
+                throw new RuntimeException('Tidak ada pembayaran yang belum ditransfer.');
+            }
         }
 
         return [
-            'project_title' => $project->title,
+            'scope' => $scope,
             'payment_ids' => $payments->pluck('id')->all(),
             'total' => (int) $payments->sum('amount'),
             'jumlah_pembayaran' => $payments->count(),
@@ -61,8 +77,9 @@ class CatatTransferBankAction extends WriteAction
     public function preview(array $p): string
     {
         return "Catat transfer ke Bank Octo:\n"
-            . "- Proyek: {$p['project_title']}\n"
+            . "- Untuk: {$p['scope']}\n"
             . "- {$p['jumlah_pembayaran']} pembayaran, total {$this->rp($p['total'])}\n"
+            . ($p['referensi'] ? "- Referensi: {$p['referensi']}\n" : '')
             . "- Tanggal: {$p['tanggal']}\n\n"
             . "Tandai sudah ditransfer? Balas *ya* atau *tidak*.";
     }
@@ -91,7 +108,7 @@ class CatatTransferBankAction extends WriteAction
 
         $saldo = BankBalance::getCurrentBalance();
 
-        return "{$payments->count()} pembayaran proyek \"{$p['project_title']}\" ditandai sudah transfer. "
+        return "{$payments->count()} pembayaran ({$this->rp((int) $payments->sum('amount'))}) ditandai sudah transfer. "
             . "Saldo Bank Octo: {$this->rp($saldo)}.";
     }
 }

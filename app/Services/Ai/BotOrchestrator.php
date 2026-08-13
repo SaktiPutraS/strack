@@ -144,6 +144,9 @@ Pilih SATU tindakan paling tepat untuk pesan user:
 Aturan:
 - Untuk perintah tulis, JANGAN mengarang nilai. Bila ada data WAJIB yang belum jelas (mis. nominal),
   JANGAN panggil tool; balas singkat menanyakan data yang kurang.
+- Data OPSIONAL (mis. tanggal, referensi, metode) JANGAN ditanyakan - biarkan kosong / pakai default.
+- Untuk transfer bank: bila user tidak menyebut proyek tertentu (mis. "transfer semua yang belum
+  ditransfer"), panggil `catat_transfer_bank` dengan proyek dikosongkan.
 - Konversi waktu ke tanggal Y-m-d: "hari ini"={$today}; "kemarin"=sehari sebelumnya.
 - Ubah nominal ke angka bulat: "50rb"->50000, "1,5jt"->1500000, "2 juta"->2000000.
 - Jangan menjawab pertanyaan data dari pengetahuanmu sendiri; selalu lewat `tanya_data`.

@@ -45,6 +45,20 @@ return [
         'version'        => env('ANTHROPIC_VERSION', '2023-06-01'),
     ],
 
+    // Google Gemini API (Google AI Studio). Tier gratis. Dipakai sebagai AI
+    // PRIMER bot (hemat biaya); Claude jadi cadangan bila Gemini gagal.
+    'gemini' => [
+        'api_key'  => env('GEMINI_API_KEY'),
+        'model'    => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+    ],
+
+    // Urutan provider AI bot. 'gemini' = coba Gemini dulu, gagal -> Claude.
+    // 'anthropic' = Claude saja / Claude dulu.
+    'ai' => [
+        'primary' => env('AI_PRIMARY', 'gemini'),
+    ],
+
     // Groq API (transkripsi voice note bot Telegram). Tier gratis, endpoint
     // kompatibel OpenAI (Whisper). TERPISAH dari Anthropic.
     'groq' => [

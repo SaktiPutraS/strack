@@ -24,7 +24,7 @@ class BotOrchestrator
     private const HISTORY_TTL_MINUTES = 30;
 
     public function __construct(
-        private AnthropicClient $ai,
+        private AiGateway $ai,
         private TextToSqlService $textToSql,
         private ActionRegistry $registry,
     ) {}
@@ -55,23 +55,17 @@ class BotOrchestrator
         // 2. Klasifikasi via AI + tool use (dengan riwayat singkat sebagai konteks).
         $history = $this->loadHistory($chatId);
 
-        $response = $this->ai->raw([
-            'system' => [[
-                'type' => 'text',
-                'text' => $this->systemPrompt(),
-                'cache_control' => ['type' => 'ephemeral'],
-            ]],
-            'messages' => array_merge($history, [['role' => 'user', 'content' => $text]]),
-            'tools' => array_merge([$this->tanyaDataTool()], $this->registry->toolDefinitions()),
-            'tool_choice' => ['type' => 'auto'],
-            'max_tokens' => 1024,
-        ]);
+        $result = $this->ai->classify(
+            $this->systemPrompt(),
+            array_merge($history, [['role' => 'user', 'content' => $text]]),
+            array_merge([$this->tanyaDataTool()], $this->registry->toolDefinitions()),
+        );
 
-        $tool = AnthropicClient::extractToolUse($response);
+        $tool = $result->tool;
 
         // Tidak memanggil tool -> AI menjawab/menanyakan sesuatu langsung.
         if (! $tool) {
-            $reply = AnthropicClient::extractText($response);
+            $reply = $result->text;
             return $this->finish($chatId, $text, $reply !== '' ? $reply : 'Maaf, saya belum paham. Coba jelaskan lagi.');
         }
 

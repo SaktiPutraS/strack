@@ -14,7 +14,7 @@ use Throwable;
 class TextToSqlService
 {
     public function __construct(
-        private AnthropicClient $ai,
+        private AiGateway $ai,
         private SchemaInspector $schema,
         private SqlGuardrail $guardrail,
     ) {}
@@ -46,10 +46,7 @@ SKEMA DATABASE:
 {$this->schema->schemaText()}
 PROMPT;
 
-        $raw = $this->ai->chat(
-            [['role' => 'user', 'content' => $question]],
-            ['system' => $system, 'cache_system' => true, 'max_tokens' => 700]
-        );
+        $raw = $this->ai->text($system, [['role' => 'user', 'content' => $question]], 700, cacheSystem: true);
 
         if (str_contains(strtoupper($raw), 'TIDAK_BISA')) {
             throw new RuntimeException('__TIDAK_BISA__');
@@ -92,9 +89,6 @@ PROMPT;
 
         $user = "Pertanyaan: {$question}\n\nHASIL QUERY (JSON):\n{$data}";
 
-        return $this->ai->chat(
-            [['role' => 'user', 'content' => $user]],
-            ['system' => $system, 'max_tokens' => 800]
-        );
+        return $this->ai->text($system, [['role' => 'user', 'content' => $user]], 800);
     }
 }

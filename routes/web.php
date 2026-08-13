@@ -17,6 +17,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DebtRecordController;
 use App\Http\Controllers\DebtPaymentController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -26,6 +27,9 @@ Route::get('/', function () {
 Route::get('/login', [SimpleLoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [SimpleLoginController::class, 'login']);
 Route::get('/logout', [SimpleLoginController::class, 'logout']);
+
+// Webhook bot Telegram (publik; dilindungi secret header + whitelist chat_id).
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
 
 Route::middleware('simpleauth')->group(function () {
 

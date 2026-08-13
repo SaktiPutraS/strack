@@ -35,4 +35,25 @@ return [
         ],
     ],
 
+    // Anthropic API (dipakai bot Telegram Text-to-SQL). Prabayar per token,
+    // TERPISAH dari langganan Claude Pro. Model default Haiku (murah).
+    'anthropic' => [
+        'api_key'        => env('ANTHROPIC_API_KEY'),
+        'model'          => env('ANTHROPIC_MODEL', 'claude-haiku-4-5'),
+        'model_fallback' => env('ANTHROPIC_MODEL_FALLBACK', 'claude-sonnet-4-6'),
+        'base_url'       => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
+        'version'        => env('ANTHROPIC_VERSION', '2023-06-01'),
+    ],
+
+    // Bot Telegram tanya-jawab data strack. Keamanan: secret webhook +
+    // whitelist chat_id (hanya id yang terdaftar boleh bertanya).
+    'telegram' => [
+        'bot_token'       => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_secret'  => env('TELEGRAM_WEBHOOK_SECRET'),
+        'allowed_chat_ids' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TELEGRAM_ALLOWED_CHAT_IDS', ''))
+        ), fn ($id) => $id !== '')),
+    ],
+
 ];

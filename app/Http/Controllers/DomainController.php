@@ -48,7 +48,6 @@ class DomainController extends Controller
             'method' => 'POST',
             'domain' => new Domain(),
             'clients' => Client::orderBy('name')->get(),
-            'projects' => Project::with('client')->orderByDesc('id')->get(),
         ]);
     }
 
@@ -69,7 +68,6 @@ class DomainController extends Controller
             'method' => 'PUT',
             'domain' => $domain,
             'clients' => Client::orderBy('name')->get(),
-            'projects' => Project::with('client')->orderByDesc('id')->get(),
         ]);
     }
 

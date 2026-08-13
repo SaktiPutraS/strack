@@ -52,30 +52,23 @@
                             </div>
                         </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-6 mb-3">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-8 mb-3">
                                 <label class="form-label fw-semibold">Klien (opsional)</label>
-                                <select name="client_id" class="form-select">
+                                <select name="client_id" id="client_id" class="form-select" style="width:100%;">
                                     <option value="">- Tidak ditautkan -</option>
                                     @foreach ($clients as $client)
                                         <option value="{{ $client->id }}"
                                             {{ (string) old('client_id', $domain->client_id) === (string) $client->id ? 'selected' : '' }}>
-                                            {{ $client->name }}
+                                            {{ $client->name }}{{ $client->phone ? ' - ' . $client->phone : '' }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Project (opsional)</label>
-                                <select name="project_id" class="form-select">
-                                    <option value="">- Tidak ditautkan -</option>
-                                    @foreach ($projects as $project)
-                                        <option value="{{ $project->id }}"
-                                            {{ (string) old('project_id', $domain->project_id) === (string) $project->id ? 'selected' : '' }}>
-                                            {{ $project->title }}{{ $project->client ? ' - ' . $project->client->name : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                            <div class="col-md-4 mb-3 d-grid">
+                                <a id="showProjectBtn" href="#" target="_blank" class="btn btn-outline-secondary disabled">
+                                    <i class="bi bi-folder2-open me-2"></i>Show Project
+                                </a>
                             </div>
                         </div>
 
@@ -116,3 +109,49 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        /* Samakan tinggi Select2 dengan form-control Bootstrap 5 */
+        .select2-container .select2-selection--single {
+            height: calc(2.5rem + 2px);
+            display: flex;
+            align-items: center;
+            border-color: #dee2e6;
+            border-radius: .5rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: rgba(139, 92, 246, .5);
+            box-shadow: 0 0 0 .2rem rgba(139, 92, 246, .25);
+        }
+    </style>
+    <script>
+        $(function() {
+            $('#client_id').select2({
+                placeholder: '- Tidak ditautkan -',
+                allowClear: true,
+                width: '100%'
+            });
+
+            const clientBase = "{{ url('clients') }}/";
+            const $btn = $('#showProjectBtn');
+
+            function updateShowProject() {
+                const id = $('#client_id').val();
+                if (id) {
+                    $btn.attr('href', clientBase + id).removeClass('disabled');
+                } else {
+                    $btn.attr('href', '#').addClass('disabled');
+                }
+            }
+
+            updateShowProject();
+            $('#client_id').on('change', updateShowProject);
+        });
+    </script>
+@endpush

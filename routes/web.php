@@ -17,6 +17,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DebtRecordController;
 use App\Http\Controllers\DebtPaymentController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\DomainController;
 use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +62,10 @@ Route::middleware('simpleauth')->group(function () {
     Route::resource('maintenance', MaintenanceController::class);
     Route::post('maintenance/{maintenance}/complete', [MaintenanceController::class, 'complete'])->name('maintenance.complete');
     Route::delete('maintenance-logs/{maintenanceLog}', [MaintenanceController::class, 'destroyLog'])->name('maintenance-logs.destroy');
+
+    // ── Domain & Hosting ──────────────────────────────────────────────────────
+    Route::post('domains/sync', [DomainController::class, 'sync'])->name('domains.sync');
+    Route::resource('domains', DomainController::class)->except(['show']);
 
     Route::resource('payments', PaymentController::class);
     Route::get('projects/{project}/payments/create', [PaymentController::class, 'createForProject'])->name('payments.create-for-project');

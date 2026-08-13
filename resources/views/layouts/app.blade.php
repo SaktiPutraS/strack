@@ -636,6 +636,13 @@
                             </a>
                         </li>
 
+                        {{-- Menu Domain & Hosting --}}
+                        <li class="nav-item">
+                            <a href="{{ route('domains.index') }}" class="nav-link {{ request()->routeIs('domains.*') ? 'active' : '' }}">
+                                <i class="bi bi-globe2 me-2"></i>Domain &amp; Hosting
+                            </a>
+                        </li>
+
                     @endif
 
                     @if (session('role') === 'admin')

@@ -59,6 +59,13 @@ return [
         'primary' => env('AI_PRIMARY', 'gemini'),
     ],
 
+    // Path folder domain di hosting (untuk fitur Sync Domain). Default dihitung
+    // dari lokasi app: dua tingkat di atas base_path (~/domains). Kosongkan =
+    // pakai default. Fungsi PHP file (scandir) dipakai, bukan exec.
+    'hosting' => [
+        'domains_path' => env('HOSTING_DOMAINS_PATH'),
+    ],
+
     // Groq API (transkripsi voice note bot Telegram). Tier gratis, endpoint
     // kompatibel OpenAI (Whisper). TERPISAH dari Anthropic.
     'groq' => [

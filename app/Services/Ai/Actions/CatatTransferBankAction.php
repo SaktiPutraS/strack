@@ -26,9 +26,10 @@ class CatatTransferBankAction extends WriteAction
         return [
             'name' => $this->name(),
             'description' => 'Catat bahwa pembayaran sudah DITRANSFER masuk ke rekening Bank Octo. '
-                . 'Jika user menyebut proyek tertentu, isi "proyek". Jika user ingin mentransfer SEMUA '
-                . 'pembayaran yang belum ditransfer (tanpa menyebut proyek tertentu), KOSONGKAN "proyek". '
-                . 'Tanggal opsional (default hari ini) - jangan tanya tanggal kecuali user menyebutkannya.',
+                . 'Aksi ini SELALU memindahkan SELURUH pembayaran yang belum ditransfer sesuai lingkupnya, '
+                . 'jadi TIDAK butuh nominal - JANGAN tanya nominal walau user menyebut suatu total. '
+                . 'Jika user menyebut proyek tertentu, isi "proyek"; jika ingin SEMUA pembayaran yang belum '
+                . 'ditransfer, KOSONGKAN "proyek". Tanggal & referensi opsional - jangan ditanyakan.',
             'input_schema' => [
                 'type' => 'object',
                 'properties' => [

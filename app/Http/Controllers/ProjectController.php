@@ -74,6 +74,10 @@ class ProjectController extends Controller
                 $query->orderBy('deadline', $sortOrder);
                 break;
 
+            case 'total_value':
+                $query->orderBy('total_value', $sortOrder);
+                break;
+
             case 'status':
                 $query->orderBy('status', $sortOrder);
                 break;

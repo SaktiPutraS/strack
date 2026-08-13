@@ -200,6 +200,21 @@
                                         </a>
                                     </th>
                                     <th class="px-4 py-3 border-0">
+                                        <a href="{{ request()->fullUrlWithQuery(['sort' => 'total_value', 'order' => request('sort') == 'total_value' && request('order') == 'asc' ? 'desc' : 'asc']) }}"
+                                            class="text-decoration-none text-dark d-flex align-items-center fw-semibold">
+                                            <i class="bi bi-currency-dollar me-2 text-muted"></i>Nilai
+                                            @if (request('sort') == 'total_value')
+                                                @if (request('order') == 'asc')
+                                                    <i class="bi bi-arrow-up ms-1 text-purple"></i>
+                                                @else
+                                                    <i class="bi bi-arrow-down ms-1 text-purple"></i>
+                                                @endif
+                                            @else
+                                                <i class="bi bi-arrow-down-up ms-1 opacity-50"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 border-0">
                                         <a href="{{ request()->fullUrlWithQuery(['sort' => 'status', 'order' => request('sort') == 'status' && request('order') == 'asc' ? 'desc' : 'asc']) }}"
                                             class="text-decoration-none text-dark d-flex align-items-center fw-semibold">
                                             <i class="bi bi-flag me-2 text-muted"></i>Status
@@ -266,6 +281,9 @@
                                                     @endif
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span class="fw-bold text-success">{{ $project->formatted_total_value }}</span>
                                         </td>
                                         <td class="px-4 py-4">
                                             @if ($project->status == 'WAITING')
@@ -343,6 +361,11 @@
                                                 <small class="text-muted">Lunas</small>
                                             @endif
                                         </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <i class="bi bi-currency-dollar me-1 text-success"></i>
+                                        <span class="fw-bold text-success">{{ $project->formatted_total_value }}</span>
                                     </div>
 
                                     <div class="d-flex justify-content-between align-items-center">

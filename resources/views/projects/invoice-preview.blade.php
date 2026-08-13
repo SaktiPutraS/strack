@@ -7,9 +7,9 @@
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
                 <div>
                     <h1 class="h2 fw-bold text-teal mb-1">
-                        <i class="bi bi-printer me-2"></i>Preview Invoice
+                        <i class="bi bi-printer me-2"></i>Preview Invoice{{ $stageLabel ? ' - ' . $stageLabel : '' }}
                     </h1>
-                    <p class="text-muted mb-0">Edit informasi client sebelum mencetak invoice untuk {{ $project->title }}</p>
+                    <p class="text-muted mb-0">Edit informasi client &amp; jumlah tagihan sebelum mencetak invoice untuk {{ $project->title }}</p>
                 </div>
                 <div>
                     <a href="{{ route('projects.show', $project) }}" class="btn btn-outline-primary">
@@ -41,6 +41,7 @@
                 </div>
                 <div class="card-body p-4">
                     <form id="invoiceForm" method="GET" action="{{ route('projects.print-invoice', $project) }}" target="_blank">
+                        <input type="hidden" name="type" value="{{ $type }}">
                         <div class="mb-3">
                             <label for="client_name" class="form-label fw-semibold">Nama Client</label>
                             <input type="text" class="form-control" id="client_name" name="client_name" value="{{ $project->client->name }}" required>
@@ -73,6 +74,17 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="billed_amount" class="form-label fw-semibold">Jumlah Ditagih</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control" id="billed_amount" name="billed_amount"
+                                        value="{{ number_format($project->total_value, 0, ',', '.') }}" inputmode="numeric">
+                                </div>
+                                <small class="text-muted">Default nilai proyek. Ubah sesuai jumlah yang ditagih pada invoice ini
+                                    (mis. DP, cicilan, atau pelunasan).</small>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="qty" class="form-label fw-semibold">Quantity</label>
                                 <input type="number" class="form-control" id="qty" name="qty" value="1" min="1" step="1"
                                     required>
@@ -89,7 +101,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Total Nilai</label>
+                                <label class="form-label fw-semibold">Total Ditagih</label>
                                 <div class="d-flex align-items-center p-3 bg-light rounded-3">
                                     <i class="bi bi-calculator text-success me-2"></i>
                                     <strong class="text-success" id="total_display">{{ $project->formatted_total_value }}</strong>
@@ -203,6 +215,19 @@
 @push('scripts')
     <script>
         const totalValue = {{ $project->total_value }};
+        const nf = new Intl.NumberFormat('id-ID');
+
+        function parseBilled() {
+            const raw = document.getElementById('billed_amount').value.replace(/[^0-9]/g, '');
+            return parseInt(raw) || 0;
+        }
+
+        function recalc() {
+            const qty = parseInt(document.getElementById('qty').value) || 1;
+            const billed = parseBilled();
+            document.getElementById('unit_price').value = nf.format(Math.round(billed / qty));
+            document.getElementById('total_display').textContent = 'Rp ' + nf.format(billed);
+        }
 
         function resetForm() {
             document.getElementById('client_name').value = '{{ $project->client->name }}';
@@ -211,16 +236,16 @@
             document.getElementById('client_email').value = '{{ $project->client->email }}';
             document.getElementById('item_description').value = '{{ $project->title }}\n{{ $project->description }}';
             document.getElementById('qty').value = '1';
-            calculateUnitPrice();
+            document.getElementById('billed_amount').value = nf.format(totalValue);
+            recalc();
         }
 
-        function calculateUnitPrice() {
-            const qty = parseInt(document.getElementById('qty').value) || 1;
-            const unitPrice = totalValue / qty;
-            document.getElementById('unit_price').value = new Intl.NumberFormat('id-ID').format(Math.round(unitPrice));
-        }
-
-        document.getElementById('qty').addEventListener('input', calculateUnitPrice);
+        document.getElementById('qty').addEventListener('input', recalc);
+        document.getElementById('billed_amount').addEventListener('input', recalc);
+        document.getElementById('billed_amount').addEventListener('blur', function() {
+            this.value = nf.format(parseBilled());
+        });
+        recalc();
 
         document.getElementById('invoiceForm').addEventListener('submit', function(e) {
             const name = document.getElementById('client_name').value.trim();
@@ -266,6 +291,17 @@
                 Swal.fire({
                     title: 'Peringatan!',
                     text: 'Quantity harus diisi minimal 1',
+                    icon: 'warning',
+                    confirmButtonColor: '#0D9488'
+                });
+                return;
+            }
+
+            if (parseBilled() <= 0) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Peringatan!',
+                    text: 'Jumlah ditagih harus lebih dari 0',
                     icon: 'warning',
                     confirmButtonColor: '#0D9488'
                 });

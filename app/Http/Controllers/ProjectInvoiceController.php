@@ -8,18 +8,34 @@ use Illuminate\View\View;
 
 class ProjectInvoiceController extends Controller
 {
-    public function previewInvoice(Project $project): View
+    /** Label tahap invoice berdasarkan jenis. */
+    private const STAGE_LABELS = [
+        'dp' => 'Down Payment',
+        'progress' => 'Progress',
+        'pelunasan' => 'Pelunasan',
+    ];
+
+    public function previewInvoice(Request $request, Project $project): View
     {
         $invoiceNumber = $this->generateInvoiceNumber($project);
         $isBtools = $project->type === 'BTOOLS';
+        $type = $request->get('type', 'full');
+        $stageLabel = self::STAGE_LABELS[$type] ?? '';
 
-        return view('projects.invoice-preview', compact('project', 'invoiceNumber', 'isBtools'));
+        return view('projects.invoice-preview', compact('project', 'invoiceNumber', 'isBtools', 'type', 'stageLabel'));
     }
 
     public function printInvoice(Request $request, Project $project): View
     {
+        $type = $request->get('type', 'full');
+        $stageLabel = self::STAGE_LABELS[$type] ?? '';
+
         $invoiceNumber = $this->generateInvoiceNumber($project);
-        $terbilang = $this->numberToWords($project->total_value);
+
+        // Jumlah yang ditagih diisi manual di preview; default nilai proyek.
+        $billed = $this->parseAmount($request->get('billed_amount'), (float) $project->total_value);
+
+        $terbilang = $this->numberToWords($billed);
 
         $clientData = [
             'name' => $request->get('client_name', $project->client->name),
@@ -29,18 +45,36 @@ class ProjectInvoiceController extends Controller
         ];
 
         $qty = max(1, intval($request->get('qty', 1)));
-        $unitPrice = $project->total_value / $qty;
+        $unitPrice = $billed / $qty;
 
         $itemData = [
             'description' => $request->get('item_description', $project->title . "\n" . $project->description),
             'qty' => $qty,
             'unit_price' => $unitPrice,
-            'total' => $project->total_value
+            'total' => $billed,
+        ];
+
+        // Rincian pembayaran proyek (untuk invoice bertahap).
+        $paymentInfo = [
+            'total_value' => (float) $project->total_value,
+            'paid_amount' => (float) $project->paid_amount,
+            'billed' => $billed,
+            'remaining_after' => max(0, (float) $project->total_value - (float) $project->paid_amount - $billed),
         ];
 
         $viewName = $project->type === 'BTOOLS' ? 'projects.invoice' : 'projects.invoice-general';
 
-        return view($viewName, compact('project', 'invoiceNumber', 'terbilang', 'clientData', 'itemData'));
+        return view($viewName, compact(
+            'project', 'invoiceNumber', 'terbilang', 'clientData', 'itemData', 'stageLabel', 'paymentInfo'
+        ));
+    }
+
+    /** Ambil angka rupiah dari input (buang titik/pemisah), fallback ke default. */
+    private function parseAmount(mixed $value, float $default): float
+    {
+        $digits = preg_replace('/[^0-9]/', '', (string) $value);
+
+        return $digits === '' ? $default : (float) $digits;
     }
 
     public function previewQuotation(Project $project): View

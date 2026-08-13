@@ -334,15 +334,42 @@
                             </button>
                         @endif
 
-                        <a href="{{ route('projects.preview-quotation', $project) }}"
-                            class="btn btn-warning d-flex align-items-center justify-content-center">
-                            <i class="bi bi-file-text me-2"></i>Print Quotation
-                        </a>
-
-                        <a href="{{ route('projects.preview-invoice', $project) }}"
-                            class="btn btn-info d-flex align-items-center justify-content-center">
-                            <i class="bi bi-printer me-2"></i>Print Invoice
-                        </a>
+                        <div class="dropdown">
+                            <button
+                                class="btn btn-info dropdown-toggle w-100 d-flex align-items-center justify-content-center"
+                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-printer me-2"></i>Print Invoice
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('projects.preview-quotation', $project) }}">
+                                        <i class="bi bi-file-text me-2 text-warning"></i>Quotation
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('projects.preview-invoice', ['project' => $project, 'type' => 'dp']) }}">
+                                        <i class="bi bi-cash-coin me-2 text-info"></i>Down Payment
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('projects.preview-invoice', ['project' => $project, 'type' => 'progress']) }}">
+                                        <i class="bi bi-hourglass-split me-2 text-primary"></i>Progress
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('projects.preview-invoice', ['project' => $project, 'type' => 'pelunasan']) }}">
+                                        <i class="bi bi-check2-circle me-2 text-success"></i>Pelunasan
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
                         <a href="{{ $project->client->whatsapp_link }}" target="_blank"
                             class="btn btn-success d-flex align-items-center justify-content-center">

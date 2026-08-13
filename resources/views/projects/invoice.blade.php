@@ -372,6 +372,10 @@
             </div>
             <div class="invoice-title">
                 <h1>INVOICE</h1>
+                @if (!empty($stageLabel))
+                    <div style="font-size:15px;font-weight:bold;color:#0ea5e9;letter-spacing:1px;margin-bottom:6px;">
+                        {{ strtoupper($stageLabel) }}</div>
+                @endif
                 <div class="invoice-details">
                     <strong>{{ $invoiceNumber }}</strong><br>
                     {{ $project->deadline->format('d F Y') }}
@@ -453,6 +457,17 @@
         <div class="terbilang">
             <strong>Terbilang:</strong> {{ ucfirst($terbilang) }}
         </div>
+
+        <!-- Rincian pembayaran (invoice bertahap) -->
+        @if (!empty($stageLabel) && isset($paymentInfo))
+            <div class="terbilang" style="background-color:#f8fafc;border-left-color:#64748b;font-style:normal;">
+                <strong>Rincian Pembayaran Proyek</strong><br>
+                Nilai Proyek: Rp {{ number_format($paymentInfo['total_value'], 0, ',', '.') }}<br>
+                Sudah Dibayar: Rp {{ number_format($paymentInfo['paid_amount'], 0, ',', '.') }}<br>
+                Ditagih pada invoice ini ({{ $stageLabel }}): Rp {{ number_format($paymentInfo['billed'], 0, ',', '.') }}<br>
+                Sisa setelah pembayaran ini: Rp {{ number_format($paymentInfo['remaining_after'], 0, ',', '.') }}
+            </div>
+        @endif
 
         <!-- Notes -->
         @if ($project->notes)

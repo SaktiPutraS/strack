@@ -402,15 +402,20 @@
             <strong>Terbilang:</strong> {{ ucfirst($terbilang) }}
         </div>
 
-        @if (!empty($stageLabel) && isset($paymentInfo))
+        @isset($paymentInfo)
             <div class="terbilang" style="background-color:#f8fafc;border-left-color:#64748b;font-style:normal;">
                 <strong>Rincian Pembayaran Proyek</strong><br>
                 Nilai Proyek: Rp {{ number_format($paymentInfo['total_value'], 0, ',', '.') }}<br>
+                DP: Rp {{ number_format($paymentInfo['dp'], 0, ',', '.') }}<br>
+                Pelunasan: Rp {{ number_format($paymentInfo['pelunasan'], 0, ',', '.') }}<br>
                 Sudah Dibayar: Rp {{ number_format($paymentInfo['paid_amount'], 0, ',', '.') }}<br>
-                Ditagih pada invoice ini ({{ $stageLabel }}): Rp {{ number_format($paymentInfo['billed'], 0, ',', '.') }}<br>
-                Sisa setelah pembayaran ini: Rp {{ number_format($paymentInfo['remaining_after'], 0, ',', '.') }}
+                @if (!empty($stageLabel))
+                    Ditagih pada invoice ini ({{ $stageLabel }}): Rp
+                    {{ number_format($paymentInfo['billed'], 0, ',', '.') }}<br>
+                @endif
+                Sisa: Rp {{ number_format($paymentInfo['remaining'], 0, ',', '.') }}
             </div>
-        @endif
+        @endisset
 
         @if ($project->notes)
             <div class="notes">

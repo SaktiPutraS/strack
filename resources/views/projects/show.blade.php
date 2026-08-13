@@ -352,6 +352,12 @@
                                 </li>
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('projects.preview-invoice', ['project' => $project, 'type' => 'full']) }}">
+                                        <i class="bi bi-file-earmark-text me-2 text-secondary"></i>Invoice Penuh
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center"
                                         href="{{ route('projects.preview-invoice', ['project' => $project, 'type' => 'dp']) }}">
                                         <i class="bi bi-cash-coin me-2 text-info"></i>Down Payment
                                     </a>

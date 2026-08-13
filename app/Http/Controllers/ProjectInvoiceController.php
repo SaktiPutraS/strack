@@ -54,12 +54,17 @@ class ProjectInvoiceController extends Controller
             'total' => $billed,
         ];
 
-        // Rincian pembayaran proyek (untuk invoice bertahap).
+        // Rincian pembayaran proyek (ditampilkan di semua invoice).
+        $total = (float) $project->total_value;
+        $paid = (float) $project->paid_amount;
+        $dp = (float) $project->dp_amount;
         $paymentInfo = [
-            'total_value' => (float) $project->total_value,
-            'paid_amount' => (float) $project->paid_amount,
+            'total_value' => $total,
+            'dp' => $dp,
+            'pelunasan' => max(0, $total - $dp),
+            'paid_amount' => $paid,
             'billed' => $billed,
-            'remaining_after' => max(0, (float) $project->total_value - (float) $project->paid_amount - $billed),
+            'remaining' => max(0, $total - $paid),
         ];
 
         $viewName = $project->type === 'BTOOLS' ? 'projects.invoice' : 'projects.invoice-general';

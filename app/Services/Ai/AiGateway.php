@@ -19,11 +19,26 @@ class AiGateway
     /** @var array<int, AiProvider> */
     private array $providers;
 
+    /** Nama provider yang berhasil menjawab pada panggilan terakhir. */
+    private ?string $lastProvider = null;
+
     public function __construct(GeminiProvider $gemini, AnthropicProvider $anthropic)
     {
         $this->providers = config('services.ai.primary') === 'anthropic'
             ? [$anthropic, $gemini]
             : [$gemini, $anthropic];
+    }
+
+    /** Nama provider yang menjawab panggilan terakhir (gemini/anthropic), atau null. */
+    public function lastProvider(): ?string
+    {
+        return $this->lastProvider;
+    }
+
+    /** Kosongkan pelacakan provider (dipanggil di awal tiap pesan). */
+    public function resetProviderTracking(): void
+    {
+        $this->lastProvider = null;
     }
 
     /** Klasifikasi/tool use. Sistem prompt stabil -> di-cache (khusus Claude). */
@@ -59,7 +74,9 @@ class AiGateway
             }
 
             try {
-                return $provider->generate($req);
+                $result = $provider->generate($req);
+                $this->lastProvider = $provider->name();
+                return $result;
             } catch (Throwable $e) {
                 $lastError = $e;
                 Log::warning("AI provider {$provider->name()} gagal, coba cadangan", [

@@ -80,7 +80,8 @@ class TelegramWebhookController extends Controller
                 . "MENCATAT/MENGUBAH data (selalu minta konfirmasi dulu), misalnya:\n"
                 . "- catat pengeluaran bensin 50rb dari cash\n- catat pembayaran DP 2jt proyek Website Starvvo\n"
                 . "- bayar hutang ke Budi 500rb\n- tandai proyek X selesai\n\n"
-                . "Setiap perubahan data akan saya konfirmasi dulu (balas *ya* untuk simpan)."
+                . "Setiap perubahan data akan saya konfirmasi dulu (balas *ya* untuk simpan).\n\n"
+                . "Penanda di awal balasan: 🔵 = dijawab Gemini (gratis), 🟠 = dijawab Claude (cadangan)."
             );
             return response('ok');
         }

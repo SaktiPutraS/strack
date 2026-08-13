@@ -31,6 +31,8 @@ class BotOrchestrator
 
     public function handle(int|string $chatId, string $text): string
     {
+        $this->ai->resetProviderTracking();
+
         $text = trim($text);
         $normalized = $this->normalize($text);
         $pendingKey = 'tg_pending:' . $chatId;
@@ -95,17 +97,24 @@ class BotOrchestrator
         return $this->finish($chatId, $text, $action->preview($prepared));
     }
 
-    /** Simpan giliran ke riwayat lalu kembalikan balasan. */
+    /** Simpan giliran ke riwayat lalu kembalikan balasan (diberi penanda AI). */
     private function finish(int|string $chatId, string $userText, string $reply): string
     {
         $history = $this->loadHistory($chatId);
         $history[] = ['role' => 'user', 'content' => mb_substr($userText, 0, 1500)];
         $history[] = ['role' => 'assistant', 'content' => mb_substr($reply, 0, 1500)];
 
-        // Simpan hanya beberapa giliran terakhir.
+        // Simpan hanya beberapa giliran terakhir (tanpa ikon, agar konteks bersih).
         $history = array_slice($history, -self::MAX_HISTORY);
 
         Cache::put('tg_history:' . $chatId, $history, now()->addMinutes(self::HISTORY_TTL_MINUTES));
+
+        // Penanda AI penjawab: biru = Gemini (gratis), oranye = Claude (cadangan).
+        // Hanya ditampilkan bila ada panggilan AI di giliran ini.
+        $provider = $this->ai->lastProvider();
+        if ($provider !== null) {
+            $reply = ($provider === 'anthropic' ? '🟠' : '🔵') . ' ' . $reply;
+        }
 
         return $reply;
     }

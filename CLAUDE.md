@@ -66,6 +66,10 @@ smoke test produksi. Detail di DOKUMENTASI.md.
 - UJI: MySQL lokal mati -> diuji via SQLite sementara (feed 5 sumber, filter, todo, CRUD, cek kepemilikan).
   Di PRODUKSI (login curl): /calendar 200, feed Agu-Sep = 7 event (2 proyek, 4 domain, 1 maintenance),
   5 catatan lama utuh di bulan aslinya, buat+baca+hapus agenda OK lalu dibersihkan. Uji visual browser: PENDING user.
+- TAMPILAN `1e4829e` (permintaan user, sudah deploy): tinggi kalender dihitung agar mengisi 1 layar
+  (`innerHeight - offsetTop - 28`, min 560px; hitung ulang saat `load` + `resize`; di bawah 992px tetap auto),
+  `dayMaxEvents: true`, tipografi diperbesar, panel samping sticky. Menu Kalender di sidebar dipindah ke
+  ATAS Sierra Berak.
 
 ### 2026-08-13 (bangun + deploy bot Telegram tanya-data, Text-to-SQL read-only - FASE 1)
 Rancangan bot Telegram 2026-08-12 DIEKSEKUSI. Bot read-only sudah jadi + deploy + teruji. Commit

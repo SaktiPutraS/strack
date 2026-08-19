@@ -63,6 +63,19 @@ buka; sumber data tambahan = deadline proyek, domain, maintenance, hutang piutan
   todo terlewat terdeteksi; store/move/toggle/destroy OK; hapus milik user lain ditolak "Data tidak ditemukan".
 - View dirender langsung (69 KB HTML) - semua penanda penting ada.
 
+### Penyesuaian tampilan (sama hari, `1e4829e`)
+Permintaan user setelah melihat hasil pertama: kotak tanggal terlalu kecil untuk halaman khusus kalender.
+- TINGGI: `height: 'auto'` DIGANTI hasil hitung `window.innerHeight - offsetTop kalender - 28`, minimal 560px,
+  jadi grid bulanan mengisi satu layar penuh. Dihitung ulang di event `load` (posisi bergeser setelah font/CSS
+  CDN selesai dimuat, kalau tidak tingginya meleset) dan saat `resize` (debounce 150ms). Di bawah 992px
+  tetap `auto` karena mode Agenda lebih enak digulir.
+- `dayMaxEvents: 3` -> `true` (menyesuaikan tinggi sel sendiri). Padding card-body dikurangi ke p-2/p-md-3,
+  header row mb-4 -> mb-3.
+- TIPOGRAFI dinaikkan agar sebanding: nomor tanggal .82->.95rem, lingkaran hari ini 26->32px, nama hari
+  .78->.88rem, judul bulan 1.15->1.35rem, label acara .74->.82rem, slot jam timeGrid 2.4em.
+- Panel samping `.calendar-side` jadi sticky (top 1rem) di lg+, `.todo-list` max-height clamp(180px,34vh,460px).
+- SIDEBAR: menu Kalender dipindah dari bawah Proyek ke ATAS Sierra Berak (di bawah Domain & Hosting).
+
 ### Urutan penerapan (PENTING)
 1. Terapkan `database/sql/2026_08_19_calendar_events.sql` di hosting DULU (buat tabel + pindah data + catat
    migrasi batch 8). INSERT ... SELECT jalankan SEKALI saja, kalau diulang data jadi dobel.

@@ -50,8 +50,8 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 ## Riwayat Sesi
 
 ### 2026-08-19 (menu Kalender: agenda + todo, gaya Google Calendar)
-Menu baru "Kalender" (`/calendar`) halaman penuh. BELUM di-commit/deploy saat catatan ini ditulis. Detail di
-DOKUMENTASI.md.
+Menu baru "Kalender" (`/calendar`) halaman penuh. SUDAH commit `63bcb9d` + delta SQL diterapkan + deploy +
+smoke test produksi. Detail di DOKUMENTASI.md.
 - TABEL BARU `calendar_events` (migrasi `2026_08_19_000001`, delta `database/sql/2026_08_19_calendar_events.sql`,
   batch 8): user_id/title/description/type(EVENT|TODO)/start_date/end_date/start_time/end_time/all_day/color/
   is_done/completed_at. `calendar_notes` LAMA tidak di-drop, isinya dipindah lewat INSERT..SELECT (jalankan
@@ -63,8 +63,9 @@ DOKUMENTASI.md.
 - DASHBOARD: kalender lama TETAP, sumber data pindah ke CalendarEvent, 3 URL fetch -> `/calendar/events*`,
   + tombol "Buka Kalender" & "Buka di Kalender" (deep link `?date=YYYY-MM-DD`).
 - URUTAN PENERAPAN WAJIB: delta SQL di hosting DULU, baru deploy kode (kalau dibalik, dashboard error).
-- UJI: MySQL lokal mati -> diuji via SQLite sementara (feed 5 sumber, filter, todo, CRUD, cek kepemilikan)
-  + render view + view:cache + route:list. Uji visual browser: PENDING user.
+- UJI: MySQL lokal mati -> diuji via SQLite sementara (feed 5 sumber, filter, todo, CRUD, cek kepemilikan).
+  Di PRODUKSI (login curl): /calendar 200, feed Agu-Sep = 7 event (2 proyek, 4 domain, 1 maintenance),
+  5 catatan lama utuh di bulan aslinya, buat+baca+hapus agenda OK lalu dibersihkan. Uji visual browser: PENDING user.
 
 ### 2026-08-13 (bangun + deploy bot Telegram tanya-data, Text-to-SQL read-only - FASE 1)
 Rancangan bot Telegram 2026-08-12 DIEKSEKUSI. Bot read-only sudah jadi + deploy + teruji. Commit

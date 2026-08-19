@@ -50,7 +50,13 @@ buka; sumber data tambahan = deadline proyek, domain, maintenance, hutang piutan
   -> FullCalendar langsung membuka tanggal itu).
 
 ### Verifikasi
-- Lint PHP bersih; `view:cache` sukses; `route:list --path=calendar` = 9 route.
+- Commit `63bcb9d` (+ `563c585` beres-beres). Delta SQL diterapkan ke hosting SEBELUM push, lalu deploy.
+  Verifikasi hosting: tabel `calendar_events` terbentuk, 5 catatan lama pindah utuh, migrasi tercatat batch 8.
+- Smoke test PRODUKSI (login lewat curl): `/calendar` 200 (69 KB), `/calendar/feed` Agu-Sep 2026 = 7 event
+  (2 deadline proyek, 4 domain, 1 maintenance), `/calendar/todos` + `/calendar/events/month/...` 200,
+  catatan lama muncul di bulan aslinya (Okt 2025 & Jun 2026) lengkap dengan deskripsinya, dashboard 200 dan
+  tombol "Buka Kalender" ada. Uji tulis: buat agenda berjam -> muncul di feed -> dihapus lagi (bersih).
+- Lint PHP bersih; `view:cache` sukses; `route:list --path=calendar` = 9 route (lokal & hosting).
 - MySQL lokal MATI, jadi diuji lewat SQLite sementara (skrip scratchpad, skema minimal + data contoh):
   feed 10 event dari 5 sumber BENAR; proyek CANCELLED & hutang PAID dikecualikan; maintenance MONTH muncul
   2x (Agu & Sep), ODOMETER dilewati; multi-hari `end` +1 hari; filter `sources=own,projects` -> 5 event;

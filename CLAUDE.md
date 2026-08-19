@@ -50,7 +50,8 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 ## Riwayat Sesi
 
 ### 2026-08-19 (Kalender: agenda & todo BERULANG / terjadwal)
-Lanjutan menu Kalender. Agenda + todo bisa dijadwalkan berulang. BELUM commit/deploy. Detail di DOKUMENTASI.md.
+Lanjutan menu Kalender. Agenda + todo bisa dijadwalkan berulang. SUDAH commit `f75efa6` + delta SQL
+diterapkan + deploy + smoke test produksi. Detail di DOKUMENTASI.md.
 - KOLOM BARU di `calendar_events` (migrasi `2026_08_19_000002`, delta `database/sql/2026_08_19_calendar_recurrence.sql`,
   batch 9): repeat_type (NULL=sekali jalan; DAILY/WEEKDAY/WEEKLY/MONTHLY/YEARLY) + repeat_interval +
   repeat_days (CSV 0-6) + repeat_day_of_month (1-31 atau -1=akhir bulan) + repeat_until. Data lama tak berubah.
@@ -67,6 +68,14 @@ Lanjutan menu Kalender. Agenda + todo bisa dijadwalkan berulang. BELUM commit/de
 - UJI: MySQL lokal mati lagi -> SQLite sementara, 81 uji LULUS semua. Lint bersih, view:cache OK, 9 route tetap,
   render halaman 95 KB. Uji visual browser: PENDING user.
 - URUTAN WAJIB: delta SQL di hosting DULU, baru deploy kode (kalau dibalik, kalender + dashboard error).
+  SUDAH dijalankan: batch 8 -> 9, 6 agenda lama utuh & tetap sekali jalan.
+- CARA APPLY DELTA VIA SSH yang enak: `scp file.sql saktify:~/` lalu jalankan skrip sh kecil (baca DB_* dari
+  .env, `export MYSQL_PWD`, `mysql -u"$US" "$DB" < file.sql`). Hindari `mysql -e "..."` (kutip-ganda dihapus transport).
+- SMOKE TEST PRODUKSI OK: /calendar 200 (95 KB), /calendar/todos 200, /dashboard-admin 200. Uji tulis:
+  "hari kerja" 1-11 Sep = 9 kemunculan (Sabtu/Minggu dilewati, berhenti di repeat_until); "Sel+Kam tiap 2
+  minggu" = 1,3,15,17,29 Sep; centang 1 Sep -> panel pindah ke 2 Sep; centang tanpa tanggal 422; move
+  rangkaian berulang 422. Data uji sudah dihapus.
+- Uji visual browser: PENDING user.
 
 ### 2026-08-19 (menu Kalender: agenda + todo, gaya Google Calendar)
 Menu baru "Kalender" (`/calendar`) halaman penuh. SUDAH commit `63bcb9d` + delta SQL diterapkan + deploy +

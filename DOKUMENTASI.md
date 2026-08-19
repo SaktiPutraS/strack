@@ -8,7 +8,8 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 Lanjutan menu Kalender. Agenda dan todo sekarang bisa dijadwalkan berulang: setiap hari, setiap hari kerja
 (Sen-Jum), mingguan pilih hari, bulanan pada tanggal tertentu, tahunan, dan kustom tiap N hari/minggu/bulan/
-tahun, dengan batas akhir opsional. BELUM di-commit / deploy saat catatan ini ditulis.
+tahun, dengan batas akhir opsional. SUDAH commit `f75efa6` + delta SQL diterapkan + deploy + smoke test
+produksi.
 
 KEPUTUSAN user (ditanyakan di awal): (1) opsi pola LENGKAP, bukan ringkas; (2) berlaku untuk Todo DAN Agenda;
 (3) centang selesai todo berulang PER TANGGAL, jadi todo harian yang beres hari ini muncul lagi besok.
@@ -96,13 +97,33 @@ berulang, diurutkan `completed_at` menurun, ambil 20.
 - Render halaman kalender: 95 KB HTML (sebelumnya 69 KB), semua penanda form pengulangan ada.
 - Uji visual di browser: PENDING user.
 
-### Urutan penerapan (PENTING)
+### Urutan penerapan (PENTING) - SUDAH DIJALANKAN
 1. Terapkan `database/sql/2026_08_19_calendar_recurrence.sql` di hosting DULU (ALTER TABLE + tabel baru +
    catat migrasi batch 9). Jalankan SEKALI saja.
 2. BARU deploy kode. Kalau dibalik, halaman kalender & dashboard error karena kolom `repeat_type` belum ada.
 
+Cara menerapkan delta lewat SSH (pola yang berhasil, menghindari masalah kutip-ganda yang dihapus transport):
+`scp file.sql saktify:~/` lalu jalankan skrip sh kecil yang membaca DB_DATABASE/DB_USERNAME/DB_PASSWORD dari
+`.env`, `export MYSQL_PWD`, dan `mysql -u"$US" "$DB" < file.sql`. Jauh lebih tenang daripada `mysql -e "..."`.
+
+### Hasil di produksi (2026-08-19)
+- Sebelum delta: `calendar_events` ada 6 baris, kolom repeat BELUM ada, batch terakhir 8. Sesuai dugaan.
+- Sesudah delta: 5 kolom repeat_* terbentuk (repeat_type varchar(20) NULL, repeat_interval smallint unsigned
+  default 1, repeat_days varchar(20), repeat_day_of_month smallint, repeat_until date), tabel
+  `calendar_event_completions` terbentuk, migrasi tercatat batch 9, 6 agenda lama UTUH dan semuanya
+  `repeat_type` NULL (perilaku tidak berubah).
+- Deploy: push `cd93cd5..f75efa6`, hosting `git pull --ff-only` + `optimize:clear` + `view:cache` sukses.
+- SMOKE TEST (login lewat curl): `/calendar` 200 (95 KB), `/calendar/todos` 200, `/dashboard-admin` 200,
+  data lama terbaca `isRecurring: false`.
+- UJI TULIS di produksi lalu dibersihkan:
+  (a) Todo "setiap hari kerja" 1-11 Sep -> feed mengembalikan TEPAT 9 kemunculan (1-4, 7-11 Sep), Sabtu 5 dan
+      Minggu 6 dilewati, berhenti di 11 Sep sesuai `repeat_until`.
+  (b) Agenda "mingguan Selasa+Kamis tiap 2 minggu" -> 1, 3, 15, 17, 29 Sep (minggu 6-12 dan 20-26 dilompati).
+  (c) Panel todo menunjuk 1 Sep; setelah dicentang, pindah ke 2 Sep dan 1 Sep masuk daftar selesai.
+  (d) Centang tanpa tanggal -> 422. Geser rangkaian berulang -> 422 dengan pesan yang benar.
+  (e) Kedua data uji dihapus; feed September kosong lagi, DB kembali 6 agenda + 0 completions.
+
 ### Pending / lanjutan
-- Commit + deploy (belum dikerjakan, menunggu user).
 - Uji visual: buat todo "setiap hari kerja", centang, pastikan besok muncul lagi; coba mingguan multi-hari,
   bulanan tanggal 25, kustom tiap 2 minggu; cek tampilan mobile.
 - Opsi lanjutan: pengecualian per tanggal (lewati/geser satu kemunculan tanpa mengubah rangkaian),

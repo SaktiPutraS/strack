@@ -12,7 +12,7 @@ use App\Http\Controllers\BankTransferController;
 use App\Http\Controllers\CashWithdrawalController;
 use App\Http\Controllers\GoldTransactionController;
 use App\Http\Controllers\FinancialReportController;
-use App\Http\Controllers\CalendarNoteController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DebtRecordController;
 use App\Http\Controllers\DebtPaymentController;
@@ -106,10 +106,18 @@ Route::middleware('simpleauth')->group(function () {
         Route::delete('/{id}', [App\Http\Controllers\SierraBerakController::class, 'destroy'])->name('destroy');
     });
 
-    Route::get('/calendar-notes/month/{year}/{month}', [CalendarNoteController::class, 'getMonthNotes'])->name('calendar-notes.month');
-    Route::post('/calendar-notes', [CalendarNoteController::class, 'store'])->name('calendar-notes.store');
-    Route::put('/calendar-notes/{id}', [CalendarNoteController::class, 'update'])->name('calendar-notes.update');
-    Route::delete('/calendar-notes/{id}', [CalendarNoteController::class, 'destroy'])->name('calendar-notes.destroy');
+    // ── Kalender (agenda + todo) ──────────────────────────────────────────────
+    Route::prefix('calendar')->name('calendar.')->group(function () {
+        Route::get('/', [CalendarController::class, 'index'])->name('index');
+        Route::get('/feed', [CalendarController::class, 'feed'])->name('feed');
+        Route::get('/todos', [CalendarController::class, 'todos'])->name('todos');
+        Route::get('/events/month/{year}/{month}', [CalendarController::class, 'monthEvents'])->name('events.month');
+        Route::post('/events', [CalendarController::class, 'store'])->name('events.store');
+        Route::put('/events/{id}', [CalendarController::class, 'update'])->name('events.update');
+        Route::delete('/events/{id}', [CalendarController::class, 'destroy'])->name('events.destroy');
+        Route::post('/events/{id}/toggle-done', [CalendarController::class, 'toggleDone'])->name('events.toggle-done');
+        Route::post('/events/{id}/move', [CalendarController::class, 'move'])->name('events.move');
+    });
 
     Route::get('/projects/deadlines/month/{year}/{month}', [ProjectController::class, 'getMonthDeadlines'])->name('projects.deadlines.month');
 

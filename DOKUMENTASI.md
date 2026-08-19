@@ -4,7 +4,324 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
-## Sesi 2026-08-12 (hapus total integrasi Midtrans)
+## Sesi 2026-08-19 (Menu Kalender: agenda + todo, gaya Google Calendar)
+
+Menu baru "Kalender" (`/calendar`) sebagai halaman penuh: agenda berjam, todo, dan seluruh tanggal penting
+strack dalam satu tampilan. Kalender dashboard TETAP ada, kini bersumber data yang sama + ditautkan ke menu ini.
+KEPUTUSAN user: tabel baru `calendar_events`; tampilan pakai FullCalendar 6 (CDN); dashboard tetap ada + tombol
+buka; sumber data tambahan = deadline proyek, domain, maintenance, hutang piutang (keempatnya dipilih).
+
+### Data
+- Tabel BARU `calendar_events` (migrasi `2026_08_19_000001`, delta `database/sql/2026_08_19_calendar_events.sql`):
+  user_id, title, description, type(ENUM EVENT/TODO), start_date, end_date, start_time, end_time, all_day,
+  color, is_done, completed_at, timestamps. Index di user_id & start_date.
+- Tabel LAMA `calendar_notes` (id/user_id/date/title/content, 5 baris di produksi) TIDAK di-drop, isinya
+  DIPINDAH lewat `INSERT ... SELECT` di migrasi + delta SQL. Batasan lama "1 catatan per hari" DIBUANG.
+- Model `CalendarNote` + `CalendarNoteController` DIHAPUS, digantikan `CalendarEvent` + `CalendarController`.
+
+### File baru
+- `app/Models/CalendarEvent.php`: scope forUser/inRange/todo, accessor is_todo/display_color/effective_end_date/
+  time_label, `toCalendarPayload()` (bentuk event FullCalendar), `toDashboardArray()`, `getEventsForMonth()`.
+  PENTING: untuk acara seharian FullCalendar memakai `end` EKSKLUSIF, jadi tanggal akhir +1 hari di payload.
+- `app/Http/Controllers/CalendarController.php`: index, feed (semua sumber, param start/end/sources), todos
+  (panel samping), monthEvents (dipakai dashboard), store/update/destroy/toggleDone/move. Kepemilikan dicek
+  lewat `forUser(session('role'))` di tiap operasi. Helper `normalizeTime()` menyamakan jam ke H:i:s.
+- `resources/views/calendar/index.blade.php`: FullCalendar 6 (CDN `index.global.min.js` + `locales-all`),
+  locale id, view Bulan/Minggu/Hari/Agenda (mobile: Bulan + Agenda, default listWeek). Drag & drop geser
+  jadwal, resize durasi, klik-seret area kosong = buat agenda. Panel samping: filter sumber data (disimpan di
+  localStorage) + daftar todo (centang selesai, badge Terlewat/Hari ini, tambah cepat, daftar selesai).
+  Modal form (Agenda/Todo, seharian atau berjam, warna) + modal detail untuk data modul lain.
+  CATATAN: FullCalendar 6 build global MENYUNTIKKAN CSS-nya sendiri, tidak ada file CSS terpisah di CDN.
+
+### Sumber data yang ikut tampil (read-only, klik -> modal detail + tombol buka)
+- Deadline proyek: status WAITING/PROGRESS. Warna merah bila terlewat, kuning <=7 hari, biru selebihnya.
+- Domain: `expires_at`. Merah bila lewat, kuning <=30 hari (`Domain::EXPIRING_DAYS`).
+- Maintenance: tipe DATE (tanggal pasti), MONTH (berulang, ditaruh tanggal 1 tiap bulan yang cocok),
+  YEAR (1 Januari). Tipe TEXT & ODOMETER DILEWATI karena tak punya tanggal.
+- Hutang piutang: `due_date` dari `debt_records` yang status != PAID.
+
+### Perubahan file lain
+- `routes/web.php`: 4 route `calendar-notes.*` DIGANTI grup `calendar.*` (9 route: index, feed, todos,
+  events.month, events.store/update/destroy/toggle-done/move).
+- `resources/views/layouts/app.blade.php`: menu sidebar "Kalender" (bi-calendar-week) di bawah Proyek.
+- `app/Http/Controllers/DashboardController.php`: `$calendarNotes` kini dari `CalendarEvent::getEventsForMonth`.
+- `resources/views/dashboard/index.blade.php`: 3 URL fetch dialihkan ke `/calendar/events*`, tombol
+  "Buka Kalender" di header kartu, tombol "Buka di Kalender" di modal harian (deep link `?date=YYYY-MM-DD`
+  -> FullCalendar langsung membuka tanggal itu).
+
+### Verifikasi
+- Lint PHP bersih; `view:cache` sukses; `route:list --path=calendar` = 9 route.
+- MySQL lokal MATI, jadi diuji lewat SQLite sementara (skrip scratchpad, skema minimal + data contoh):
+  feed 10 event dari 5 sumber BENAR; proyek CANCELLED & hutang PAID dikecualikan; maintenance MONTH muncul
+  2x (Agu & Sep), ODOMETER dilewati; multi-hari `end` +1 hari; filter `sources=own,projects` -> 5 event;
+  todo terlewat terdeteksi; store/move/toggle/destroy OK; hapus milik user lain ditolak "Data tidak ditemukan".
+- View dirender langsung (69 KB HTML) - semua penanda penting ada.
+
+### Urutan penerapan (PENTING)
+1. Terapkan `database/sql/2026_08_19_calendar_events.sql` di hosting DULU (buat tabel + pindah data + catat
+   migrasi batch 8). INSERT ... SELECT jalankan SEKALI saja, kalau diulang data jadi dobel.
+2. BARU deploy kode. Kalau dibalik, dashboard error karena `calendar_events` belum ada.
+
+### Pending / lanjutan
+- User uji visual di browser: buat agenda berjam, todo, drag & drop, filter sumber, tampilan mobile.
+- Opsi lanjutan bila diinginkan: acara berulang (mingguan/bulanan), pengingat Telegram untuk agenda/todo
+  (infrastruktur sudah ada: TelegramService + pola command `domains:remind`), undangan/berbagi ke klien.
+
+---
+
+## Sesi 2026-08-13 (Modul Domain & Hosting + reminder Telegram)
+
+Menu baru "Domain & Hosting": pendataan domain + pengingat perpanjangan. Commit `9134fe9`, deploy + tabel
+dibuat + teruji. KEPUTUSAN user: tautkan ke Klien DAN Project (opsional); reminder dikirim ke Telegram.
+- Tabel `domains` (delta `database/sql/2026_08_13_domains.sql` + migrasi `2026_08_13_000001`, dicatat batch 7):
+  name(unique), client_id/project_id (FK nullOnDelete), provider, registered_at, expires_at, renewal_cost,
+  is_hosted, notes. Model `Domain`: relasi client/project, accessor status (EXPIRED/EXPIRING_SOON<=30h/ACTIVE/
+  UNKNOWN) + days_until_expiry + status_color/label, scope search/expiringWithin.
+- `DomainController`: resource (kecuali show) + `sync`. Index: ringkasan (total/di hosting/akan habis/kedaluwarsa)
+  + filter status+search + tabel/card, badge sisa hari. Form (create+edit share `domains/form.blade.php`).
+- SYNC dari hosting: `sync()` baca folder `~/domains` (=`dirname(base_path(),2)` = /home/u137841455/domains)
+  via `scandir` (BUKAN exec - exec DINONAKTIFKAN di hosting; open_basedir KOSONG jadi PHP boleh baca).
+  Impor nama domain yang belum ada (is_hosted=true). Config `services.hosting.domains_path` (env override).
+  TERUJI: impor 50 domain.
+- REMINDER: command `domains:remind {--days=30}` cari domain expiringWithin -> kirim daftar ke
+  `TELEGRAM_ALLOWED_CHAT_IDS` via TelegramService. Dijadwalkan `Schedule::command('domains:remind')->dailyAt('08:00')`
+  di routes/console.php. TERUJI: set 1 domain +10 hari -> "Pengingat terkirim (1 domain) ke 1 chat" (pesan nyata
+  masuk Telegram), lalu di-revert.
+- FAKTA HOSTING (penting): whois TIDAK ADA + exec/shell_exec/system/passthru/popen DINONAKTIFKAN -> tgl
+  kedaluwarsa TAK bisa auto (manual). open_basedir KOSONG -> PHP boleh baca ~/domains. crontab CLI TIDAK ADA
+  (cron lewat hPanel). php di /usr/bin/php.
+- PENDING: user set CRON di hPanel (Advanced -> Cron Jobs) untuk reminder harian:
+  `/usr/bin/php ~/domains/strack.my.id/public_html/artisan domains:remind` (jadwalkan sekali sehari, mis. 08:00).
+
+### Lanjutan Domain (sama hari)
+- FORM DOMAIN `533c464`: select Klien jadi SEARCHABLE pakai Select2 (CDN; jQuery 3.7.1 sudah dimuat layout),
+  opsi tampilkan "Nama - nomor telepon". Select Project DIHAPUS dari form (kolom `project_id` di DB tetap ada),
+  diganti tombol "Show Project" yang mengarah ke `clients.show` (halaman klien berisi daftar project-nya) di
+  tab baru, aktif hanya bila klien dipilih (href di-update via JS). CSS Select2 disisipkan lewat @push('scripts')
+  (layout hanya punya @stack('scripts'), tak ada stack styles). Controller create/edit tak lagi query $projects.
+- DATA EXPIRY: user kasih daftar 66 domain + tanggal berakhir dari Hostinger. Di-update via tinker: cocokkan
+  by name, UPDATE expires_at utk yang ADA di strack. Hasil: 50 diperbarui (semua domain strack kini punya
+  tanggal), 16 DIABAIKAN (ada di daftar tapi tak ada di strack -> per instruksi user = domain tak diperpanjang).
+  "sanggartari juju.my.id" (ada spasi) dinormalkan ke `sanggartarijuju.my.id`. Terdekat kedaluwarsa:
+  langensari06.site 01 Sep 2026, sdnkebonpala12pagi 02 Sep, politikus.id 03 Sep, saktify.my.id 12 Sep.
+
+### Kolom Nilai Proyek di /projects (sama hari, `404e172`)
+Tambah info nilai proyek (`total_value`) di daftar `/projects`: kolom "Nilai" baru (sortable, antara Deadline &
+Status) di tabel desktop + baris nilai di card mobile. `ProjectController::index` & `search`: tambah case sort
+`total_value`. File: `ProjectController`, `projects/index.blade.php`.
+
+---
+
+## Sesi 2026-08-13 (Print Invoice: opsi Quotation/DP/Progress/Pelunasan)
+
+Penyesuaian strack (bukan bot). Gabung tombol "Print Quotation" + "Print Invoice" jadi SATU dropdown
+"Print Invoice" berisi: Quotation, Down Payment, Progress, Pelunasan. Commit `8cb02cd`, deploy + smoke test.
+- KEPUTUSAN user: jumlah tagihan DIISI MANUAL (default nilai proyek, editable di preview); tampilan DROPDOWN.
+- `show.blade.php`: 2 tombol -> 1 dropdown Bootstrap. Quotation -> alur lama (`preview-quotation`). DP/Progress/
+  Pelunasan -> `preview-invoice?type=dp|progress|pelunasan`. PENTING: query param via
+  `route('projects.preview-invoice', ['project'=>$project,'type'=>'dp'])` (arg ke-3 route() itu $absolute, bukan query).
+- `ProjectInvoiceController`: `previewInvoice(Request)` + `printInvoice` terima `type` + `billed_amount` (manual,
+  helper `parseAmount` buang titik, fallback total_value). itemData total = billed. Kirim `$stageLabel`
+  (dp=Down Payment/progress=Progress/pelunasan=Pelunasan) + `$paymentInfo` (total_value, paid_amount, billed,
+  remaining_after=max(0,total-paid-billed)). Const `STAGE_LABELS`.
+- `invoice-preview.blade.php`: judul + label tahap, hidden `type`, field "Jumlah Ditagih" (name=billed_amount,
+  default number_format(total), editable), unit_price & total_display dihitung JS dari billed/qty (fungsi
+  recalc/parseBilled, format blur), validasi billed>0.
+- Template cetak `invoice-general` (teal) & `invoice` BTOOLS (ocean blue): label tahap di header (STRTOUPPER),
+  + box "Rincian Pembayaran Proyek" (Nilai Proyek, Sudah Dibayar, Ditagih invoice ini, Sisa) - hanya bila
+  $stageLabel ada. total pakai billed. Quotation views TIDAK diubah.
+- LANJUTAN (`2a6e971`): tambah opsi **Invoice Penuh** (type=full, tagih total, tanpa label tahap) di dropdown.
+  Rincian Pembayaran Proyek kini tampil di SEMUA invoice (`@isset($paymentInfo)`, bukan hanya bertahap) dan
+  memuat **DP** (`dp_amount`) + **Pelunasan** (`total-dp`) + Sudah Dibayar + Sisa; baris "Ditagih invoice ini"
+  hanya bila ada $stageLabel. Dropdown final: Quotation, Invoice Penuh, Down Payment, Progress, Pelunasan.
+- Teruji: view:cache OK; render via tinker OK (full -> DP/Pelunasan muncul tanpa baris "Ditagih"; DP -> ada
+  baris "Ditagih (Down Payment)"); route hasilkan `?type=dp`.
+- PENDING: user uji visual di browser (buka proyek -> Print Invoice -> tiap opsi -> cetak).
+
+---
+
+## Sesi 2026-08-13 (bangun + deploy bot Telegram tanya-data, Text-to-SQL read-only - FASE 1)
+
+### Ringkasan
+Rancangan bot Telegram dari sesi 2026-08-12 DIEKSEKUSI. Bot read-only (tanya data strack lewat
+Telegram, dijawab AI Bahasa Indonesia) sudah dibangun, di-commit (`b379119`), deploy ke hosting,
+webhook terdaftar, dan TERUJI end-to-end. Bot: **t.me/Saktify_strack_bot**. User sudah topup credit
+Anthropic $5 + kasih API key. Fitur TULIS (INSERT/UPDATE) ditunda jadi FASE 2 (lihat bawah).
+
+### Arsitektur (Fase 1, read-only)
+Alur: Telegram -> `POST /telegram/webhook` -> `TelegramWebhookController` -> `TextToSqlService`:
+(1) AI (Haiku) ubah pertanyaan ID jadi 1 query SELECT (skema DB dikirim sebagai konteks),
+(2) `SqlGuardrail` validasi, (3) jalankan di koneksi `mysql_ro`, (4) AI rangkai jawaban natural ID.
+Implementasi Anthropic pakai `Http` facade (tanpa SDK), prompt caching pada system prompt (skema).
+
+### File dibuat
+- `app/Services/Ai/AnthropicClient.php` - panggil `api.anthropic.com/v1/messages`, cache_control ephemeral.
+- `app/Services/Ai/SchemaInspector.php` - baca `information_schema.COLUMNS` -> teks skema, cache 1 jam,
+  buang tabel sistem Laravel. Pakai koneksi `mysql_ro`.
+- `app/Services/Ai/SqlGuardrail.php` - hanya SELECT/WITH tunggal; blokir kata kunci tulis
+  (INSERT/UPDATE/DELETE/DROP/ALTER/dll), tolak `;` ganda + komentar (`--`/`#`/`/*`), paksa LIMIT 200.
+- `app/Services/Ai/TextToSqlService.php` - orkestrasi 2 panggilan AI (buat SQL, lalu rangkai jawaban),
+  timeout query `SET SESSION max_execution_time=8000`. Balas `TIDAK_BISA` bila di luar skema.
+- `app/Services/Telegram/TelegramService.php` - `sendMessage` (pecah per 4000 char) + `sendChatAction`.
+- `app/Http/Controllers/TelegramWebhookController.php` - verifikasi secret header, whitelist chat_id,
+  perintah `/start`/`/help`, selalu balas 200 (Telegram tak retry).
+- `app/Console/Commands/TelegramSetWebhook.php` - `php artisan telegram:set-webhook <url>|--delete|--info`.
+
+### File diedit
+- `config/services.php`: blok `anthropic` (api_key, model Haiku default, fallback Sonnet, base_url,
+  version) + `telegram` (bot_token, webhook_secret, allowed_chat_ids parse CSV).
+- `config/database.php`: koneksi `mysql_ro`. PENTING: password fallback = `env('DB_RO_PASSWORD',
+  env('DB_PASSWORD',''))` supaya kalau DB_RO kosong benar-benar jatuh ke DB utama.
+- `bootstrap/app.php`: `validateCsrfTokens(except: ['telegram/webhook'])`.
+- `.env.example`: placeholder ANTHROPIC_*/TELEGRAM_*/DB_RO_*.
+- `routes/web.php`: `POST /telegram/webhook` (di luar grup simpleauth).
+
+### Keamanan (berlapis)
+1. Secret webhook (`X-Telegram-Bot-Api-Secret-Token`) -> tanpa/ salah = 403.
+2. Whitelist chat_id (hanya `8588404484` = akun user) -> chat lain ditolak, tak ada query.
+3. Guardrail SQL SELECT-only (aplikasi).
+4. Koneksi read-only + LIMIT + timeout.
+Semua 4 sudah DIUJI di produksi (lihat verifikasi).
+
+### KENDALA HOSTING PENTING: user MySQL read-only TIDAK BISA dibuat
+- Rencana awal: buat user MySQL read-only (GRANT SELECT saja) via SSH. GAGAL: user DB hosting
+  (`u137841455_7BIdx`) cuma punya `USAGE` global + `ALL PRIVILEGES` di DB sendiri, TIDAK punya
+  `CREATE USER`. Di shared hosting Hostinger pembuatan user dikunci ke hPanel, dan hPanel memberi
+  ALL PRIVILEGES saat menautkan user (tak ada opsi SELECT-only granular).
+- KEPUTUSAN user: koneksi `mysql_ro` FALLBACK ke kredensial DB utama; keamanan tulis diandalkan pada
+  guardrail aplikasi (SELECT-only) + whitelist + secret. Praktis: satu-satunya query yang lolos ke DB
+  hanyalah SELECT dari user sendiri. DB_RO_USERNAME/DB_RO_PASSWORD SENGAJA tidak ditulis di .env hosting
+  (biar env() null -> fallback; kalau ditulis kosong, Laravel anggap string kosong -> koneksi gagal).
+
+### Kredensial (di .env HOSTING saja, TIDAK di repo)
+- `ANTHROPIC_API_KEY` (dari console user), `ANTHROPIC_MODEL=claude-haiku-4-5`, fallback Sonnet.
+- `TELEGRAM_BOT_TOKEN` (BotFather, bot @Saktify_strack_bot), `TELEGRAM_WEBHOOK_SECRET` (hex acak),
+  `TELEGRAM_ALLOWED_CHAT_IDS=8588404484`.
+- Backup .env hosting dibuat sebelum diedit: `.env.bak.telegram.<timestamp>`.
+- CATATAN KEAMANAN: API key + bot token sempat tampil di chat sesi ini -> SEBAIKNYA user regenerate
+  keduanya nanti (console + BotFather) lalu update .env hosting.
+
+### Deploy & verifikasi
+- Commit `b379119` (12 file, partial commit - tak menyertakan perubahan lain yang sudah ter-stage).
+  Deploy via `scripts/deploy.ps1` (push + pull + optimize:clear + view:cache). HEAD hosting = b379119.
+- Webhook didaftarkan: `php artisan telegram:set-webhook https://strack.my.id/telegram/webhook` -> ok.
+- UJI end-to-end (tinker di hosting): "ada berapa total proyek?" -> "Ada 215 total proyek." BENAR.
+- UJI kirim Telegram (simulasi webhook + secret + chat_id user): balas 200 `ok`, pesan nyata terkirim.
+- UJI keamanan: tanpa secret -> 403; chat_id asing -> ditolak (tak query). Guardrail: UPDATE/DELETE/
+  multi-statement DROP/komentar semua DITOLAK; SELECT lolos + auto LIMIT.
+
+### Catatan teknis
+- Nested heredoc `ssh saktify 'bash -s' <<'OUTER'` (+ heredoc dalam untuk `mysql`/`php artisan tinker
+  <<'PHP'`) JALAN via tool Bash (beda dgn transport PowerShell yg bermasalah). tinker REPL evaluasi
+  baris-demi-baris: hindari try/foreach multi-baris, pakai closure/statement satu baris.
+
+### FASE 2 (SELESAI, sama hari) - fitur TULIS (insert/update) via tool use + konfirmasi
+Commit `9c7811f`, deploy + teruji. KEPUTUSAN arsitektur (disepakati): tulis TIDAK via Text-to-SQL mentah
+(bahaya: UPDATE tanpa WHERE, lewati aturan bisnis). Pola = AKSI TERDEFINISI (tool use Anthropic): tiap
+pesan diklasifikasi AI -> BACA (tool `tanya_data` -> TextToSqlService) atau TULIS (panggil 1 aksi + ekstrak
+data). Aksi tulis lewat model/controller yang ada (validasi saldo/sisa + sinkronisasi tetap jalan) dan
+SELALU minta KONFIRMASI dulu (aksi tertunda disimpan di cache per chat_id, TTL 5 menit; dieksekusi setelah
+user balas "ya"; "tidak" batal; pesan lain = permintaan baru).
+- 6 AKSI (`app/Services/Ai/Actions/`): `CatatPengeluaranAction` (Expense, cek saldo Bank/Cash),
+  `CatatPendapatanAction` (Payment, resolusi proyek via `search()`, tolak > sisa tagihan),
+  `CatatBayarHutangAction` (DebtPayment, resolusi DebtRecord, tolak > sisa), `UpdateStatusProyekAction`
+  (Project.status enum), `CatatTransferBankAction` (BankTransfer utk semua pembayaran proyek yg belum
+  ditransfer + BankBalance::updateBalance), `CatatSierraBerakAction` (SierraBerak). Base `WriteAction`
+  (helper parseAmount/rp/parseDate) + trait `ResolvesProject` (cari 1 proyek, pesan bila ambigu/none) +
+  `ActionRegistry`. Orkestrasi: `BotOrchestrator`. `AnthropicClient` ditambah `raw()` + `extractToolUse()`
+  + `extractText()` untuk tool use (chat() lama tetap dipakai TextToSqlService). Controller webhook kini
+  panggil `BotOrchestrator::handle()` (bukan TextToSqlService langsung).
+- UJI di hosting (tinker, chat_id dummy): (baca) "ada berapa total proyek" -> 215 OK; (pengeluaran) "kopi
+  15rb dari cash" -> DITOLAK "Saldo Cash tidak cukup (Rp6.800)" (validasi jalan, tak menulis); (Sierra
+  Berak) preview -> "ya" -> tersimpan (count 230->231) -> row uji dihapus (cleanup ke 230); routing 4 aksi
+  lain benar (pendapatan resolve "Website Starvvo/PT Global Mitra Proteksindo", status Penawaran->Selesai,
+  hutang "Budi tidak ditemukan", transfer "tak ada yg belum ditransfer"). Tak ada data uji tertinggal.
+- CATATAN: aksi tulis pakai koneksi DB DEFAULT (mysql, read-write) via Eloquent; baca tetap `mysql_ro`.
+  Cache konfirmasi pakai CACHE_STORE=database (sudah ada). Untuk MENAMBAH aksi baru: buat kelas turunan
+  `WriteAction` + daftarkan di `ActionRegistry`.
+
+### FASE 3 (SELESAI, sama hari) - dukungan VOICE NOTE (transkripsi Groq Whisper)
+Commit `ff53050`, deploy + teruji. User tanya bisa VN atau tidak; dijelaskan Anthropic API tak menerima
+audio (hanya teks/gambar/PDF) -> butuh speech-to-text terpisah. User tanya opsi gratis -> pilih GROQ
+(tier gratis, Whisper large v3, endpoint kompatibel OpenAI). User kasih GROQ_API_KEY.
+- Alur: `message.voice`/`message.audio` -> `TelegramService::downloadFile()` (getFile + unduh biner dari
+  `api.telegram.org/file/bot<token>/<path>`) -> `TranscriptionService::transcribe()` (POST multipart ke
+  `api.groq.com/openai/v1/audio/transcriptions`, model `whisper-large-v3`, language=id, via Http::attach)
+  -> teks -> `BotOrchestrator::handle()` (pipeline sama: baca/tulis + konfirmasi). Balasan VN diberi prefix
+  transkripsi (emoji mikrofon + teks) agar user tahu yang didengar - penting utk verifikasi sebelum konfirmasi tulis.
+- File: `config/services.php` (blok `groq`: api_key, stt_model, base_url), `.env.example` (+GROQ_*),
+  `TranscriptionService`, `TelegramService::downloadFile`, `TelegramWebhookController` (cabang voice: transkrip
+  dulu setelah whitelist, sebelum /start & proses; gagal transkrip/senyap dibalas ramah).
+- KREDENSIAL di .env hosting saja: GROQ_API_KEY (+GROQ_STT_MODEL=whisper-large-v3). Backup `.env.bak.groq.*`.
+  Uji: key valid (models list, whisper-large-v3 & -turbo ada); endpoint transcriptions 200 (WAV senyap ->
+  Whisper halusinasi "Terima kasih", wajar) baik lokal maupun via TranscriptionService di hosting. Uji VN
+  ASLI berisi ucapan menunggu user (kirim VN ke bot). Biaya Groq: tier gratis (rate limit) - VN Rp0.
+- Catatan model tersedia di Groq: whisper-large-v3 (dipakai, akurat) & whisper-large-v3-turbo (lebih cepat).
+  Ganti lewat GROQ_STT_MODEL.
+
+### PERBAIKAN UX bot (sama hari, dari feedback VN pertama user)
+User uji VN asli: (1) "berapa total belum ditransfer" -> Rp220.000 (BENAR), lalu (2) "transfer senilai
+total tersebut dengan catatan MB..." -> bot MENOLAK/terus menanya proyek+nominal. Tiga akar + fix:
+- `catat_transfer_bank` dulu WAJIB proyek -> bot terus tanya. FIX `e60f9ff`: proyek OPSIONAL. Kosong =
+  transfer SEMUA pembayaran belum ditransfer (pola batch, `Payment::where is_transferred=false`), diisi =
+  khusus proyek. + instruksi AI jangan tanya field opsional (tanggal/referensi).
+- AI kira transfer butuh NOMINAL. FIX `c7a01bc`: tegaskan di deskripsi tool bahwa transfer SELALU
+  memindahkan seluruh pembayaran belum ditransfer, TIDAK butuh nominal, jangan tanya nominal.
+- Bot STATELESS -> "total tersebut" tak terpahami. FIX `805d808`: INGATAN PERCAKAPAN singkat -
+  `BotOrchestrator` simpan 6 giliran terakhir per chat di cache (`tg_history:{chatId}`, TTL 30 mnt),
+  diikutkan sebagai `messages` konteks ke klasifikasi AI (disimpan via `finish()` di semua cabang).
+  Rujukan "tadi/tersebut" kini nyambung antar pesan.
+- Teruji (tinker, preview tanpa konfirmasi): multi-turn "berapa total belum ditransfer" -> "Rp220.000",
+  lalu "transfer total tersebut ref MB..." -> preview "semua, 2 pembayaran, Rp220.000, ref MB..." BENAR.
+
+### FAILOVER 2 AI - Gemini (gratis) primer, Claude cadangan (`054dcca`)
+User ingin hemat biaya: pakai Gemini gratis dulu, kalau tak merespons baru Claude. KEPUTUSAN user:
+failover HANYA saat Gemini gagal/tak respons (error/timeout/rate-limit), BUKAN saat jawaban kurang akurat.
+- Arsitektur: lapisan provider di belakang `AiGateway`. `AiProvider` interface (name/isConfigured/generate)
+  + `AiResult` (text + tool ternormalisasi). `AnthropicProvider` (bungkus AnthropicClient) + `GeminiProvider`
+  (Google AI Studio, tier gratis). `AiGateway` coba provider sesuai urutan `config('services.ai.primary')`
+  (default gemini -> anthropic); provider GAGAL -> jatuh ke berikutnya; provider tanpa kredensial DILEWATI.
+- GeminiProvider: endpoint `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=`,
+  map messages (assistant->model, systemInstruction), terjemahkan tool Anthropic-style (`input_schema`) ->
+  `functionDeclarations` dgn `toGeminiSchema()` (UPPERCASE nilai "type": STRING/OBJECT/...), toolConfig AUTO.
+  Parse `candidates.0.content.parts` -> text + functionCall{name,args} jadi tool{name,input}.
+- BotOrchestrator (`classify`) & TextToSqlService (`text`) kini lewat AiGateway, bukan AnthropicClient
+  langsung. AnthropicClient tetap ada (dipakai AnthropicProvider). Model Gemini default `gemini-2.0-flash`.
+- Config `services.gemini` + `services.ai.primary`; .env: GEMINI_API_KEY, GEMINI_MODEL, AI_PRIMARY=gemini.
+  BACKWARD-COMPATIBLE: selama GEMINI_API_KEY kosong, Gemini dilewati -> Claude saja (perilaku lama).
+- AKTIF & TERUJI: user kasih GEMINI_API_KEY (format baru `AQ.` dari AI Studio; auth via header
+  `X-goog-api-key`, BUKAN `?key=`). MODEL: `gemini-flash-lite-latest` (dipilih setelah `gemini-2.0-flash`
+  ternyata 404/dihentikan, dan `gemini-flash-latest` adalah model THINKING yang memotong output di token
+  kecil + `thinkingBudget:0` ditolak 400). flash-lite: ringan, tanpa truncation, function-calling akurat.
+  Teruji end-to-end via Gemini di hosting: baca "215 proyek" & "pengeluaran Rp2.222.071" (Text-to-SQL),
+  tulis pengeluaran ditolak saldo, pendapatan proyek resolve "Website Starvvo" - semua BENAR. Claude jadi
+  cadangan (hanya saat Gemini gagal). GEMINI_MODEL di .env hosting.
+- PENANDA AI (`fec6d87`): tiap balasan diawali ikon penjawab - 🔵 Gemini (gratis) / 🟠 Claude (cadangan) -
+  supaya user tahu AI mana yang dipakai. `AiGateway::lastProvider()` (di-reset tiap pesan); ikon ditambah
+  di `BotOrchestrator::finish()` HANYA bila ada panggilan AI (giliran konfirmasi ya/tidak tak beri ikon).
+  Keterangan ikon di /start. Teruji: baca/preview -> 🔵; batal -> tanpa ikon.
+- FIX GLOSARIUM (`8f2978b`): user lapor jawaban "piutang" salah (AI tak paham istilah -> "tidak ditemukan",
+  lalu daftar piutang MENYERTAKAN proyek LEAD/data uji tanpa filter status). Sebab: skema DB saja tak beri
+  aturan bisnis. Solusi: tambah "ISTILAH & ATURAN BISNIS" ke prompt Text-to-SQL - piutang proyek = sisa
+  (total_value-paid_amount) HANYA status WAITING/PROGRESS (cocok `DashboardController:46`); penjualan
+  kecualikan CANCELLED+LEAD; pendapatan=payments; hutang/piutang umum=debt_records. Teruji: total piutang
+  Rp5.025.000 (cocok aturan app, 4 proyek), rincian hanya 3 proyek WAITING/PROGRESS sisa>0 (Website Starvvo
+  LEAD kini DIKECUALIKAN). Bila muncul istilah domain lain yang salah, tambah ke glosarium ini.
+
+### Pending / lanjutan
+- Bot 2 AI SELESAI: Gemini primer (gemini-flash-lite-latest) live + teruji; Claude cadangan. Pantau kualitas
+  Gemini di pemakaian nyata (kalau sering meleset, bisa naikkan ke model lebih pintar via GEMINI_MODEL).
+- Uji VN ASLI (ucapan) oleh user langsung di bot untuk cek akurasi Bahasa Indonesia (terutama nominal uang).
+- CATATAN model Gemini: `gemini-2.0-flash` sudah 404. Model tersedia a.l. gemini-2.5-flash(-lite),
+  gemini-flash(-lite)-latest, gemini-3.x-* (lihat ListModels). flash-lite = paling murah/ringan.
+- User sebaiknya regenerate ANTHROPIC_API_KEY + TELEGRAM_BOT_TOKEN + GROQ_API_KEY (sempat di chat) lalu update .env hosting.
+- Menggantung lama: `Claude-strack.bat` (untracked), `resources/views/errors/` + logo dari hosting belum
+  di-commit. Odometer maintenance auto-DUE, multi-pilih Tahun (opsional).
+- Bila mau, tambah aksi tulis lain (mis. buat proyek/klien baru, catat penarikan tunai, transaksi emas).
+
+---
+
+## Sesi 2026-08-12 (hapus integrasi Midtrans + rancangan bot Telegram AI)
 
 ### Ringkasan
 User membatalkan fitur pembayaran otomatis Midtrans. SELURUH konsep Midtrans dihapus dari kode DAN
@@ -45,7 +362,41 @@ Pendapatan yang sah) TIDAK ikut dihapus, hanya bagian Midtrans-nya yang dicabut.
 - Konfirmasi workflow deploy: benar, tinggal `./scripts/deploy.ps1` (push + `ssh saktify` git pull +
   bersihkan cache). Perubahan SKEMA DB tetap manual (delta SQL via ssh/phpMyAdmin).
 
+### Diskusi rancangan: bot Telegram + AI tanya-jawab data (BELUM ADA KODE)
+Sesi kedua hari ini murni DISKUSI/rancangan. Tidak ada file yang diubah untuk fitur ini. User ingin
+kelak bisa bertanya soal data strack lewat Telegram dalam bahasa Indonesia dan dijawab AI.
+- KONSEP yang disepakati: Telegram bot (BotFather) -> webhook ke Laravel (`/telegram/webhook`) ->
+  panggil AI -> AI ubah pertanyaan jadi query -> jalankan ke DB -> jawab balik ke Telegram.
+- KEPUTUSAN (condong): 
+  - Pendekatan query = TEXT-TO-SQL (user pilih ini, di atas opsi "tools read-only terdefinisi").
+    CATATAN WAJIB saat implementasi: buat USER MySQL READ-ONLY khusus (SELECT saja), blokir
+    DROP/UPDATE/DELETE, pasang timeout + LIMIT, batasi tabel. Model murah/gratis lebih rawan salah
+    tulis SQL untuk skema serumit strack -> pakai model yang cukup pintar (min Haiku).
+  - Penyedia AI = condong ke ANTHROPIC API (console.anthropic.com), kemungkinan model Haiku.
+    Model bisa diatur/diganti (Haiku `claude-haiku-4-5` / Sonnet `claude-sonnet-4-6`), bisa routing
+    (simpel->Haiku, kompleks->Sonnet) atau perintah manual. API Anthropic TIDAK memakai data untuk training.
+  - Implementasi sisi Laravel rencananya pakai `Http` facade (raw HTTP), TANPA SDK composer, biar
+    ringan di Hostinger (pola sama seperti integrasi lama).
+- KLARIFIKASI PENTING yang sudah dijelaskan ke user:
+  - Claude API (console) TERPISAH TOTAL dari langganan Claude Pro. Pro = chat di claude.ai (produk jadi,
+    manusia mengetik); API = mesin yang dipanggil program, tagihan sendiri (prabayar credit, per token).
+    Bot hanya menyentuh dompet API; Pro tidak kena biaya tambahan.
+  - Beda Claude Code/Pro (produk jadi, ada antarmuka, langganan flat) vs Console/API (mesin mentah untuk
+    developer, dipanggil kode, bayar per pemakaian). Bot WAJIB pakai API karena tak ada manusia mengetik.
+  - Estimasi biaya (Text-to-SQL, ~$0.015/tanya Haiku, ~$0.05/tanya Sonnet): pemakaian pribadi RINGAN
+    (~beberapa tanya/hari) ~ $1-5/bulan (Haiku). Prompt caching menurunkan biaya. Bisa set SPEND LIMIT
+    di console + sistem prabayar -> tak bakal kebobolan.
+- SECURITY yang ditekankan untuk implementasi nanti: WHITELIST chat_id user saja (data keuangan sensitif),
+  secret token webhook, user DB read-only. Hosting shared: cukup proses sinkron + indikator "mengetik",
+  tak perlu queue worker.
+- STATUS: user mau CEK dulu (daftar console + buat bot), sesi disudahi. Belum ada persetujuan mulai koding.
+
 ### Pending / lanjutan
+- FITUR AI/TELEGRAM (langkah berikut, menunggu user):
+  1. User: daftar `console.anthropic.com`, isi credit kecil (mis. $5), set spend limit, ambil API key.
+  2. User: buat bot via @BotFather, ambil bot token + chat_id sendiri.
+  3. Claude: bangun sisi Laravel (endpoint webhook, whitelist chat_id + secret, user MySQL read-only,
+     mesin Text-to-SQL Haiku + guardrail, kirim balasan Telegram via Http facade).
 - Masih menggantung (bukan Midtrans lagi): commit `Claude-strack.bat` (untracked), commit
   `resources/views/errors/` (+ logo) dari hosting. Seluruh urusan Midtrans (aktivasi production,
   webhook, regenerate server key) SUDAH TIDAK RELEVAN karena fitur dibatalkan.

@@ -523,6 +523,11 @@
                                 <i class="bi bi-list-task me-2"></i>Proyek
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ route('calendar.index') }}" class="nav-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar-week me-2"></i>Kalender
+                            </a>
+                        </li>
 
                         <!-- Kelompok Keuangan -->
                         <li class="nav-item dropdown">

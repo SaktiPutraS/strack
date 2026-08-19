@@ -167,8 +167,8 @@ class DashboardController extends Controller
 
         // Ambil catatan untuk bulan ini
         $userId = session('role');
-        $calendarNotes = \App\Models\CalendarNote::getNotesForMonth(
-            $userId,
+        $calendarNotes = \App\Models\CalendarEvent::getEventsForMonth(
+            (string) $userId,
             $calendarData['currentYear'],
             $calendarData['currentMonthNumber']
         );

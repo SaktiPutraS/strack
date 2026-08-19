@@ -224,16 +224,21 @@
                             </h4>
                             <p class="text-muted mb-0">Catatan pribadi dan deadline proyek dalam satu tampilan</p>
                         </div>
-                        <div class="d-none d-lg-flex align-items-center gap-3">
-                            <button class="btn btn-sm btn-outline-primary" id="prevMonth">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <h5 class="mb-0 fw-bold text-purple" id="calendarTitle">
-                                {{ $calendarData['currentMonth'] }}
-                            </h5>
-                            <button class="btn btn-sm btn-outline-primary" id="nextMonth">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="d-none d-lg-flex align-items-center gap-3">
+                                <button class="btn btn-sm btn-outline-primary" id="prevMonth">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <h5 class="mb-0 fw-bold text-purple" id="calendarTitle">
+                                    {{ $calendarData['currentMonth'] }}
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" id="nextMonth">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                            <a href="{{ route('calendar.index') }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-calendar-week me-1"></i>Buka Kalender
+                            </a>
                         </div>
                     </div>
                     <!-- Legend -->
@@ -324,7 +329,12 @@
                     <h5 class="modal-title fw-bold text-purple" id="modalTitle">
                         <i class="bi bi-calendar3 me-2"></i><span id="modalDate"></span>
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{{ route('calendar.index') }}" class="btn btn-sm btn-outline-primary" id="openInCalendar">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Buka di Kalender
+                        </a>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
                 </div>
                 <div class="modal-body p-4">
                     <!-- Tab Navigation -->
@@ -1020,6 +1030,12 @@
                 document.getElementById('modalDate').textContent = displayDate;
                 document.getElementById('noteDate').value = dateStr;
 
+                // Tautkan tombol ke menu Kalender pada tanggal yang sama
+                const openInCalendar = document.getElementById('openInCalendar');
+                if (openInCalendar) {
+                    openInCalendar.href = `{{ route('calendar.index') }}?date=${dateStr}`;
+                }
+
                 // Filter notes and projects for this day
                 const dayNotes = calendarNotes.filter(note => note.date === dateStr);
                 // Ambil proyek dari daftar lintas bulan agar akurat (termasuk tampilan mingguan)
@@ -1131,20 +1147,30 @@
                 const title = noteTitleInput.value;
                 const content = noteDescriptionInput.value;
 
-                const url = noteId ? `/calendar-notes/${noteId}` : '/calendar-notes';
+                const url = noteId ? `/calendar/events/${noteId}` : '/calendar/events';
                 const method = noteId ? 'PUT' : 'POST';
+
+                // Saat menyunting, kirim judul & catatan saja: sisa datanya (tipe, jam,
+                // warna) dipertahankan oleh CalendarController dari data yang tersimpan.
+                const payload = noteId ? {
+                    title: title,
+                    description: content
+                } : {
+                    title: title,
+                    description: content,
+                    type: 'EVENT',
+                    start_date: date,
+                    all_day: true
+                };
 
                 fetch(url, {
                         method: method,
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                         },
-                        body: JSON.stringify({
-                            date,
-                            title,
-                            content
-                        })
+                        body: JSON.stringify(payload)
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -1197,7 +1223,7 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        fetch(`/calendar-notes/${id}`, {
+                        fetch(`/calendar/events/${id}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
@@ -1238,7 +1264,7 @@
                 const month = currentDate.getMonth() + 1;
 
                 // Load notes
-                fetch(`/calendar-notes/month/${year}/${month}`)
+                fetch(`/calendar/events/month/${year}/${month}`)
                     .then(response => response.json())
                     .then(data => {
                         // getMonthNotes mengembalikan objek ber-key per tanggal (keyBy day),

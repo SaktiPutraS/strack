@@ -3,7 +3,7 @@
 
 @section('content')
     <!-- Header -->
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-12">
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
                 <div>
@@ -28,14 +28,14 @@
         <!-- Kalender -->
         <div class="col-12 col-lg-9">
             <div class="card luxury-card border-0">
-                <div class="card-body p-3 p-md-4">
+                <div class="card-body p-2 p-md-3">
                     <div id="calendar"></div>
                 </div>
             </div>
         </div>
 
         <!-- Panel samping -->
-        <div class="col-12 col-lg-3">
+        <div class="col-12 col-lg-3 calendar-side">
             <!-- Filter sumber data -->
             <div class="card luxury-card border-0 mb-4">
                 <div class="card-body p-3">
@@ -233,7 +233,7 @@
         }
 
         #calendar .fc-toolbar-title {
-            font-size: 1.15rem;
+            font-size: 1.35rem;
             font-weight: 700;
             color: #7C3AED;
         }
@@ -280,36 +280,64 @@
         #calendar .fc-col-header-cell-cushion {
             color: #6D28D9;
             font-weight: 700;
-            font-size: .78rem;
+            font-size: .88rem;
             text-decoration: none;
         }
 
         #calendar .fc-daygrid-day-number {
-            font-size: .82rem;
+            font-size: .95rem;
             font-weight: 600;
             color: #374151;
             text-decoration: none;
+            padding: .35rem .5rem;
         }
 
         #calendar .fc-day-today .fc-daygrid-day-number {
             background: #8B5CF6;
             color: #fff;
             border-radius: 50%;
-            width: 26px;
-            height: 26px;
+            width: 32px;
+            height: 32px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin: 2px;
+            margin: 3px;
+            padding: 0;
+        }
+
+        /* Beri ruang napas di dalam sel supaya kotak terasa lega */
+        #calendar .fc-daygrid-day-frame {
+            padding: 2px;
+        }
+
+        #calendar .fc-daygrid-day-events {
+            margin-bottom: 2px;
         }
 
         #calendar .fc-event {
             border-radius: 6px;
-            padding: 1px 4px;
-            font-size: .74rem;
+            padding: 3px 6px;
+            font-size: .82rem;
             font-weight: 600;
+            line-height: 1.35;
             cursor: pointer;
             border: none;
+            margin-bottom: 2px;
+        }
+
+        #calendar .fc-daygrid-more-link {
+            font-size: .78rem;
+            font-weight: 600;
+            color: #7C3AED;
+        }
+
+        #calendar .fc-timegrid-slot {
+            height: 2.4em;
+        }
+
+        #calendar .fc-list-event-title,
+        #calendar .fc-list-event-time {
+            font-size: .9rem;
         }
 
         #calendar .fc-event-done .fc-event-title {
@@ -357,9 +385,23 @@
             flex-shrink: 0;
         }
 
+        @media (min-width: 992px) {
+            .calendar-side {
+                position: sticky;
+                top: 1rem;
+                align-self: flex-start;
+            }
+        }
+
         .todo-list {
             max-height: 340px;
             overflow-y: auto;
+        }
+
+        @media (min-width: 992px) {
+            .todo-list {
+                max-height: clamp(180px, 34vh, 460px);
+            }
         }
 
         .todo-item {
@@ -546,12 +588,25 @@
             const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
             const calendarEl = document.getElementById('calendar');
 
+            /**
+             * Tinggi kalender dibuat mengisi sisa layar supaya kotak tanggalnya besar.
+             * Di layar kecil biarkan mengalir apa adanya (mode Agenda lebih enak digulir).
+             */
+            function calendarHeight() {
+                if (window.matchMedia('(max-width: 991.98px)').matches) {
+                    return 'auto';
+                }
+                const offsetTop = calendarEl.getBoundingClientRect().top + window.scrollY;
+                const bottomGap = 28; // sisa ruang bawah biar tidak mepet
+                return Math.max(560, Math.round(window.innerHeight - offsetTop - bottomGap));
+            }
+
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'id',
                 timeZone: 'local',
                 initialView: isMobile ? 'listWeek' : '{{ $initialView }}',
                 initialDate: initialDate || undefined,
-                height: 'auto',
+                height: calendarHeight(),
                 firstDay: 0,
                 headerToolbar: {
                     left: 'prev,next today',
@@ -579,7 +634,7 @@
                 moreLinkText: function(n) {
                     return '+' + n + ' lagi';
                 },
-                dayMaxEvents: 3,
+                dayMaxEvents: true, // sesuaikan sendiri dengan tinggi sel
                 navLinks: true,
                 nowIndicator: true,
                 selectable: true,
@@ -654,6 +709,21 @@
             });
 
             calendar.render();
+
+            // Hitung ulang setelah semua aset (font, CSS CDN) selesai dimuat, karena
+            // posisi kalender bisa bergeser sedikit dan tingginya jadi kurang pas.
+            window.addEventListener('load', function() {
+                calendar.setOption('height', calendarHeight());
+            });
+
+            // Hitung ulang tinggi saat ukuran jendela berubah (mis. rotasi / resize)
+            let resizeTimer = null;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    calendar.setOption('height', calendarHeight());
+                }, 150);
+            });
 
             function isoDate(date) {
                 return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' +

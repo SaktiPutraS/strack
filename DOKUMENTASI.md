@@ -4,6 +4,113 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-19 (Kalender: agenda & todo BERULANG / terjadwal)
+
+Lanjutan menu Kalender. Agenda dan todo sekarang bisa dijadwalkan berulang: setiap hari, setiap hari kerja
+(Sen-Jum), mingguan pilih hari, bulanan pada tanggal tertentu, tahunan, dan kustom tiap N hari/minggu/bulan/
+tahun, dengan batas akhir opsional. BELUM di-commit / deploy saat catatan ini ditulis.
+
+KEPUTUSAN user (ditanyakan di awal): (1) opsi pola LENGKAP, bukan ringkas; (2) berlaku untuk Todo DAN Agenda;
+(3) centang selesai todo berulang PER TANGGAL, jadi todo harian yang beres hari ini muncul lagi besok.
+
+### Data
+- Kolom BARU di `calendar_events` (migrasi `2026_08_19_000002`, delta `database/sql/2026_08_19_calendar_recurrence.sql`,
+  batch 9): `repeat_type` (NULL = sekali jalan; DAILY/WEEKDAY/WEEKLY/MONTHLY/YEARLY), `repeat_interval`
+  (default 1), `repeat_days` (CSV 0-6, 0 = Minggu, khusus WEEKLY), `repeat_day_of_month` (1-31, atau -1 =
+  hari terakhir bulan, khusus MONTHLY), `repeat_until` (batas akhir inklusif, NULL = tanpa batas).
+  Semua baris LAMA otomatis `repeat_type` NULL, jadi perilakunya tidak berubah sama sekali.
+- Tabel BARU `calendar_event_completions`: event_id (FK cascade), occurrence_date, completed_at, unique
+  (event_id, occurrence_date). Menyimpan centang selesai PER TANGGAL untuk rangkaian berulang.
+  Kolom `is_done` di calendar_events tetap dipakai, TAPI hanya untuk data sekali jalan (untuk data berulang
+  dipaksa false saat simpan).
+- Rangkaian berulang disimpan SATU BARIS saja. Tanggal kemunculannya dihitung saat dibaca, tidak
+  dimaterialisasi jadi banyak baris.
+
+### File baru
+- `app/Models/CalendarEventCompletion.php`: model centang per tanggal.
+- `database/migrations/2026_08_19_000002_add_recurrence_to_calendar_events.php`
+- `database/sql/2026_08_19_calendar_recurrence.sql` (delta untuk hosting; JANGAN dijalankan dua kali,
+  ALTER TABLE akan error "Duplicate column name").
+
+### Logika kemunculan (`CalendarEvent::occurrencesBetween`)
+Rentang yang diminta dimundurkan sepanjang durasi acara supaya acara multi-hari yang mulai sebelum rentang
+tetap kelihatan ekornya. Dipagari `MAX_OCCURRENCES = 500` biar rentang lebar tidak meledak.
+- DAILY: tiap N hari, diselaraskan dari `start_date` (jadi kalau dibaca dari tengah rentang, fase-nya tetap benar).
+- WEEKDAY: Senin-Jumat, interval diabaikan (dipaksa 1 saat simpan).
+- WEEKLY: minggu dihitung mulai hari MINGGU (sama dengan `firstDay: 0` di FullCalendar); tiap N minggu,
+  hari-hari dari `repeat_days`. Kalau tak ada hari dicentang, dipakai hari dari `start_date`.
+- MONTHLY: tiap N bulan pakai `addMonthsNoOverflow`. Bulan yang tidak punya tanggalnya DILEWATI, bukan
+  digeser (mis. tanggal 31 tidak muncul di Februari/April/Juni). `-1` = hari terakhir bulan.
+- YEARLY: tiap N tahun pada tanggal & bulan dari `start_date`. 29 Februari hanya muncul di tahun kabisat.
+
+### Panel todo: satu baris per rangkaian (`CalendarEvent::activeOccurrence`)
+Todo berulang TIDAK ditampilkan sebagai puluhan baris. Satu rangkaian diwakili satu baris, aturannya meniru
+aplikasi todo umum (Todoist/Google Tasks):
+1. Ada kemunculan <= hari ini yang belum dicentang -> ambil yang PALING BARU (jadi todo harian menunjuk
+   HARI INI, bukan tanggal basi beberapa hari lalu).
+2. Kemunculan yang tanggalnya di bawah centang TERAKHIR dianggap sudah terlewati, tidak ditagih lagi.
+   Efeknya: sekali dicentang, baris langsung lompat ke kemunculan berikutnya.
+3. Tidak ada yang tertunggak -> ambil kemunculan berikutnya.
+Contoh: todo mingguan tiap Selasa, hari ini Rabu, Selasa belum dicentang -> baris menunjuk Selasa dengan
+badge "Terlewat". Begitu dicentang -> lompat ke Selasa minggu depan.
+Jendela pencarian: `TODO_LOOKBACK_DAYS = 92`, `TODO_LOOKAHEAD_DAYS = 400` (di CalendarController).
+Daftar "Selesai terakhir" kini gabungan todo sekali jalan (kolom is_done) + centang per tanggal rangkaian
+berulang, diurutkan `completed_at` menurun, ambil 20.
+
+### Perubahan file lain
+- `app/Models/CalendarEvent.php`: konstanta REPEAT_*, DAY_NAMES; accessor is_recurring / duration_days /
+  repeat_every / repeat_day_numbers / repeat_label (kalimat Indonesia, mis. "Setiap 2 minggu pada Selasa,
+  Kamis, sampai 31 Des 2026"); `occurrencesBetween`, `activeOccurrence`, `lastCompletedOccurrence`,
+  `isDoneOn`, `expandRange`, `loadCompletionsFor`, `formProps`. `scopeInRange` dipecah dua cabang (sekali
+  jalan vs berulang; untuk yang berulang batas atas tidak dipakai karena rangkaian bisa mulai jauh di masa
+  lalu). `toCalendarPayload()` & `toDashboardArray()` sekarang menerima tanggal kemunculan.
+- `app/Http/Controllers/CalendarController.php`: `ownEvents` pakai `expandRange`; `todos` + helper
+  `recentlyDoneTodos` & `todoRow`; `toggleDone` menerima param `date` untuk data berulang (422 kalau tanggal
+  tidak valid); `move` MENOLAK rangkaian berulang (422); `validatePayload` + `normalizeRepeat` +
+  `repeatRuleChanged`; `destroy` ikut menghapus completions.
+- `resources/views/calendar/index.blade.php`: blok "Ulangi" di form (preset + interval kustom + tombol hari
+  + tanggal bulanan + batas akhir + kalimat ringkasan langsung), CSS `.repeat-box`/`.day-toggle`, modul JS
+  pengulangan, panel todo dikunci per KEMUNCULAN (`data-key` = id|tanggal, bukan id saja - satu rangkaian
+  bisa nongol di daftar pending dan selesai sekaligus), centang mengirim `date`.
+- `resources/views/dashboard/index.blade.php`: ikon berulang di daftar catatan harian; konfirmasi hapus
+  memperingatkan kalau yang dihapus SELURUH rangkaian.
+
+### Batasan yang disengaja (bukan bug)
+- Kemunculan berulang TIDAK bisa digeser drag & drop (`editable: false` di payload, `move` juga menolak).
+  Yang harus berubah aturannya, lewat form. Ini menghindari kerumitan "ubah acara ini saja vs semua".
+- Edit rangkaian berlaku untuk SELURUH kemunculan (ada catatan di form). Belum ada pengecualian per tanggal.
+- Kalau aturan pengulangan atau tanggal mulai DIUBAH, riwayat centang lama dihapus (sudah tidak cocok lagi
+  dengan kemunculan yang baru). Ubah judul/warna/catatan saja TIDAK menghapus riwayat.
+- Hapus rangkaian = hapus semua kemunculan + riwayat centangnya.
+
+### Verifikasi
+- MySQL lokal MATI lagi, jadi diuji lewat SQLite sementara (skrip di scratchpad, skema minimal):
+  **81 uji, 81 lulus, 0 gagal**. Cakupan: perhitungan 7 pola + interval kustom + tanggal 31/hari terakhir/
+  29 Feb/batas akhir/multi-hari; validasi & normalisasi controller (pola ngawur ditolak, WEEKDAY interval
+  dipaksa 1, is_done dipaksa false, repeat_until sebelum start ditolak, hari/tanggal kosong diisi dari
+  tanggal mulai); feed (id unik per tanggal, editable false untuk berulang); centang per tanggal (hari ini
+  selesai tapi besok belum, batal centang, tanggal ngawur 422); aturan kemunculan aktif (4 skenario);
+  ubah aturan membersihkan centang, ubah judul TIDAK; hapus ikut membuang completions; kepemilikan
+  (centang milik user lain 404); dashboard membentangkan berulang; pagar MAX_OCCURRENCES.
+- Lint PHP bersih, `view:cache` sukses, `route:list --path=calendar` tetap 9 route.
+- Render halaman kalender: 95 KB HTML (sebelumnya 69 KB), semua penanda form pengulangan ada.
+- Uji visual di browser: PENDING user.
+
+### Urutan penerapan (PENTING)
+1. Terapkan `database/sql/2026_08_19_calendar_recurrence.sql` di hosting DULU (ALTER TABLE + tabel baru +
+   catat migrasi batch 9). Jalankan SEKALI saja.
+2. BARU deploy kode. Kalau dibalik, halaman kalender & dashboard error karena kolom `repeat_type` belum ada.
+
+### Pending / lanjutan
+- Commit + deploy (belum dikerjakan, menunggu user).
+- Uji visual: buat todo "setiap hari kerja", centang, pastikan besok muncul lagi; coba mingguan multi-hari,
+  bulanan tanggal 25, kustom tiap 2 minggu; cek tampilan mobile.
+- Opsi lanjutan: pengecualian per tanggal (lewati/geser satu kemunculan tanpa mengubah rangkaian),
+  pengingat Telegram untuk todo berulang (pola `domains:remind` sudah ada), tampilan riwayat kepatuhan
+  (berapa kali dikerjakan dari sekian kemunculan) - datanya sudah tersimpan di calendar_event_completions.
+
+---
+
 ## Sesi 2026-08-19 (Menu Kalender: agenda + todo, gaya Google Calendar)
 
 Menu baru "Kalender" (`/calendar`) sebagai halaman penuh: agenda berjam, todo, dan seluruh tanggal penting

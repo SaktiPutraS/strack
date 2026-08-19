@@ -1052,7 +1052,7 @@
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
-                                <h6 class="mb-1 fw-bold">${escapeHtml(note.title || '')}</h6>
+                                <h6 class="mb-1 fw-bold">${escapeHtml(note.title || '')}${note.is_recurring ? ` <i class="bi bi-arrow-repeat text-primary" title="${escapeHtml(note.repeat_label || 'Berulang')}"></i>` : ''}</h6>
                                 ${note.content ? `<p class="text-muted mb-0 small">${escapeHtml(note.content)}</p>` : ''}
                             </div>
                             <div class="btn-group btn-group-sm">
@@ -1212,9 +1212,16 @@
             };
 
             window.deleteNote = function(id) {
+                // Agenda berulang disimpan satu baris: menghapusnya membuang
+                // SELURUH kemunculan, bukan tanggal yang sedang dibuka saja.
+                const target = calendarNotes.find(n => String(n.id) === String(id));
+                const recurring = target && target.is_recurring;
+
                 Swal.fire({
-                    title: 'Hapus Catatan?',
-                    text: 'Catatan yang dihapus tidak dapat dikembalikan!',
+                    title: recurring ? 'Hapus seluruh rangkaian?' : 'Hapus Catatan?',
+                    text: recurring ?
+                        'Ini agenda berulang. Semua kemunculannya ikut terhapus, bukan tanggal ini saja.' :
+                        'Catatan yang dihapus tidak dapat dikembalikan!',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',

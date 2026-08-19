@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CalendarEvent;
+use App\Models\CalendarEventCompletion;
 use App\Models\DebtRecord;
 use App\Models\Domain;
 use App\Models\MaintenanceTask;
@@ -20,6 +21,14 @@ class CalendarController extends Controller
 {
     /** Sumber data yang bisa ditampilkan di kalender. */
     public const SOURCES = ['own', 'projects', 'domains', 'maintenance', 'debts'];
+
+    /**
+     * Jendela pencarian kemunculan todo BERULANG untuk panel samping.
+     * Ke belakang secukupnya buat menagih yang tertunggak, ke depan cukup jauh
+     * supaya pola bulanan/tahunan tetap kebagian satu baris.
+     */
+    private const TODO_LOOKBACK_DAYS = 92;
+    private const TODO_LOOKAHEAD_DAYS = 400;
 
     /** Warna per sumber eksternal. */
     private const SOURCE_COLORS = [
@@ -46,6 +55,7 @@ class CalendarController extends Controller
             'initialDate' => $initialDate,
             'initialView' => $request->query('view', 'dayGridMonth'),
             'colors' => CalendarEvent::COLORS,
+            'dayNames' => CalendarEvent::DAY_NAMES_SHORT,
         ]);
     }
 
@@ -91,52 +101,130 @@ class CalendarController extends Controller
     /**
      * Daftar todo untuk panel samping: yang belum selesai (termasuk terlewat)
      * plus yang baru saja diselesaikan.
+     *
+     * Todo BERULANG diwakili SATU baris saja: kemunculan yang sedang perlu
+     * dikerjakan (lihat CalendarEvent::activeOccurrence). Begitu dicentang,
+     * barisnya lompat ke kemunculan berikutnya, jadi panel tidak dibanjiri
+     * todo harian.
      */
     public function todos(Request $request): JsonResponse
     {
         $userId = $this->userId();
+        $today = Carbon::today();
 
-        $pending = CalendarEvent::forUser($userId)
+        $from = $today->copy()->subDays(self::TODO_LOOKBACK_DAYS)->format('Y-m-d');
+        $to = $today->copy()->addDays(self::TODO_LOOKAHEAD_DAYS)->format('Y-m-d');
+
+        // Rangkaian berulang selalu ikut diambil (kolom is_done tidak dipakai
+        // untuk data berulang - centangnya per tanggal di tabel completions).
+        $candidates = CalendarEvent::forUser($userId)
             ->todo()
-            ->where('is_done', false)
+            ->where(function ($q) {
+                $q->whereNotNull('repeat_type')->orWhere('is_done', false);
+            })
             ->orderBy('start_date')
             ->orderByRaw('start_time IS NULL, start_time')
-            ->limit(100)
+            ->limit(200)
             ->get();
 
-        $done = CalendarEvent::forUser($userId)
+        CalendarEvent::loadCompletionsFor($candidates, $from, $to);
+
+        $pending = [];
+        foreach ($candidates as $todo) {
+            if ($todo->is_recurring) {
+                $date = $todo->activeOccurrence($from, $to);
+                if ($date) {
+                    $pending[] = $this->todoRow($todo, $date, $today);
+                }
+                continue;
+            }
+
+            $pending[] = $this->todoRow($todo, $todo->start_date->format('Y-m-d'), $today);
+        }
+
+        usort($pending, fn (array $a, array $b) => [$a['occurrenceDate'], (string) $a['startTime']]
+            <=> [$b['occurrenceDate'], (string) $b['startTime']]);
+
+        return response()->json([
+            'success' => true,
+            'pending' => array_values($pending),
+            'done' => $this->recentlyDoneTodos($userId, $today),
+        ]);
+    }
+
+    /**
+     * Todo yang baru saja diselesaikan: gabungan todo sekali jalan (kolom
+     * is_done) dan centang per tanggal dari rangkaian berulang.
+     */
+    private function recentlyDoneTodos(string $userId, Carbon $today): array
+    {
+        $rows = [];
+
+        $once = CalendarEvent::forUser($userId)
             ->todo()
+            ->whereNull('repeat_type')
             ->where('is_done', true)
             ->orderByDesc('completed_at')
             ->limit(20)
             ->get();
 
-        $today = Carbon::today();
+        foreach ($once as $todo) {
+            $rows[] = $this->todoRow($todo, $todo->start_date->format('Y-m-d'), $today, true, $todo->completed_at);
+        }
 
-        // Bentuknya sengaja disamakan dengan yang dibutuhkan form di halaman
-        // kalender, supaya klik todo di panel bisa langsung membuka form edit.
-        $map = fn (CalendarEvent $todo) => [
+        $recurringIds = CalendarEvent::forUser($userId)->todo()->recurring()->pluck('id');
+
+        if ($recurringIds->isNotEmpty()) {
+            $completions = CalendarEventCompletion::with('event')
+                ->whereIn('event_id', $recurringIds)
+                ->orderByDesc('completed_at')
+                ->limit(20)
+                ->get();
+
+            foreach ($completions as $completion) {
+                if (! $completion->event) {
+                    continue;
+                }
+                $rows[] = $this->todoRow(
+                    $completion->event,
+                    $completion->occurrence_date->format('Y-m-d'),
+                    $today,
+                    true,
+                    $completion->completed_at,
+                );
+            }
+        }
+
+        usort($rows, fn (array $a, array $b) => ($b['completedAt'] ?? '') <=> ($a['completedAt'] ?? ''));
+
+        return array_slice($rows, 0, 20);
+    }
+
+    /**
+     * Satu baris todo di panel samping.
+     *
+     * Field form (startDate dkk) sengaja diambil dari RANGKAIAN, bukan dari
+     * tanggal kemunculan, supaya klik baris langsung membuka form edit yang
+     * benar. Tanggal kemunculan dibawa terpisah lewat `occurrenceDate`.
+     */
+    private function todoRow(
+        CalendarEvent $todo,
+        string $date,
+        Carbon $today,
+        bool $isDone = false,
+        ?Carbon $completedAt = null,
+    ): array {
+        $occurrence = Carbon::parse($date);
+
+        return array_merge($todo->formProps(), [
             'id' => $todo->id,
-            'type' => $todo->type,
-            'title' => $todo->title,
-            'description' => $todo->description,
-            'startDate' => $todo->start_date->format('Y-m-d'),
-            'endDate' => $todo->end_date?->format('Y-m-d'),
-            'startTime' => $todo->start_time ? substr((string) $todo->start_time, 0, 5) : null,
-            'endTime' => $todo->end_time ? substr((string) $todo->end_time, 0, 5) : null,
-            'allDay' => (bool) $todo->all_day,
-            'dateLabel' => $todo->start_date->translatedFormat('j M Y'),
+            'occurrenceDate' => $date,
+            'dateLabel' => $occurrence->translatedFormat('j M Y'),
             'timeLabel' => $todo->time_label,
-            'color' => $todo->display_color,
-            'isDone' => $todo->is_done,
-            'isOverdue' => ! $todo->is_done && $todo->start_date->lt($today),
-            'isToday' => $todo->start_date->isSameDay($today),
-        ];
-
-        return response()->json([
-            'success' => true,
-            'pending' => $pending->map($map)->all(),
-            'done' => $done->map($map)->all(),
+            'isDone' => $isDone,
+            'isOverdue' => ! $isDone && $occurrence->lt($today),
+            'isToday' => $occurrence->isSameDay($today),
+            'completedAt' => $completedAt?->format('Y-m-d H:i:s'),
         ]);
     }
 
@@ -195,9 +283,24 @@ class CalendarController extends Controller
             'color' => $event->display_color,
             'is_done' => $event->is_done,
             'description' => $event->description,
+            'repeat_type' => $event->repeat_type,
+            'repeat_interval' => $event->repeat_every,
+            'repeat_days' => $event->repeat_day_numbers,
+            'repeat_day_of_month' => $event->repeat_day_of_month,
+            'repeat_until' => $event->repeat_until?->format('Y-m-d'),
         ], $request->all()));
 
-        $event->update($this->validatePayload($request));
+        $data = $this->validatePayload($request);
+        $ruleChanged = $this->repeatRuleChanged($event, $data);
+
+        $event->update($data);
+
+        // Aturan pengulangan berubah: centang per tanggal yang lama sudah tidak
+        // cocok lagi dengan kemunculan yang baru, jadi dibersihkan.
+        if ($ruleChanged) {
+            $event->completions()->delete();
+            $event->load('completions');
+        }
 
         return response()->json([
             'success' => true,
@@ -213,30 +316,72 @@ class CalendarController extends Controller
             return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
         }
 
+        // FK sudah cascade, tapi dihapus eksplisit supaya tidak bergantung pada
+        // dukungan foreign key di tiap koneksi.
+        $event->completions()->delete();
         $event->delete();
 
         return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
     }
 
-    /** Centang / batalkan centang todo. */
-    public function toggleDone(int $id): JsonResponse
+    /**
+     * Centang / batalkan centang todo.
+     *
+     * Data BERULANG dicentang per tanggal (param `date`), supaya todo harian
+     * yang beres hari ini tetap muncul lagi besok. Data sekali jalan tetap
+     * memakai kolom is_done seperti sebelumnya.
+     */
+    public function toggleDone(Request $request, int $id): JsonResponse
     {
         $event = $this->findOwned($id);
         if (! $event) {
             return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
         }
 
-        $done = ! $event->is_done;
-        $event->update([
-            'is_done' => $done,
-            'completed_at' => $done ? Carbon::now() : null,
-        ]);
+        if (! $event->is_recurring) {
+            $done = ! $event->is_done;
+            $event->update([
+                'is_done' => $done,
+                'completed_at' => $done ? Carbon::now() : null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $done ? 'Ditandai selesai' : 'Tanda selesai dibatalkan',
+                'isDone' => $done,
+                'event' => $event->fresh()->toCalendarPayload(),
+            ]);
+        }
+
+        $date = (string) $request->input('date', '');
+        if (! $date || ! $this->isValidDate($date)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal kemunculan tidak valid',
+            ], 422);
+        }
+
+        $existing = $event->completions()->whereDate('occurrence_date', $date)->first();
+
+        if ($existing) {
+            $existing->delete();
+            $done = false;
+        } else {
+            $event->completions()->create([
+                'occurrence_date' => $date,
+                'completed_at' => Carbon::now(),
+            ]);
+            $done = true;
+        }
+
+        $event->load('completions');
+        $label = Carbon::parse($date)->translatedFormat('j M Y');
 
         return response()->json([
             'success' => true,
-            'message' => $done ? 'Ditandai selesai' : 'Tanda selesai dibatalkan',
+            'message' => $done ? "Selesai untuk {$label}" : "Tanda selesai {$label} dibatalkan",
             'isDone' => $done,
-            'event' => $event->fresh()->toCalendarPayload(),
+            'event' => $event->toCalendarPayload($date),
         ]);
     }
 
@@ -248,6 +393,15 @@ class CalendarController extends Controller
         $event = $this->findOwned($id);
         if (! $event) {
             return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Menggeser satu kemunculan tidak punya arti untuk rangkaian berulang:
+        // yang harus berubah aturannya, lewat form.
+        if ($event->is_recurring) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Agenda berulang tidak bisa digeser. Ubah pola pengulangannya lewat form.',
+            ], 422);
         }
 
         $validated = $request->validate([
@@ -278,11 +432,10 @@ class CalendarController extends Controller
     // ── Sumber event ────────────────────────────────────────────────────────
     private function ownEvents(string $from, string $to): array
     {
-        return CalendarEvent::forUser($this->userId())
-            ->inRange($from, $to)
-            ->get()
-            ->map(fn (CalendarEvent $event) => $event->toCalendarPayload())
-            ->all();
+        return array_map(
+            fn (array $row) => $row['event']->toCalendarPayload($row['date']),
+            CalendarEvent::expandRange($this->userId(), $from, $to)
+        );
     }
 
     private function projectEvents(string $from, string $to): array
@@ -511,10 +664,18 @@ class CalendarController extends Controller
             'all_day' => 'nullable|boolean',
             'color' => 'nullable|string|max:20',
             'is_done' => 'nullable|boolean',
+            'repeat_type' => 'nullable|in:' . implode(',', CalendarEvent::REPEAT_TYPES),
+            'repeat_interval' => 'nullable|integer|min:1|max:365',
+            'repeat_days' => 'nullable|array',
+            'repeat_days.*' => 'integer|min:0|max:6',
+            'repeat_day_of_month' => 'nullable|integer|min:-1|max:31',
+            'repeat_until' => 'nullable|date|after_or_equal:start_date',
         ], [], [
             'title' => 'judul',
             'start_date' => 'tanggal mulai',
             'end_date' => 'tanggal selesai',
+            'repeat_until' => 'batas akhir pengulangan',
+            'repeat_interval' => 'interval pengulangan',
         ]);
 
         $allDay = $request->boolean('all_day', true);
@@ -532,9 +693,13 @@ class CalendarController extends Controller
             $endTime = null;
         }
 
-        $isDone = $request->boolean('is_done');
+        $repeat = $this->normalizeRepeat($validated);
 
-        return [
+        // Data berulang tidak punya status selesai tunggal: centangnya per
+        // tanggal, disimpan di calendar_event_completions.
+        $isDone = $repeat['repeat_type'] ? false : $request->boolean('is_done');
+
+        return array_merge([
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'type' => $validated['type'],
@@ -546,7 +711,82 @@ class CalendarController extends Controller
             'color' => $validated['color'] ?? CalendarEvent::DEFAULT_COLOR,
             'is_done' => $isDone,
             'completed_at' => $isDone ? Carbon::now() : null,
+        ], $repeat);
+    }
+
+    /**
+     * Rapikan aturan pengulangan: buang field yang tidak relevan untuk pola
+     * terpilih, dan isi bagian yang dikosongkan user dari tanggal mulai.
+     *
+     * @return array{repeat_type: ?string, repeat_interval: int, repeat_days: ?string, repeat_day_of_month: ?int, repeat_until: ?string}
+     */
+    private function normalizeRepeat(array $validated): array
+    {
+        $type = $validated['repeat_type'] ?? null;
+
+        if (! $type) {
+            return [
+                'repeat_type' => null,
+                'repeat_interval' => 1,
+                'repeat_days' => null,
+                'repeat_day_of_month' => null,
+                'repeat_until' => null,
+            ];
+        }
+
+        $start = Carbon::parse($validated['start_date']);
+        $interval = max(1, (int) ($validated['repeat_interval'] ?? 1));
+        $days = null;
+        $dayOfMonth = null;
+
+        if ($type === CalendarEvent::REPEAT_WEEKDAY) {
+            // Sen-Jum sudah menentukan harinya sendiri, interval tidak dipakai.
+            $interval = 1;
+        }
+
+        if ($type === CalendarEvent::REPEAT_WEEKLY) {
+            $picked = array_map('intval', $validated['repeat_days'] ?? []);
+            $picked = array_values(array_unique(array_filter($picked, fn ($d) => $d >= 0 && $d <= 6)));
+            sort($picked);
+            // Tidak ada hari yang dicentang: pakai hari dari tanggal mulai.
+            $days = implode(',', $picked ?: [$start->dayOfWeek]);
+        }
+
+        if ($type === CalendarEvent::REPEAT_MONTHLY) {
+            $dom = $validated['repeat_day_of_month'] ?? null;
+            // 0 tidak punya arti; -1 dipakai untuk "hari terakhir bulan".
+            $dayOfMonth = ($dom === null || (int) $dom === 0) ? $start->day : (int) $dom;
+        }
+
+        return [
+            'repeat_type' => $type,
+            'repeat_interval' => $interval,
+            'repeat_days' => $days,
+            'repeat_day_of_month' => $dayOfMonth,
+            'repeat_until' => $validated['repeat_until'] ?? null,
         ];
+    }
+
+    /** Apakah aturan pengulangan (atau tanggal mulainya) berubah. */
+    private function repeatRuleChanged(CalendarEvent $event, array $data): bool
+    {
+        $before = [
+            $event->repeat_type,
+            $event->repeat_every,
+            (string) $event->repeat_days,
+            $event->repeat_day_of_month,
+            $event->start_date->format('Y-m-d'),
+        ];
+
+        $after = [
+            $data['repeat_type'],
+            (int) $data['repeat_interval'],
+            (string) $data['repeat_days'],
+            $data['repeat_day_of_month'],
+            Carbon::parse($data['start_date'])->format('Y-m-d'),
+        ];
+
+        return $before !== $after;
     }
 
     /** Samakan jam ke format H:i:s supaya nilainya konsisten di DB. */

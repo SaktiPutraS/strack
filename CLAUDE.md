@@ -49,6 +49,25 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-19 (Kalender: agenda & todo BERULANG / terjadwal)
+Lanjutan menu Kalender. Agenda + todo bisa dijadwalkan berulang. BELUM commit/deploy. Detail di DOKUMENTASI.md.
+- KOLOM BARU di `calendar_events` (migrasi `2026_08_19_000002`, delta `database/sql/2026_08_19_calendar_recurrence.sql`,
+  batch 9): repeat_type (NULL=sekali jalan; DAILY/WEEKDAY/WEEKLY/MONTHLY/YEARLY) + repeat_interval +
+  repeat_days (CSV 0-6) + repeat_day_of_month (1-31 atau -1=akhir bulan) + repeat_until. Data lama tak berubah.
+- TABEL BARU `calendar_event_completions` (event_id FK cascade, occurrence_date, completed_at, unique pasangan):
+  centang selesai PER TANGGAL. Kolom `is_done` HANYA untuk data sekali jalan (berulang dipaksa false).
+- Rangkaian disimpan SATU BARIS, kemunculan DIHITUNG saat dibaca (`occurrencesBetween`, pagar MAX_OCCURRENCES=500).
+  MONTHLY: bulan tanpa tanggalnya DILEWATI (bukan digeser). YEARLY 29 Feb hanya tahun kabisat.
+  WEEKLY: minggu mulai hari MINGGU (samakan dengan firstDay:0 FullCalendar).
+- PANEL TODO: 1 baris per rangkaian lewat `activeOccurrence` (ambil kemunculan <=hari ini yang belum dicentang
+  dan PALING BARU, abaikan yang di bawah centang terakhir; kalau tak ada, ambil berikutnya). Jadi todo harian
+  menunjuk HARI INI, dan sekali dicentang langsung lompat ke besok. Lookback 92 hari, lookahead 400 hari.
+- BATASAN SENGAJA: kemunculan berulang TIDAK bisa drag & drop (`editable:false`, `move` tolak 422); edit
+  berlaku SELURUH rangkaian; ubah aturan/tanggal mulai MENGHAPUS riwayat centang (ubah judul/warna tidak).
+- UJI: MySQL lokal mati lagi -> SQLite sementara, 81 uji LULUS semua. Lint bersih, view:cache OK, 9 route tetap,
+  render halaman 95 KB. Uji visual browser: PENDING user.
+- URUTAN WAJIB: delta SQL di hosting DULU, baru deploy kode (kalau dibalik, kalender + dashboard error).
+
 ### 2026-08-19 (menu Kalender: agenda + todo, gaya Google Calendar)
 Menu baru "Kalender" (`/calendar`) halaman penuh. SUDAH commit `63bcb9d` + delta SQL diterapkan + deploy +
 smoke test produksi. Detail di DOKUMENTASI.md.

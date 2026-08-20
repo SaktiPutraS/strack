@@ -35,7 +35,7 @@ class GeminiProvider implements AiProvider
         foreach ($req['messages'] as $m) {
             $contents[] = [
                 'role'  => ($m['role'] === 'assistant') ? 'model' : 'user',
-                'parts' => [['text' => $m['content']]],
+                'parts' => $this->toGeminiParts($m['content']),
             ];
         }
 
@@ -89,6 +89,29 @@ class GeminiProvider implements AiProvider
         }
 
         return new AiResult(trim($text), $tool);
+    }
+
+    /**
+     * Isi pesan -> parts Gemini. Teks biasa jadi satu part; daftar bagian
+     * (text/image) diterjemahkan satu per satu, gambar lewat inline_data.
+     */
+    private function toGeminiParts(mixed $content): array
+    {
+        if (! is_array($content)) {
+            return [['text' => (string) $content]];
+        }
+
+        $parts = [];
+        foreach ($content as $part) {
+            $parts[] = ($part['type'] ?? 'text') === 'image'
+                ? ['inline_data' => [
+                    'mime_type' => $part['mime'] ?? 'image/jpeg',
+                    'data'      => $part['data'] ?? '',
+                ]]
+                : ['text' => (string) ($part['text'] ?? '')];
+        }
+
+        return $parts;
     }
 
     /**

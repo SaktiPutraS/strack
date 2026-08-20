@@ -26,7 +26,7 @@ class AnthropicProvider implements AiProvider
     public function generate(array $req): AiResult
     {
         $payload = [
-            'messages'   => $req['messages'],
+            'messages'   => $this->normalizeMessages($req['messages']),
             'max_tokens' => $req['max_tokens'] ?? 1024,
         ];
 
@@ -49,5 +49,34 @@ class AnthropicProvider implements AiProvider
             AnthropicClient::extractText($response),
             AnthropicClient::extractToolUse($response),
         );
+    }
+
+    /**
+     * Terjemahkan pesan ternormalisasi ke bentuk Anthropic. Isi pesan boleh
+     * berupa teks biasa, atau daftar bagian (text/image) untuk pesan bergambar.
+     */
+    private function normalizeMessages(array $messages): array
+    {
+        return array_map(function (array $message) {
+            if (! is_array($message['content'])) {
+                return $message;
+            }
+
+            $parts = [];
+            foreach ($message['content'] as $part) {
+                $parts[] = ($part['type'] ?? 'text') === 'image'
+                    ? [
+                        'type' => 'image',
+                        'source' => [
+                            'type'       => 'base64',
+                            'media_type' => $part['mime'] ?? 'image/jpeg',
+                            'data'       => $part['data'] ?? '',
+                        ],
+                    ]
+                    : ['type' => 'text', 'text' => (string) ($part['text'] ?? '')];
+            }
+
+            return ['role' => $message['role'], 'content' => $parts];
+        }, $messages);
     }
 }

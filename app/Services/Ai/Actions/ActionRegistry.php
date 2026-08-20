@@ -2,6 +2,8 @@
 
 namespace App\Services\Ai\Actions;
 
+use App\Services\Ai\AiGateway;
+
 /**
  * Daftar semua aksi tulis yang tersedia untuk bot. Tambah aksi baru cukup
  * daftarkan di sini.
@@ -11,7 +13,7 @@ class ActionRegistry
     /** @var array<string, WriteAction> */
     private array $actions = [];
 
-    public function __construct()
+    public function __construct(AiGateway $ai)
     {
         foreach ([
             new CatatPengeluaranAction(),
@@ -20,6 +22,7 @@ class ActionRegistry
             new UpdateStatusProyekAction(),
             new CatatTransferBankAction(),
             new CatatSierraBerakAction(),
+            new CatatStrukAction($ai),
         ] as $action) {
             $this->actions[$action->name()] = $action;
         }
@@ -30,12 +33,17 @@ class ActionRegistry
         return $this->actions[$name] ?? null;
     }
 
-    /** @return array<int, array> definisi tool untuk Anthropic API */
+    /**
+     * Definisi tool untuk AI. Aksi tersembunyi (mis. catat struk dari foto)
+     * tidak ikut karena tidak bisa dipicu dari teks.
+     *
+     * @return array<int, array>
+     */
     public function toolDefinitions(): array
     {
         return array_values(array_map(
             fn (WriteAction $a) => $a->toolDefinition(),
-            $this->actions
+            array_filter($this->actions, fn (WriteAction $a) => ! $a->hidden())
         ));
     }
 }

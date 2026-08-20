@@ -16,7 +16,11 @@ interface AiProvider
     public function isConfigured(): bool;
 
     /**
-     * @param  array{system?: string, messages: array<int, array{role: string, content: string}>, tools?: array, max_tokens?: int, cache_system?: bool}  $req
+     * Isi tiap pesan boleh berupa string, atau daftar bagian untuk pesan
+     * bergambar: ['type' => 'text', 'text' => ...] dan
+     * ['type' => 'image', 'mime' => 'image/jpeg', 'data' => <base64>].
+     *
+     * @param  array{system?: string, messages: array<int, array{role: string, content: string|array}>, tools?: array, max_tokens?: int, cache_system?: bool}  $req
      */
     public function generate(array $req): AiResult;
 }

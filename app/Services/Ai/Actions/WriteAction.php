@@ -31,6 +31,37 @@ abstract class WriteAction
     /** Eksekusi penyimpanan. Kembalikan pesan sukses. Boleh throw bila state berubah. */
     abstract public function execute(array $prepared): string;
 
+    /**
+     * Aksi tersembunyi tidak ditawarkan ke AI sebagai tool (dipicu dari jalur
+     * lain, mis. foto struk), tapi tetap bisa dijalankan lewat konfirmasi.
+     */
+    public function hidden(): bool
+    {
+        return false;
+    }
+
+    /** Berapa lama aksi menunggu konfirmasi sebelum kedaluwarsa. */
+    public function pendingTtlMinutes(): int
+    {
+        return 5;
+    }
+
+    /** Apakah user boleh mengoreksi hasil sebelum menyimpan (lihat refine). */
+    public function supportsRefine(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Terapkan koreksi dari user pada payload yang sedang menunggu konfirmasi.
+     * Lempar NotACorrectionException bila balasan user ternyata bukan koreksi
+     * (agar bot memperlakukannya sebagai permintaan baru).
+     */
+    public function refine(array $prepared, string $instruction): array
+    {
+        throw new NotACorrectionException();
+    }
+
     /** Helper: ambil & bersihkan angka rupiah dari input. */
     protected function parseAmount(mixed $value): int
     {

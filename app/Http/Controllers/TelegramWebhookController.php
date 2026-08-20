@@ -12,8 +12,9 @@ use Throwable;
 
 /**
  * Endpoint webhook Telegram. Alur:
- *   verifikasi secret -> whitelist chat_id -> (voice note ditranskrip dulu) ->
- *   proses pesan -> balas ke Telegram. Selalu balas 200 agar Telegram tidak retry.
+ *   verifikasi secret -> whitelist chat_id -> (voice note ditranskrip dulu,
+ *   foto struk dibaca AI) -> proses pesan -> balas ke Telegram.
+ * Selalu balas 200 agar Telegram tidak retry.
  */
 class TelegramWebhookController extends Controller
 {
@@ -35,9 +36,10 @@ class TelegramWebhookController extends Controller
         $chatId = data_get($message, 'chat.id');
         $text = trim((string) data_get($message, 'text', ''));
         $voice = data_get($message, 'voice') ?? data_get($message, 'audio');
+        $photo = $this->photoFrom($message);
 
         // Update tanpa isi yang bisa diproses (join, sticker, dll) -> abaikan.
-        if (! $chatId || ($text === '' && ! $voice)) {
+        if (! $chatId || ($text === '' && ! $voice && ! $photo)) {
             return response('ok');
         }
 
@@ -49,7 +51,28 @@ class TelegramWebhookController extends Controller
             return response('ok');
         }
 
-        // 2b. Voice note -> transkrip jadi teks lebih dulu.
+        // 2b. Foto (struk belanja) -> dibaca AI, dirinci per kategori, lalu konfirmasi.
+        if ($photo) {
+            $this->telegram->sendChatAction($chatId, 'typing');
+
+            try {
+                $binary = $this->telegram->downloadFile($photo['file_id']);
+                $answer = $this->orchestrator->handleReceipt(
+                    $chatId,
+                    $binary,
+                    $photo['mime'],
+                    (string) data_get($message, 'caption', '')
+                );
+                $this->telegram->sendMessage($chatId, $answer);
+            } catch (Throwable $e) {
+                Log::error('Telegram struk gagal diproses', ['error' => $e->getMessage()]);
+                $this->telegram->sendMessage($chatId, 'Maaf, saya gagal membaca struk itu. Coba foto ulang lebih jelas.');
+            }
+
+            return response('ok');
+        }
+
+        // 2c. Voice note -> transkrip jadi teks lebih dulu.
         $isVoice = false;
         if ($text === '' && $voice) {
             $this->telegram->sendChatAction($chatId, 'typing');
@@ -80,6 +103,9 @@ class TelegramWebhookController extends Controller
                 . "MENCATAT/MENGUBAH data (selalu minta konfirmasi dulu), misalnya:\n"
                 . "- catat pengeluaran bensin 50rb dari cash\n- catat pembayaran DP 2jt proyek Website Starvvo\n"
                 . "- bayar hutang ke Budi 500rb\n- tandai proyek X selesai\n\n"
+                . "MEMBACA FOTO STRUK belanja: kirim saja fotonya (boleh pakai caption).\n"
+                . "Isinya saya rinci per kategori lalu dicatat jadi beberapa pengeluaran sekaligus.\n"
+                . "Sebelum disimpan masih bisa dikoreksi, misalnya: tango masukkan ke sierra.\n\n"
                 . "Setiap perubahan data akan saya konfirmasi dulu (balas *ya* untuk simpan).\n\n"
                 . "Penanda di awal balasan: 🔵 = dijawab Gemini (gratis), 🟠 = dijawab Claude (cadangan)."
             );
@@ -109,5 +135,31 @@ class TelegramWebhookController extends Controller
         }
 
         return response('ok');
+    }
+
+    /**
+     * Ambil gambar dari pesan: foto biasa (pakai resolusi terbesar) atau file
+     * gambar yang dikirim sebagai dokumen (mis. screenshot tanpa kompresi).
+     *
+     * @return array{file_id: string, mime: string}|null
+     */
+    private function photoFrom(?array $message): ?array
+    {
+        $sizes = data_get($message, 'photo');
+        if (is_array($sizes) && $sizes !== []) {
+            $largest = end($sizes);
+            $fileId = data_get($largest, 'file_id');
+
+            return $fileId ? ['file_id' => $fileId, 'mime' => 'image/jpeg'] : null;
+        }
+
+        $mime = (string) data_get($message, 'document.mime_type', '');
+        $fileId = data_get($message, 'document.file_id');
+
+        if ($fileId && str_starts_with($mime, 'image/')) {
+            return ['file_id' => $fileId, 'mime' => $mime];
+        }
+
+        return null;
     }
 }

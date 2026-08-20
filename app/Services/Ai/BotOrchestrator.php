@@ -3,6 +3,8 @@
 namespace App\Services\Ai;
 
 use App\Services\Ai\Actions\ActionRegistry;
+use App\Services\Ai\Actions\NotACorrectionException;
+use App\Services\Ai\Actions\WriteAction;
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 
@@ -17,8 +19,6 @@ class BotOrchestrator
     private const AFFIRM = ['ya', 'iya', 'y', 'ok', 'oke', 'okay', 'yes', 'betul', 'benar', 'lanjut', 'simpan', 'gas', 'boleh', 'setuju', 'yoi'];
     private const DENY = ['tidak', 'ga', 'gak', 'engga', 'enggak', 'nggak', 'batal', 'jangan', 'no', 'n', 'cancel', 'stop'];
 
-    private const PENDING_TTL_MINUTES = 5;
-
     /** Riwayat percakapan singkat sebagai konteks (mis. rujukan "tadi/tersebut"). */
     private const MAX_HISTORY = 6;
     private const HISTORY_TTL_MINUTES = 30;
@@ -27,6 +27,7 @@ class BotOrchestrator
         private AiGateway $ai,
         private TextToSqlService $textToSql,
         private ActionRegistry $registry,
+        private ReceiptParser $receipts,
     ) {}
 
     public function handle(int|string $chatId, string $text): string
@@ -48,6 +49,25 @@ class BotOrchestrator
             if (in_array($normalized, self::DENY, true)) {
                 Cache::forget($pendingKey);
                 return $this->finish($chatId, $text, 'Baik, dibatalkan.');
+            }
+
+            // Aksi yang bisa dikoreksi (mis. rekap struk): balasan bebas
+            // diperlakukan sebagai koreksi selama memang menyoal rekap itu.
+            $pendingAction = $this->registry->find($pending['action']);
+
+            if ($pendingAction && $pendingAction->supportsRefine()) {
+                try {
+                    $prepared = $pendingAction->refine($pending['prepared'], $text);
+
+                    $this->putPending($pendingKey, $pendingAction, $prepared);
+
+                    return $this->finish($chatId, $text, $pendingAction->preview($prepared));
+                } catch (NotACorrectionException) {
+                    // Bukan koreksi -> lanjut sebagai permintaan baru di bawah.
+                } catch (RuntimeException $e) {
+                    // Koreksi belum jelas: pertahankan yang tertunda, minta diperjelas.
+                    return $this->finish($chatId, $text, $e->getMessage());
+                }
             }
 
             // Selain ya/tidak -> anggap permintaan baru, buang yang tertunda.
@@ -89,12 +109,48 @@ class BotOrchestrator
             return $this->finish($chatId, $text, $e->getMessage());
         }
 
-        Cache::put($pendingKey, [
-            'action' => $action->name(),
-            'prepared' => $prepared,
-        ], now()->addMinutes(self::PENDING_TTL_MINUTES));
+        $this->putPending($pendingKey, $action, $prepared);
 
         return $this->finish($chatId, $text, $action->preview($prepared));
+    }
+
+    /**
+     * Foto struk belanja: baca lewat AI, kelompokkan per kategori, lalu minta
+     * konfirmasi seperti aksi tulis lain. Struk baru menggantikan yang tertunda.
+     */
+    public function handleReceipt(int|string $chatId, string $binary, string $mime, string $caption = ''): string
+    {
+        $this->ai->resetProviderTracking();
+
+        $pendingKey = 'tg_pending:' . $chatId;
+        Cache::forget($pendingKey);
+
+        $action = $this->registry->find('catat_struk');
+        if (! $action) {
+            return 'Maaf, pembacaan struk belum tersedia.';
+        }
+
+        $label = trim($caption) !== '' ? "[struk] {$caption}" : '[struk]';
+
+        try {
+            $parsed = $this->receipts->parse($binary, $mime, $caption);
+            $prepared = $action->prepare($parsed + ['hint' => $caption]);
+        } catch (RuntimeException $e) {
+            return $this->finish($chatId, $label, $e->getMessage());
+        }
+
+        $this->putPending($pendingKey, $action, $prepared);
+
+        return $this->finish($chatId, $label, $action->preview($prepared));
+    }
+
+    /** Simpan aksi yang menunggu konfirmasi (masa berlaku ditentukan aksinya). */
+    private function putPending(string $key, WriteAction $action, array $prepared): void
+    {
+        Cache::put($key, [
+            'action' => $action->name(),
+            'prepared' => $prepared,
+        ], now()->addMinutes($action->pendingTtlMinutes()));
     }
 
     /** Simpan giliran ke riwayat lalu kembalikan balasan (diberi penanda AI). */

@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Format kolom (9 kolom, 1 sheet):
  *   A = ID         (kosong = item baru)
  *   B = Tahun      (4 digit)
- *   C = Bulan      (1–12)
+ *   C = Bulan      (1-12)
  *   D = Kategori   (string, opsional)
  *   E = Nama Item  (string, wajib)
  *   F = Nominal    (numerik)
@@ -65,7 +65,7 @@ class BudgetExcelService
         $sheet->getStyle('A2')->getFont()->setColor((new \PhpOffice\PhpSpreadsheet\Style\Color())->setRGB('555555'));
 
         // ── Row 3: Petunjuk ──
-        $sheet->setCellValue('A3', 'Petunjuk: Kolom A (ID) jangan diubah — kosongkan untuk item baru. Kolom B (Tahun) dan C (Bulan) wajib diisi. Status: Y = selesai, N = belum.');
+        $sheet->setCellValue('A3', 'Petunjuk: Kolom A (ID) jangan diubah, kosongkan untuk item baru. Kolom B (Tahun) dan C (Bulan) wajib diisi. Status: Y = selesai, N = belum.');
         $sheet->mergeCells('A3:I3');
         $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9);
         $sheet->getStyle('A3')->getFont()->getColor()->setRGB('888888');
@@ -115,7 +115,7 @@ class BudgetExcelService
         $this->applyColumnWidths($sheet);
 
         // ── Row 1: Judul ──
-        $sheet->setCellValue('A1', 'SEMUA BUDGET — Export: ' . date('d/m/Y'));
+        $sheet->setCellValue('A1', 'SEMUA BUDGET - Export: ' . date('d/m/Y'));
         $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -129,7 +129,7 @@ class BudgetExcelService
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // ── Row 3: Petunjuk ──
-        $sheet->setCellValue('A3', 'Petunjuk: Kolom A (ID) jangan diubah — kosongkan untuk item baru. Kolom B (Tahun) dan C (Bulan) wajib diisi. Status: Y = selesai, N = belum.');
+        $sheet->setCellValue('A3', 'Petunjuk: Kolom A (ID) jangan diubah, kosongkan untuk item baru. Kolom B (Tahun) dan C (Bulan) wajib diisi. Status: Y = selesai, N = belum.');
         $sheet->mergeCells('A3:I3');
         $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9);
         $sheet->getStyle('A3')->getFont()->getColor()->setRGB('888888');
@@ -137,7 +137,7 @@ class BudgetExcelService
         // ── Row 5: Header kolom ──
         $this->writeColumnHeaders($sheet);
 
-        // ── Row 6+: Data — diberi warna zebra per periode ──
+        // ── Row 6+: Data: diberi warna zebra per periode ──
         $row         = self::DATA_START_ROW;
         $prevPeriod  = null;
         $colorToggle = false;
@@ -198,7 +198,7 @@ class BudgetExcelService
                     continue;
                 }
 
-                // Verifikasi periode — jika baris punya Tahun/Bulan berbeda, lewati
+                // Verifikasi periode: jika baris punya Tahun/Bulan berbeda, lewati
                 if ($fileYear > 0 && $fileMonth > 0 && ($fileYear !== $year || $fileMonth !== $month)) {
                     $results['skipped']++;
                     $results['errors'][] = "Baris {$row} dilewati: periode {$fileYear}-{$fileMonth} berbeda dari yang diharapkan ({$year}-{$month})";
@@ -362,7 +362,7 @@ class BudgetExcelService
     }
 
     /**
-     * Set lebar kolom A–I.
+     * Set lebar kolom A-I.
      */
     private function applyColumnWidths($sheet): void
     {

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Budgeting ' . $year . ' — STRACK')
+@section('title', 'Budgeting ' . $year . ' - STRACK')
 
 @section('content')
 
@@ -110,9 +110,9 @@ $monthNamesFull = [
                             @if($catSubtotals[$m] > 0)
                                 {{ number_format($catSubtotals[$m], 0, ',', '.') }}
                             @elseif($budgets->has($m))
-                                <span class="text-muted">—</span>
+                                <span class="text-muted">-</span>
                             @else
-                                <span class="text-muted opacity-25">—</span>
+                                <span class="text-muted opacity-25">-</span>
                             @endif
                         </td>
                         @endfor
@@ -167,7 +167,7 @@ $monthNamesFull = [
 
                             @else
                                 {{-- Belum ada budget di bulan ini --}}
-                                <span class="no-data">—</span>
+                                <span class="no-data">-</span>
                             @endif
                         </td>
                         @endfor
@@ -358,13 +358,13 @@ thead th.month-all-done .month-total {
 .amount-cell.no-budget { background: rgba(0,0,0,.015); }
 .no-data { color: #E5E7EB; font-size: .75rem; }
 
-/* Item exists — PENDING (belum close) */
+/* Item exists: PENDING (belum close) */
 .amount-cell.item-exists .toggle-pfx {
     font-family: monospace;
     font-weight: 700;
     font-size: .78rem;
     cursor: pointer;
-    color: #f59e0b;          /* amber — belum selesai */
+    color: #f59e0b;          /* amber, belum selesai */
     user-select: none;
     transition: color .15s;
     margin-right: 2px;

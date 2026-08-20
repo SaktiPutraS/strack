@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Budget ' . $budget->period . ' — STRACK')
+@section('title', 'Budget ' . $budget->period . ' - STRACK')
 
 @section('content')
 
@@ -19,7 +19,7 @@
     {{-- Judul periode --}}
     <div class="text-center flex-grow-1">
         <span class="fw-semibold text-purple fs-6">
-            {{ $prevBudget ? $prevBudget->period : '—' }}
+            {{ $prevBudget ? $prevBudget->period : '-' }}
             <span class="text-secondary mx-2">●</span>
             {{ $budget->period }}
         </span>
@@ -74,7 +74,7 @@
                     </div>
                 </div>
             @else
-                <div class="col-head-title text-muted">—</div>
+                <div class="col-head-title text-muted">-</div>
                 <div class="col-head-meta text-muted fs-8">Belum ada budget bulan lalu</div>
             @endif
         </div>

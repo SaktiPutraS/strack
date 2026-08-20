@@ -93,7 +93,7 @@
         <!-- Asset Overview Card -->
         <div class="col-12 col-lg-6">
             <div class="card luxury-card border-0 h-100">
-                <!-- Bank Octo & Piutang — ditampilkan besar karena paling sering dicek -->
+                <!-- Bank Octo & Piutang: ditampilkan besar karena paling sering dicek -->
                 <div class="card-header bg-white border-0 p-3 p-md-4 pb-3">
                     <p class="text-muted fw-bold mb-3" style="font-size:0.7rem;letter-spacing:0.8px;text-transform:uppercase;">
                         <i class="bi bi-eye me-1 text-purple"></i>Saldo Utama
@@ -128,7 +128,7 @@
                     </div>
                 </div>
                 <div class="card-body p-3 p-md-4 pt-2">
-                    <!-- Total Asset — ringkasan kecil -->
+                    <!-- Total Asset: ringkasan kecil -->
                     <div class="d-flex align-items-center justify-content-between px-3 py-2 rounded-3 mb-3"
                         style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.12);">
                         <span class="text-muted fw-semibold" style="font-size:0.78rem;">

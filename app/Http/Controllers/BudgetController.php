@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class BudgetController extends Controller
 {
     /* ══════════════════════════════════════════════════════════════════════════
-     *  INDEX — Matrix 12 bulan
+     *  INDEX: Matrix 12 bulan
      * ══════════════════════════════════════════════════════════════════════════ */
     public function index(Request $request): View
     {
@@ -52,7 +52,7 @@ class BudgetController extends Controller
             }
         }
 
-        // Sort kategori A–Z, "Tanpa Kategori" selalu di akhir
+        // Sort kategori A-Z, "Tanpa Kategori" selalu di akhir
         sort($categoryOrder);
         if (($idx = array_search('Tanpa Kategori', $categoryOrder)) !== false) {
             unset($categoryOrder[$idx]);
@@ -189,7 +189,7 @@ class BudgetController extends Controller
     }
 
     /* ══════════════════════════════════════════════════════════════════════════
-     *  STORE ITEM (AJAX — tambah item ke bulan yg sudah ada)
+     *  STORE ITEM (AJAX: tambah item ke bulan yg sudah ada)
      * ══════════════════════════════════════════════════════════════════════════ */
     public function storeItem(Request $request, int $year, int $month): JsonResponse
     {

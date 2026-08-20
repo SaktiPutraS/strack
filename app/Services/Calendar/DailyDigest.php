@@ -30,6 +30,12 @@ class DailyDigest
     ];
 
     /**
+     * Domain diingatkan di titik-titik ini saja (sisa hari sebelum kedaluwarsa),
+     * bukan tiap hari selama sebulan penuh. Keputusan user 2026-08-20.
+     */
+    private const DOMAIN_REMIND_DAYS = [30, 14, 7, 3, 1, 0];
+
+    /**
      * @return array<string, array{label: string, icon: string, items: string[]}>
      *         Hanya kelompok yang ADA ISINYA yang dikembalikan.
      */
@@ -115,14 +121,48 @@ class DailyDigest
             ->all();
     }
 
+    /**
+     * Domain yang habis hari ini DAN yang mendekati kedaluwarsa di titik
+     * pengingat (H-30, H-14, H-7, H-3, H-1). Domain yang sudah lewat tidak
+     * ikut supaya tidak ditagih terus-menerus tiap pagi.
+     */
     private function domains(Carbon $date): array
     {
-        return Domain::whereDate('expires_at', $date)
+        $terjauh = max(self::DOMAIN_REMIND_DAYS);
+
+        return Domain::whereNotNull('expires_at')
+            ->whereBetween('expires_at', [
+                $date->format('Y-m-d'),
+                $date->copy()->addDays($terjauh)->format('Y-m-d'),
+            ])
+            ->orderBy('expires_at')
             ->orderBy('name')
             ->get()
-            ->map(fn (Domain $d) => $d->name . ' habis hari ini'
-                . ($d->renewal_cost ? ' (Rp ' . number_format((float) $d->renewal_cost, 0, ',', '.') . ')' : ''))
+            ->filter(fn (Domain $d) => in_array($this->sisaHari($date, $d), self::DOMAIN_REMIND_DAYS, true))
+            ->map(function (Domain $d) use ($date) {
+                $sisa = $this->sisaHari($date, $d);
+                $biaya = $d->renewal_cost
+                    ? ' (Rp ' . number_format((float) $d->renewal_cost, 0, ',', '.') . ')'
+                    : '';
+
+                return $sisa === 0
+                    ? $d->name . ' habis hari ini' . $biaya
+                    : $d->name . ' habis ' . $sisa . ' hari lagi, ' . $this->formatShort($d->expires_at) . $biaya;
+            })
+            ->values()
             ->all();
+    }
+
+    /** Selisih hari dari tanggal acuan ke tanggal kedaluwarsa domain. */
+    private function sisaHari(Carbon $date, Domain $domain): int
+    {
+        return (int) $date->copy()->startOfDay()->diffInDays($domain->expires_at->copy()->startOfDay(), false);
+    }
+
+    /** Tanggal ringkas Bahasa Indonesia, mis. "19 September 2026". */
+    private function formatShort(Carbon $date): string
+    {
+        return $date->day . ' ' . self::MONTHS[$date->month] . ' ' . $date->year;
     }
 
     /**

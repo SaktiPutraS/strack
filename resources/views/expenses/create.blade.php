@@ -289,7 +289,7 @@
             amountInput.addEventListener('input', validateAmount);
             updateBalanceInfo();
 
-            // Tombol Simpan & Lanjut — set action lalu submit
+            // Tombol Simpan & Lanjut: set action lalu submit
             saveNextBtn.addEventListener('click', function() {
                 formAction.value = 'save_next';
                 document.getElementById('expense-form').requestSubmit();

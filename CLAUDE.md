@@ -49,6 +49,30 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-20 (Foto struk Telegram jadi pengeluaran otomatis)
+Permintaan user (belanja Alfagift malas dicatat manual). Kirim foto struk ke bot, bot merekap per kategori,
+balas ya untuk simpan. Detail di DOKUMENTASI.md.
+- POLA LAMA YANG DITIRU (dibaca dari 80 pengeluaran "Alfagift" di produksi): 1 struk = BEBERAPA baris
+  pengeluaran, satu per kategori, deskripsi "Alfagift - Barang, Barang", sumber BANK.
+- KEPUTUSAN user: (1) VOUCHER dipotong di kategori ENTERTAIN dulu, kalau tidak ada/kurang baru dibagi
+  PROPORSIONAL (diskon per item tetap di itemnya); (2) rekap bisa DIKOREKSI lewat balasan bebas sebelum
+  simpan; (3) berlaku untuk struk toko APA PUN, nama toko jadi awalan deskripsi.
+- File baru: `ReceiptParser` (AI vision -> JSON item + kategori), `ReceiptTally` (SEMUA hitungan uang ada di
+  kode, bukan di AI; total baris dijamin sama persis dengan total struk), `Actions/CatatStrukAction`
+  (aksi banyak-baris + `refine()` koreksi), `NotACorrectionException`, command `struk:coba` (uji baca struk
+  tanpa Telegram, default tidak menyimpan).
+- KATEGORI dipelajari dari RIWAYAT sendiri: `ReceiptParser::categoryExamples()` mengirim contoh dari 400
+  pengeluaran "alfa" terakhir ke AI (cache 3 jam, key `receipt_category_examples`). Perbaiki kategori data
+  lama + hapus cache itu = pengelompokan ikut berubah, tanpa sentuh kode.
+- Diubah: kedua provider AI kini bisa menerima GAMBAR (`inline_data` Gemini / `image.source.base64`
+  Anthropic, pesan teks lama tetap jalan); `WriteAction` +hidden/pendingTtlMinutes/supportsRefine/refine;
+  ActionRegistry menyaring aksi tersembunyi; BotOrchestrator +handleReceipt + cabang koreksi; webhook
+  menerima foto (resolusi terbesar) & dokumen image/*; `AiGateway` jadi SINGLETON (kalau tidak, penanda
+  provider 🔵/🟠 hilang karena tiap kelas pegang instance sendiri).
+- TIDAK ada perubahan skema DB, tidak ada delta SQL. Duplikat struk BELUM dicegah (kolom `ref` sudah dibaca).
+- UJI: 94 uji SQLite lulus semua. Lint bersih, view:cache OK. BELUM diuji dengan AI sungguhan (kunci hanya
+  di .env hosting) - setelah deploy, uji dengan `php artisan struk:coba <foto>`.
+
 ### 2026-08-20 (Domain diingatkan H-30 + bersih-bersih em dash kode lama)
 Lanjutan pengingat Telegram, hari yang sama. Detail di DOKUMENTASI.md.
 - `DailyDigest::DOMAIN_REMIND_DAYS = [30,14,7,3,1,0]`: domain disebut hanya kalau sisa harinya PERSIS salah

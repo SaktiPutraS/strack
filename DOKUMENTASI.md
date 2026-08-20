@@ -4,6 +4,106 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-20 (Foto struk di Telegram jadi pengeluaran otomatis)
+
+Permintaan user: belanja lewat aplikasi Alfagift merepotkan dicatat karena harus dirinci, dikelompokkan
+per kategori, baru diinput satu per satu. Sekarang cukup KIRIM FOTO STRUK ke bot Telegram, bot merekap
+per kategori, user tinggal balas ya.
+
+POLA LAMA YANG DITIRU (dibaca dulu dari 80 pengeluaran berawalan "Alfagift" di produksi): satu struk
+dipecah jadi BEBERAPA baris pengeluaran, satu baris per kategori, deskripsi "Alfagift - Barang, Barang",
+sumber selalu BANK, dan nominalnya tidak bulat (tanda bahwa potongan memang sudah dibagi ke item).
+
+KEPUTUSAN user (ditanyakan di awal):
+1. VOUCHER (potongan seluruh belanja) dibebankan ke kategori ENTERTAIN lebih dulu. Kalau belanjaan itu
+   tidak punya item Entertain, atau nilainya tidak cukup, sisanya dibagi PROPORSIONAL ke kategori lain.
+   Diskon per item tetap dipotong di itemnya sendiri.
+2. Sebelum disimpan, rekap BISA DIKOREKSI lewat balasan biasa (bukan cuma ya/tidak).
+3. Cakupan: struk toko APA PUN (nama toko dibaca dari struk dan jadi awalan deskripsi), dengan
+   pengelompokan yang tetap belajar dari kebiasaan pencatatan sendiri.
+
+### Alur
+Foto ke Telegram -> `TelegramWebhookController` (ambil foto resolusi terbesar / dokumen image/*) ->
+`TelegramService::downloadFile` -> `BotOrchestrator::handleReceipt` -> `ReceiptParser` (AI vision, balas
+JSON item + kategori) -> `ReceiptTally` (hitung voucher, kelompokkan per kategori) -> `CatatStrukAction`
+(rekap + konfirmasi, disimpan sebagai aksi tertunda di cache) -> balas "ya" -> beberapa `Expense` dibuat
+sekaligus dalam satu transaksi.
+
+### File baru
+- `app/Services/Ai/ReceiptParser.php`: kirim gambar + prompt ke AI, terima JSON (toko, tanggal, ref,
+  items[nama/qty/harga/diskon/kategori], voucher, ongkir, total). `decodeJson()` tahan blok kode dan
+  kalimat pengantar; `normalize()` membuang item tanpa nama, membatasi diskon <= harga, qty minimal 1,
+  kategori asing jadi LAINNYA, angka bertitik/negatif dirapikan.
+  KATEGORI TIDAK DITEBAK DARI DAFTAR KATA KUNCI DI KODE. `categoryExamples()` membaca 400 pengeluaran
+  terakhir yang deskripsinya mengandung "alfa", memecah deskripsinya jadi nama barang, lalu mengirimnya
+  ke AI sebagai acuan ("SEMBAKO: Beras, Aqua Galon, ..."). Jadi kebiasaan lama otomatis diikuti (Bebelac
+  dan Tango ke SIERRA, Kojiesan ke SKINCARE, dst) dan ikut menyesuaikan kalau kebiasaannya berubah.
+  Di-cache 3 jam dengan key `receipt_category_examples`; kalau habis memperbaiki kategori lama dan ingin
+  langsung terpakai, hapus cache itu.
+- `app/Services/Ai/ReceiptTally.php`: SELURUH hitung-hitungan uang (sengaja tidak diserahkan ke AI).
+  Voucher ke ENTERTAIN dulu, sisanya proporsional; sisa pembulatan ditambahkan ke kategori terbesar
+  supaya jumlah semua baris SAMA PERSIS dengan total struk; kategori yang habis dimakan voucher tidak
+  dicatat; ongkir (bila ada) jadi baris LAINNYA dengan nama item "Ongkir".
+- `app/Services/Ai/Actions/CatatStrukAction.php`: aksi tulis banyak-baris. `prepare/preview/execute`
+  seperti aksi lain, plus `refine()` untuk koreksi.
+- `app/Services/Ai/Actions/NotACorrectionException.php`: penanda bahwa balasan user ternyata bukan koreksi.
+- `app/Console/Commands/StrukCoba.php`: `php artisan struk:coba <file> [--simpan] [--catatan=]`.
+  Menguji pembacaan struk TANPA lewat Telegram (default hanya menampilkan, tidak menyimpan). Dipakai untuk
+  memeriksa ketepatan baca AI di hosting dengan gambar nyata.
+
+### Perubahan file lain
+- `app/Services/Ai/Providers/GeminiProvider.php` + `AnthropicProvider.php`: isi pesan kini boleh berupa
+  daftar bagian `['type' => 'text'|'image', ...]`. Gemini menerjemahkannya ke `inline_data`
+  (mime_type + base64), Anthropic ke blok `image.source.base64`. Pesan teks biasa tetap seperti dulu,
+  jadi seluruh fitur bot lama tidak terpengaruh.
+- `app/Services/Ai/Actions/WriteAction.php`: tambahan `hidden()`, `pendingTtlMinutes()`, `supportsRefine()`,
+  `refine()`. Semuanya punya default, aksi lama tidak perlu diubah.
+- `app/Services/Ai/Actions/ActionRegistry.php`: menerima `AiGateway` (dibutuhkan aksi struk) dan
+  MENYARING aksi tersembunyi dari daftar tool AI (aksi struk tidak bisa dipicu dari teks).
+- `app/Services/Ai/BotOrchestrator.php`: `handleReceipt()`; cabang KOREKSI untuk aksi yang menunggu
+  konfirmasi; masa berlaku aksi tertunda kini ditentukan aksinya (konstanta PENDING_TTL_MINUTES dibuang).
+- `app/Http/Controllers/TelegramWebhookController.php`: cabang foto + helper `photoFrom()` (foto biasa
+  ambil ukuran TERBESAR, atau dokumen ber-mime image/*; PDF diabaikan), teks /help ditambah.
+- `app/Providers/AppServiceProvider.php`: `AiGateway` jadi SINGLETON. Ketahuan dari uji: penanda provider
+  (biru/oranye) hilang karena ReceiptParser, aksi, dan orchestrator masing-masing memegang instance
+  sendiri, sedangkan `lastProvider()` disimpan di instance.
+
+### Bentuk percakapan
+Kirim foto struk, bot membalas rekap: judul "Struk Alfagift - 20 Agustus 2026", sumber dana, lalu daftar
+bernomor per kategori (nominal + nama barang + catatan di kategori mana voucher dipotong), ditutup jumlah
+baris dan totalnya. Balas "ya" untuk simpan, "tidak" untuk batal, atau kalimat koreksi bebas
+("tango masukkan ke sierra", "ini pakai cash", "tanggalnya kemarin"). Koreksi memakai AI HANYA untuk
+memetakan barang ke kategori; nominalnya dihitung ulang di kode. Kalau balasan ternyata pertanyaan lain,
+struk yang menunggu dibuang dan pesan diproses seperti biasa. Aksi tertunda struk berlaku 20 menit
+(aksi lain tetap 5 menit).
+
+### Catatan penting
+- Caption foto ikut dikirim sebagai petunjuk ke AI, dan kata "cash"/"tunai" di caption mengubah sumber
+  dana jadi CASH (default BANK, mengikuti kebiasaan belanja daring).
+- Bila hasil baca tidak cocok dengan total di struk, rekap diberi tanda peringatan beserta selisihnya.
+  Data tetap bisa disimpan (keputusan di user), tapi selisihnya terlihat jelas.
+- Saldo dicek sebelum menyimpan, sama seperti `catat_pengeluaran`.
+- TIDAK ada perubahan skema DB, tidak ada delta SQL. Deploy cukup push + pull.
+- Struk yang sama bisa terkirim dua kali dan akan tercatat dua kali (belum ada penolakan duplikat).
+  Nomor referensi struk sudah ikut dibaca (`ref`), jadi kalau nanti mau dicegah, jalannya sudah ada.
+
+### Verifikasi
+- Uji lokal (SQLite in-memory, MySQL lokal masih mati): **94 uji, 94 LULUS**. Cakupan: perhitungan voucher
+  (ke Entertain, proporsional, voucher lebih besar dari Entertain, pembulatan, ongkir, tanpa voucher,
+  voucher menutup seluruh belanja), pembacaan JSON AI yang berantakan, acuan kategori dari riwayat,
+  aksi struk (rekap, simpan, saldo kurang, caption cash, peringatan selisih, koreksi kategori/sumber,
+  balasan yang bukan koreksi), alur bot (konfirmasi, koreksi, ganti topik, struk kedua menimpa yang
+  pertama, gambar gagal dibaca), dan webhook (foto resolusi terbesar, dokumen PNG, PDF diabaikan).
+- Lint bersih, `view:cache` sukses, `struk:coba` terdaftar, tidak ada em dash / en dash.
+- BELUM diuji dengan AI sungguhan: kunci Gemini/Claude hanya ada di .env HOSTING, jadi ketepatan membaca
+  gambar baru bisa dinilai setelah deploy (pakai `struk:coba` dengan foto struk asli).
+- CATATAN UJI: `Http::fake()` MENUMPUK stub, bukan mengganti. Antrean respons dari blok uji sebelumnya
+  ikut terpakai dan memicu error "response sequence is empty". Solusi di skrip uji: `Http::swap(new
+  Illuminate\Http\Client\Factory())` sebelum memasang fake baru. Skrip uji juga perlu
+  `config(['session.driver' => 'array'])` karena default project memakai tabel sessions.
+
+---
+
 ## Sesi 2026-08-20 (Pengingat domain H-30 di pesan harian + bersih-bersih em dash)
 
 Lanjutan pengingat Telegram di hari yang sama. Dua permintaan user: (1) domain jangan cuma diingatkan

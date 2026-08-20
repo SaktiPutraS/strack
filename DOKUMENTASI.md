@@ -96,8 +96,16 @@ Daftar cron user sebelumnya cuma dua, dan TIDAK ADA yang untuk strack:
 `0 8 1 * * public_html/cron_reminder.php` dan `* * * * * /usr/bin/php /home/u137841455/domains/
 horawranghae.com/public_html/artisan schedule:run` (menunjuk domain LAIN).
 Artinya `domains:remind` yang dijadwalkan sejak 2026-08-13 SELAMA INI TIDAK PERNAH JALAN.
-Yang perlu ditambah di hPanel (satu cron, tiap menit, menghidupkan semua jadwal strack sekaligus):
-`* * * * * /usr/bin/php /home/u137841455/domains/strack.my.id/public_html/artisan schedule:run >/dev/null 2>&1`
+Yang ditambah di hPanel (satu cron, tiap menit, menghidupkan semua jadwal strack sekaligus):
+`* * * * * /usr/bin/php /home/u137841455/domains/strack.my.id/public_html/artisan schedule:run`
+
+SUDAH DIPASANG user 2026-08-20 dan TERVERIFIKASI BENAR-BENAR DIEKSEKUSI, bukan cuma terdaftar. Cara
+mengujinya tanpa menunggu jam jadwal, dan tanpa deploy: di hosting tambahkan sementara
+`Schedule::call(fn () => file_put_contents(storage_path('logs/cron-alive.txt'), date('c') . PHP_EOL,
+FILE_APPEND))->everyMinute();` di `routes/console.php`, `optimize:clear`, tunggu ~150 detik, lalu baca
+file penanda; kembalikan dengan `git checkout -- routes/console.php` + `optimize:clear` + `view:cache`.
+Hasil uji: penanda tercatat 3 kali berturut-turut (12:47, 12:48, 12:49 WIB), repo hosting kembali bersih.
+Jam server sudah WIB, jadi `dailyAt('07:00')` memang jam 7 pagi waktu setempat.
 
 ### Verifikasi
 - Lokal (SQLite in-memory, MySQL lokal masih mati): **21 uji, 21 lulus**. Cakupan: hari kosong -> null,

@@ -72,9 +72,12 @@ Permintaan user. Command baru `calendar:remind` + service `DailyDigest`. Detail 
   saja, tidak mengirim; enak buat uji di hosting). Dijadwalkan `dailyAt('07:00')` di routes/console.php.
 - Aturan tanggal per sumber SENGAJA diduplikasi dari CalendarController (feed butuh rentang + payload
   FullCalendar, digest cuma 1 tanggal + teks). Ada komentar silang: ubah satu, ubah keduanya.
-- CRON: daftar cron hosting TIDAK punya entri strack sama sekali (yang ada `schedule:run` menunjuk
-  horawranghae.com). Jadi `domains:remind` sejak 2026-08-13 TIDAK PERNAH JALAN. Perlu ditambah di hPanel:
-  `* * * * * /usr/bin/php /home/u137841455/domains/strack.my.id/public_html/artisan schedule:run`
+- CRON: SUDAH DIPASANG user 2026-08-20 di hPanel dan TERVERIFIKASI JALAN
+  (`* * * * * /usr/bin/php /home/u137841455/domains/strack.my.id/public_html/artisan schedule:run`).
+  Sebelum itu daftar cron TIDAK punya entri strack sama sekali (yang ada menunjuk horawranghae.com),
+  jadi `domains:remind` sejak 2026-08-13 memang tidak pernah jalan. Cara verifikasi cron tanpa menunggu
+  jadwal: tambah `Schedule::call(...)->everyMinute()` penanda LANGSUNG di hosting, tunggu ~2 menit, cek
+  file penanda, lalu `git checkout -- routes/console.php` (tak perlu deploy, repo hosting kembali bersih).
 - Sekalian: em dash di pesan Telegram `DomainsRemind` diganti titik dua (melanggar aturan gaya).
 - UJI: SQLite in-memory, 21 uji LULUS semua. Catatan: SQLite simpan kolom date sebagai datetime penuh
   sehingga scopeInRange meleset -> di skrip uji tanggal dinormalkan; bukan masalah di MySQL.

@@ -4,6 +4,53 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-20 (Pengingat domain H-30 di pesan harian + bersih-bersih em dash)
+
+Lanjutan pengingat Telegram di hari yang sama. Dua permintaan user: (1) domain jangan cuma diingatkan
+tepat di hari kedaluwarsa, mulai H-30 saja; (2) bereskan sisa em dash di kode lama.
+
+KEPUTUSAN user (ditanyakan dulu karena berpengaruh ke jumlah pesan yang masuk tiap pagi):
+(1) domain diingatkan di TITIK TERTENTU saja, bukan tiap hari selama sebulan;
+(2) jadwal `domains:remind` 08:00 DIMATIKAN supaya tidak ada dua pesan beririsan tiap pagi.
+
+### Pengingat domain H-30
+- `DailyDigest::DOMAIN_REMIND_DAYS = [30, 14, 7, 3, 1, 0]`. Domain hanya disebut kalau sisa harinya PERSIS
+  salah satu angka itu. Domain dengan sisa 20 hari (bukan titik) atau 31 hari (di luar jangkauan) dilewati.
+- Domain yang tanggalnya SUDAH LEWAT sengaja TIDAK ikut. Kalau ikut, domain lama yang tidak diperpanjang
+  akan ditagih tiap pagi selamanya.
+- Format baris: "nama.com habis hari ini (Rp x)" untuk H-0, dan "nama.com habis 30 hari lagi,
+  19 September 2026 (Rp x)" untuk sisanya. Diurutkan dari yang paling dekat.
+- Helper baru: `sisaHari()` (selisih hari, dihitung dari awal hari supaya tidak terpengaruh jam) dan
+  `formatShort()` (tanggal ringkas Bahasa Indonesia).
+
+### Jadwal domains:remind dimatikan
+`routes/console.php` tidak lagi menjadwalkan `domains:remind`; ada komentar yang menjelaskan alasannya
+(peringatan H-30 sudah masuk pesan 07:00). COMMAND-NYA TETAP ADA, tinggal `php artisan domains:remind`
+kalau sewaktu-waktu mau daftar domain lengkap di luar jadwal.
+
+### Bersih-bersih em dash / en dash di kode lama
+22 kemunculan di 6 file dihapus (aturan gaya user: em dash & en dash dilarang di output mana pun).
+Diganti sesuai konteks: titik dua, koma, atau tanda hubung biasa.
+- `app/Http/Controllers/BudgetController.php` (3): judul komentar + rentang "A-Z".
+- `app/Services/BudgetExcelService.php` (6): termasuk 3 teks yang DILIHAT user di file Excel hasil export
+  ("Petunjuk: Kolom A (ID) jangan diubah, kosongkan untuk item baru", judul "SEMUA BUDGET - Export: ...").
+- `resources/views/budgets/index.blade.php` (6) & `show.blade.php` (3): judul halaman "... - STRACK" dan
+  placeholder sel kosong yang tadinya karakter em dash, sekarang tanda hubung biasa.
+- `resources/views/dashboard/index.blade.php` (2) & `expenses/create.blade.php` (1): komentar.
+HATI-HATI kalau mengulang: garis pemisah komentar `──` itu karakter BOX DRAWING (U+2500), BUKAN dash, dan
+dipakai di banyak file termasuk kode baru. Jangan ikut diganti. Penggantian kemarin hanya U+2014 & U+2013,
+sudah diverifikasi garis pemisahnya utuh.
+
+### Verifikasi
+- Uji lokal SQLite: **30 uji sumber (naik dari 22) + 22 uji digest/command = 52 uji, semua lulus.**
+  Tambahan uji domain: H-1/H-3/H-7/H-14/H-30 masing-masing ikut dengan kalimat & tanggal yang benar,
+  H-20 dan H-31 dilewati, domain kedaluwarsa dilewati, urutan dari yang terdekat, biaya perpanjangan ikut,
+  dan `domains:remind` sudah TIDAK terdaftar di scheduler.
+- Lint bersih di semua file yang disentuh, `view:cache` sukses, grep em dash/en dash di
+  `app/ resources/ routes/ config/ database/ public/` hasilnya NIHIL.
+
+---
+
 ## Sesi 2026-08-20 (Pengingat Telegram: isi kalender hari ini, tiap pagi)
 
 Permintaan user: setiap hari kirim semua catatan/agenda hari ini ke Telegram, KECUALI todo.

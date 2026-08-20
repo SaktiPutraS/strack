@@ -49,6 +49,19 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-20 (Domain diingatkan H-30 + bersih-bersih em dash kode lama)
+Lanjutan pengingat Telegram, hari yang sama. Detail di DOKUMENTASI.md.
+- `DailyDigest::DOMAIN_REMIND_DAYS = [30,14,7,3,1,0]`: domain disebut hanya kalau sisa harinya PERSIS salah
+  satu angka itu (keputusan user: titik tertentu, bukan tiap hari selama sebulan). Sisa 20 hari atau 31 hari
+  dilewati. Domain yang SUDAH LEWAT sengaja tak ikut (kalau ikut, ditagih tiap pagi selamanya).
+- Jadwal `domains:remind` 08:00 DIMATIKAN di routes/console.php supaya tidak dobel dengan pesan 07:00.
+  Command-nya TETAP ADA untuk dipanggil manual.
+- EM DASH: 22 kemunculan di 6 file dibuang (BudgetController, BudgetExcelService termasuk teks yang dilihat
+  user di file Excel export, budgets/index + show, dashboard/index, expenses/create). Kini grep em/en dash
+  di app+resources+routes+config+database+public NIHIL.
+  AWAS: garis pemisah komentar `──` itu BOX DRAWING (U+2500), BUKAN dash. Jangan ikut diganti.
+- UJI: 52 uji SQLite lulus semua (30 sumber + 22 digest/command). Lint bersih, view:cache OK.
+
 ### 2026-08-20 (Pengingat Telegram: isi kalender hari ini tiap pagi 07:00)
 Permintaan user. Command baru `calendar:remind` + service `DailyDigest`. Detail di DOKUMENTASI.md.
 - CAKUPAN (keputusan user): SEMUA isi kalender hari ini (agenda pribadi + deadline proyek + domain +

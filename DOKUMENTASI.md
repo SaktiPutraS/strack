@@ -4,6 +4,65 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-20 (Pengingat Telegram: isi kalender hari ini, tiap pagi)
+
+Permintaan user: setiap hari kirim semua catatan/agenda hari ini ke Telegram, KECUALI todo.
+
+KEPUTUSAN user (ditanyakan di awal): (1) cakupan = SEMUA isi kalender hari ini, jadi agenda pribadi +
+deadline proyek + domain kedaluwarsa + maintenance + jatuh tempo hutang piutang; todo tetap tidak ikut;
+(2) jam kirim 07:00 WIB (`APP_TIMEZONE` server sudah Asia/Jakarta lewat `config/app.php`).
+
+### File baru
+- `app/Services/Calendar/DailyDigest.php`: kumpulkan isi kalender untuk SATU tanggal jadi teks polos.
+  `forDate()` mengembalikan kelompok yang ADA ISINYA saja; `buildMessage()` merangkai pesan Telegram dan
+  mengembalikan NULL kalau hari itu kosong; `emptyMessage()` dipakai kalau pengiriman dipaksa;
+  `formatDate()` menulis tanggal Bahasa Indonesia sendiri (nama hari + bulan) karena `APP_LOCALE` masih `en`
+  dan mengubah locale global terlalu berisiko buat seluruh aplikasi.
+- `app/Console/Commands/CalendarRemind.php`: command `calendar:remind` dengan opsi `--date=` (default hari
+  ini), `--user=admin` (kolom user_id pemilik agenda), `--force` (kirim walau kosong), `--dry` (tampilkan
+  pesan di layar, tidak mengirim apa pun - dipakai buat uji di hosting).
+
+### Perubahan file lain
+- `routes/console.php`: `Schedule::command('calendar:remind')->dailyAt('07:00')`.
+- `app/Console/Commands/DomainsRemind.php`: em dash di baris pesan Telegram diganti titik dua (melanggar
+  aturan gaya user yang melarang em dash / en dash di output mana pun).
+
+### Bentuk pesan
+Judul "🗓️ Agenda Hari Ini" + tanggal Indonesia, lalu kelompok berikon yang ada isinya saja:
+📌 Agenda (jam + judul + deskripsi dalam kurung), 📋 Deadline Proyek (klien - judul + sisa tagihan),
+🌐 Domain Kedaluwarsa (+ biaya perpanjangan), 🔧 Maintenance (+ label jadwal), 💰 Jatuh Tempo
+(hutang/piutang - nama pihak + sisa). HARI YANG KOSONG TIDAK DIKIRIM sama sekali (anti-spam), kecuali
+dijalankan manual dengan `--force`.
+
+### Keputusan teknis
+- Aturan tanggal tiap sumber DIDUPLIKASI dari `CalendarController` (feed kalender), bukan di-refactor jadi
+  satu service bersama. Alasannya: feed kalender baru selesai diuji dan bekerja untuk RENTANG tanggal +
+  payload FullCalendar (warna/ikon/url), sedangkan digest cuma butuh SATU tanggal dalam bentuk teks. Ada
+  komentar silang di kedua file: kalau aturan tanggal salah satu diubah, ubah keduanya. Yang TIDAK
+  diduplikasi: agenda pribadi tetap lewat `CalendarEvent::expandRange(..., TYPE_EVENT)` yang sama.
+- Maintenance mengikuti kalender: DATE = tanggal pasti, MONTH = tanggal 1 pada bulan yang dipilih,
+  YEAR = 1 Januari. TEXT & ODOMETER tidak punya tanggal, jadi tidak pernah muncul.
+- Agenda BERULANG yang jatuh hari itu ikut terkirim (lewat expandRange), agenda user lain tidak.
+
+### CRON DI HOSTING (ini yang bikin pengingat benar-benar jalan)
+Daftar cron user sebelumnya cuma dua, dan TIDAK ADA yang untuk strack:
+`0 8 1 * * public_html/cron_reminder.php` dan `* * * * * /usr/bin/php /home/u137841455/domains/
+horawranghae.com/public_html/artisan schedule:run` (menunjuk domain LAIN).
+Artinya `domains:remind` yang dijadwalkan sejak 2026-08-13 SELAMA INI TIDAK PERNAH JALAN.
+Yang perlu ditambah di hPanel (satu cron, tiap menit, menghidupkan semua jadwal strack sekaligus):
+`* * * * * /usr/bin/php /home/u137841455/domains/strack.my.id/public_html/artisan schedule:run >/dev/null 2>&1`
+
+### Verifikasi
+- Lokal (SQLite in-memory, MySQL lokal masih mati): **21 uji, 21 lulus**. Cakupan: hari kosong -> null,
+  format tanggal Indonesia, agenda berjam (jam + deskripsi ikut), todo sekali jalan & berulang TIDAK ikut,
+  agenda berulang yang jatuh hari ini ikut, agenda user lain tidak ikut, tidak bocor ke tanggal lain,
+  `--dry` tidak menyentuh Telegram, tanggal ngawur exit 1, hari kosong tidak mengirim, `--force` mengirim
+  pesan kosong, pesan berisi terkirim ke chat id, pesan bebas em dash, jadwal terdaftar `0 7 * * *`.
+  CATATAN UJI: SQLite menyimpan kolom `date` sebagai datetime penuh sehingga `scopeInRange` (perbandingan
+  string) meleset; di skrip uji tanggal dinormalkan ke `Y-m-d` setelah insert. Bukan masalah di MySQL.
+
+---
+
 ## Sesi 2026-08-20 (Kalender: todo tidak lagi tampil di kotak tanggal)
 
 Permintaan user: todo (terutama todo RUTIN) jangan dimasukkan ke kotak tanggal kalender karena bikin

@@ -49,6 +49,23 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-20 (Pengingat Telegram: isi kalender hari ini tiap pagi 07:00)
+Permintaan user. Command baru `calendar:remind` + service `DailyDigest`. Detail di DOKUMENTASI.md.
+- CAKUPAN (keputusan user): SEMUA isi kalender hari ini (agenda pribadi + deadline proyek + domain +
+  maintenance + jatuh tempo hutang piutang). TODO TIDAK IKUT. Hari kosong TIDAK dikirim (anti-spam).
+- `app/Services/Calendar/DailyDigest.php`: kumpulkan isi 1 tanggal jadi teks berkelompok + ikon.
+  Nama hari/bulan Indonesia ditulis sendiri (APP_LOCALE masih `en`, tak diubah karena berdampak global).
+- `app/Console/Commands/CalendarRemind.php`: opsi `--date` `--user` `--force` `--dry` (dry = tampilkan
+  saja, tidak mengirim; enak buat uji di hosting). Dijadwalkan `dailyAt('07:00')` di routes/console.php.
+- Aturan tanggal per sumber SENGAJA diduplikasi dari CalendarController (feed butuh rentang + payload
+  FullCalendar, digest cuma 1 tanggal + teks). Ada komentar silang: ubah satu, ubah keduanya.
+- CRON: daftar cron hosting TIDAK punya entri strack sama sekali (yang ada `schedule:run` menunjuk
+  horawranghae.com). Jadi `domains:remind` sejak 2026-08-13 TIDAK PERNAH JALAN. Perlu ditambah di hPanel:
+  `* * * * * /usr/bin/php /home/u137841455/domains/strack.my.id/public_html/artisan schedule:run`
+- Sekalian: em dash di pesan Telegram `DomainsRemind` diganti titik dua (melanggar aturan gaya).
+- UJI: SQLite in-memory, 21 uji LULUS semua. Catatan: SQLite simpan kolom date sebagai datetime penuh
+  sehingga scopeInRange meleset -> di skrip uji tanggal dinormalkan; bukan masalah di MySQL.
+
 ### 2026-08-20 (Kalender: todo tidak lagi tampil di kotak tanggal)
 Permintaan user: todo rutin bikin tampilan bulanan spam. SEMUA todo (bukan cuma yang berulang) dikeluarkan
 dari kotak tanggal, cukup di panel kanan. Agenda tetap seperti biasa. Detail di DOKUMENTASI.md.

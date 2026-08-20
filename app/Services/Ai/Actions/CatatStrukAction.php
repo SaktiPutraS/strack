@@ -106,6 +106,14 @@ class CatatStrukAction extends WriteAction
                 . 'Periksa dulu sebelum menyimpan.';
         }
 
+        $saldo = (int) $this->saldo($p['sumber']);
+        if ($p['total'] > $saldo) {
+            $lines[] = '';
+            $lines[] = '⚠️ Saldo ' . Expense::SOURCES[$p['sumber']] . ' cuma ' . $this->rp($saldo)
+                . ', kurang ' . $this->rp($p['total'] - $saldo) . '. Catat dulu transfer/penarikan '
+                . 'yang belum masuk, atau ganti sumber dananya.';
+        }
+
         $lines[] = '';
         $lines[] = 'Balas ya untuk simpan, tidak untuk batal, atau sebutkan koreksinya '
             . '(mis. "tango masukkan ke sierra").';
@@ -207,8 +215,8 @@ class CatatStrukAction extends WriteAction
             throw new RuntimeException('Nilai belanja pada struk itu tidak terbaca dengan benar.');
         }
 
-        $this->assertBalance($p['sumber'], $p['total']);
-
+        // Saldo SENGAJA tidak dicek di sini: rekapnya harus tetap bisa dilihat
+        // dan dikoreksi walau saldo kurang. Pengecekan dilakukan saat menyimpan.
         return $p;
     }
 
@@ -272,11 +280,16 @@ PROMPT;
             : Expense::SOURCE_BANK;
     }
 
-    private function assertBalance(string $sumber, int $jumlah): void
+    private function saldo(string $sumber): float
     {
-        $saldo = $sumber === Expense::SOURCE_BANK
+        return $sumber === Expense::SOURCE_BANK
             ? BankBalance::getCurrentBalance()
             : CashBalance::getCurrentBalance();
+    }
+
+    private function assertBalance(string $sumber, int $jumlah): void
+    {
+        $saldo = $this->saldo($sumber);
 
         if ($jumlah > $saldo) {
             throw new RuntimeException(

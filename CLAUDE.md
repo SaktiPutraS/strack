@@ -49,6 +49,20 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-20 (Kalender: todo tidak lagi tampil di kotak tanggal)
+Permintaan user: todo rutin bikin tampilan bulanan spam. SEMUA todo (bukan cuma yang berulang) dikeluarkan
+dari kotak tanggal, cukup di panel kanan. Agenda tetap seperti biasa. Detail di DOKUMENTASI.md.
+- `CalendarEvent::expandRange()` +param `?string $type` (EVENT/TODO/null). `getEventsForMonth()` (kalender
+  Dashboard) & `CalendarController::ownEvents()` (feed FullCalendar) kini dikunci ke `TYPE_EVENT`.
+- View kalender: label filter "Agenda & Todo" -> "Agenda"; catatan `#todoNotice` muncul saat tipe Todo dipilih.
+- TIDAK ada perubahan skema, TIDAK ada delta SQL. Deploy cukup push + pull.
+- Panel Todo tak tersentuh (query terpisah). Todo tetap bisa diedit/dihapus lewat klik badan todo di panel.
+- KONSEKUENSI: todo sekali jalan yang sudah selesai tak terlihat lagi di kalender, sisa jejaknya di daftar
+  "Selesai terakhir" (20 terbaru). Mau dibalikkan? Tambah sumber filter baru (mis. `own_todo`); param `$type`
+  sudah menyiapkan jalannya.
+- UJI: MySQL lokal mati lagi -> SQLite in-memory, 17 uji LULUS semua (feed, panel todo, dashboard,
+  monthEvents, centang berulang). Lint bersih, view:cache OK, render 95 KB.
+
 ### 2026-08-19 (Kalender: agenda & todo BERULANG / terjadwal)
 Lanjutan menu Kalender. Agenda + todo bisa dijadwalkan berulang. SUDAH commit `f75efa6` + delta SQL
 diterapkan + deploy + smoke test produksi. Detail di DOKUMENTASI.md.
@@ -76,6 +90,15 @@ diterapkan + deploy + smoke test produksi. Detail di DOKUMENTASI.md.
   minggu" = 1,3,15,17,29 Sep; centang 1 Sep -> panel pindah ke 2 Sep; centang tanpa tanggal 422; move
   rangkaian berulang 422. Data uji sudah dihapus.
 - Uji visual browser: PENDING user.
+
+### 2026-08-19 (Domain: provider diseragamkan jadi Hostinger)
+Permintaan user (semua domain 1 hosting). Perubahan DATA di produksi lewat SSH, bukan skema, jadi tak ada
+file delta. Detail di DOKUMENTASI.md.
+- Awal: 50 domain, 32 provider NULL + 18 sudah "Hostinger", tak ada nilai lain (dicek dulu, tak ada yang tertimpa).
+- `UPDATE domains SET provider='Hostinger' WHERE provider IS NULL OR provider=''` -> 32 baris. IDEMPOTEN.
+- Hasil: 50/50 Hostinger, halaman /domains 200.
+- PENDING: `starvvoindonesia.com` (id 52) belum punya `expires_at` -> tak kena reminder domains:remind.
+  Opsional: default provider "Hostinger" di `DomainController::sync()` supaya domain baru tak kosong lagi.
 
 ### 2026-08-19 (menu Kalender: agenda + todo, gaya Google Calendar)
 Menu baru "Kalender" (`/calendar`) halaman penuh. SUDAH commit `63bcb9d` + delta SQL diterapkan + deploy +

@@ -4,6 +4,59 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-20 (Kalender: todo tidak lagi tampil di kotak tanggal)
+
+Permintaan user: todo (terutama todo RUTIN) jangan dimasukkan ke kotak tanggal kalender karena bikin
+tampilan bulanan penuh/spam. Todo cukup di panel sebelah kanan saja. Agenda TIDAK berubah, tetap tampil
+di kalender seperti biasa.
+
+KEPUTUSAN user (ditanyakan di awal): (1) SEMUA todo disembunyikan, bukan cuma yang berulang, dan TANPA
+saklar tambahan di filter; (2) kalender kecil di Dashboard ikut disamakan supaya perilakunya konsisten.
+
+### Perubahan
+- `app/Models/CalendarEvent.php`
+  - `expandRange()` dapat parameter keempat `?string $type = null` (EVENT / TODO / null = keduanya),
+    diterapkan lewat `when($type !== null, ...)`. Pemanggil lama tanpa parameter tetap dapat keduanya.
+  - `getEventsForMonth()` (sumber kalender Dashboard) kini memanggil `expandRange(..., self::TYPE_EVENT)`.
+- `app/Http/Controllers/CalendarController.php`
+  - `ownEvents()` (feed FullCalendar, sumber `own`) kini `expandRange(..., CalendarEvent::TYPE_EVENT)`.
+- `resources/views/calendar/index.blade.php`
+  - Label filter sumber "Agenda & Todo" jadi "Agenda" (isinya memang tinggal agenda).
+  - Catatan baru `#todoNotice` di modal form, muncul saat tipe Todo dipilih: "Todo tidak ditampilkan di
+    kotak tanggal, hanya di panel Todo sebelah kanan." Ditampilkan/disembunyikan di `syncTypeUi()`, yang
+    sudah dipanggil saat form dibuka maupun saat radio tipe diganti.
+
+TIDAK ada perubahan skema DB, jadi TIDAK ada file delta di `database/sql/`. Deploy cukup push + pull.
+
+### Yang sengaja TIDAK diubah
+- Panel Todo di kanan: query-nya (`CalendarController::todos`) memang terpisah dari feed, jadi tidak
+  tersentuh sama sekali. Todo berulang tetap diwakili satu baris lewat `activeOccurrence`.
+- Todo tetap bisa DIEDIT dan DIHAPUS: klik badan todo di panel memanggil `openForm(todo)`, form yang sama
+  seperti sebelumnya. Jadi tidak ada todo yang jadi tak terjangkau gara-gara hilang dari kalender.
+- `calendar.refetchEvents()` sesudah centang todo dibiarkan (mubazir tapi tidak merugikan, dan tetap perlu
+  kalau lewat form tipe diubah Todo <-> Agenda).
+- Dashboard hanya bisa MEMBUAT tipe EVENT (payload di `noteForm` sudah `type: 'EVENT'`), jadi tidak mungkin
+  ada data yang dibuat di dashboard lalu langsung hilang dari pandangan.
+
+### Konsekuensi yang perlu diingat
+- Todo SEKALI JALAN yang sudah dicentang selesai kini tidak terlihat di kalender lagi. Jejaknya tinggal di
+  daftar "Selesai terakhir" panel Todo (20 terbaru). Data di DB tetap utuh, cuma tidak dirender.
+- Kalau suatu saat todo ingin bisa dimunculkan lagi di kalender, jalur termurah: tambah sumber filter baru
+  (mis. `own_todo`) di `CalendarController::SOURCES` + satu checkbox di view. Parameter `$type` di
+  `expandRange()` sudah menyiapkan jalannya.
+
+### Verifikasi
+- MySQL lokal MATI lagi (Laragon), jadi diuji lewat SQLite in-memory (skrip di scratchpad, dua migrasi
+  kalender dijalankan langsung): **17 uji, 17 lulus, 0 gagal**. Cakupan:
+  feed sumber `own` (agenda sekali jalan & berulang tetap tampil, agenda berulang tetap banyak kemunculan,
+  todo sekali jalan & berulang TIDAK tampil); panel todo (kedua jenis todo tetap ada, todo berulang tetap
+  SATU baris, agenda tidak nyasar ke panel); `getEventsForMonth` + endpoint `monthEvents` (todo tidak ikut,
+  agenda ikut); centang todo berulang tetap 200 dan masuk daftar selesai.
+- Lint PHP bersih, `view:cache` sukses, render halaman kalender tetap 95 KB, penanda `todoNotice` ada dan
+  label lama "Agenda &amp; Todo" sudah hilang.
+
+---
+
 ## Sesi 2026-08-19 (Kalender: agenda & todo BERULANG / terjadwal)
 
 Lanjutan menu Kalender. Agenda dan todo sekarang bisa dijadwalkan berulang: setiap hari, setiap hari kerja
@@ -129,6 +182,23 @@ Cara menerapkan delta lewat SSH (pola yang berhasil, menghindari masalah kutip-g
 - Opsi lanjutan: pengecualian per tanggal (lewati/geser satu kemunculan tanpa mengubah rangkaian),
   pengingat Telegram untuk todo berulang (pola `domains:remind` sudah ada), tampilan riwayat kepatuhan
   (berapa kali dikerjakan dari sekian kemunculan) - datanya sudah tersimpan di calendar_event_completions.
+
+### Domain & Hosting: provider diseragamkan jadi Hostinger (sama hari)
+Permintaan user: semua domain pakai satu hosting, jadi kolom `provider` diisi "Hostinger" semua.
+- Kondisi awal di produksi: 50 domain, 32 provider NULL, 18 sudah "Hostinger". TIDAK ADA nilai provider lain,
+  jadi tidak ada data yang tertimpa. Dicek dulu sebelum menulis.
+- Dijalankan lewat SSH: `UPDATE domains SET provider = 'Hostinger', updated_at = NOW()
+  WHERE provider IS NULL OR provider = ''` -> 32 baris diperbarui. Query sengaja dibuat IDEMPOTEN (yang sudah
+  terisi tidak disentuh), jadi aman kalau diulang.
+- Verifikasi: 50/50 provider = Hostinger, 0 kosong. Halaman `/domains` 200 dan kata "Hostinger" muncul 100x
+  (50 domain x 2 tampilan: tabel desktop + card mobile).
+- Ini perubahan DATA, bukan skema, jadi TIDAK dibuatkan file delta di `database/sql/` (kalau DB lokal diimpor
+  ulang dari dump produksi, nilainya sudah ikut terbawa).
+- TEMUAN SAMPINGAN: 1 domain belum punya `expires_at` yaitu `starvvoindonesia.com` (id 52, kemungkinan
+  ditambahkan setelah pengisian massal 2026-08-13). Selama kosong, domain ini TIDAK akan kena reminder
+  `domains:remind`. Perlu diisi manual oleh user.
+- CATATAN untuk nanti: `DomainController::sync()` (impor dari folder ~/domains) masih menyimpan provider NULL
+  untuk domain baru. Kalau mau, provider bisa di-default "Hostinger" di sync/form biar tidak kosong lagi.
 
 ---
 

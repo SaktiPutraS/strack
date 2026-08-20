@@ -612,13 +612,16 @@ class CalendarEvent extends Model
      * Muat rangkaian dalam rentang lalu bentangkan jadi daftar kemunculan.
      * Centang selesai untuk data berulang diambil sekaligus (bukan per tanggal).
      *
+     * $type membatasi ke satu tipe saja (EVENT / TODO); null = keduanya.
+     *
      * @return array<int, array{event: self, date: string}> urut tanggal lalu jam
      */
-    public static function expandRange(string $userId, string $from, string $to): array
+    public static function expandRange(string $userId, string $from, string $to, ?string $type = null): array
     {
         /** @var EloquentCollection<int, self> $events */
         $events = self::forUser($userId)
             ->inRange($from, $to)
+            ->when($type !== null, fn (Builder $q) => $q->where('type', $type))
             ->orderBy('start_date')
             ->orderByRaw('start_time IS NULL, start_time')
             ->get();
@@ -666,8 +669,11 @@ class CalendarEvent extends Model
     }
 
     /**
-     * Catatan/agenda satu bulan untuk kalender dashboard (array polos).
+     * Agenda satu bulan untuk kalender dashboard (array polos).
      * Acara multi-hari & berulang ikut terbentang jadi kemunculan per tanggal.
+     *
+     * TODO SENGAJA TIDAK IKUT: todo (terutama yang rutin) tempatnya di panel
+     * Todo halaman Kalender, bukan memenuhi kotak tanggal.
      */
     public static function getEventsForMonth(string $userId, int $year, int $month): array
     {
@@ -676,7 +682,7 @@ class CalendarEvent extends Model
 
         return array_map(
             fn (array $row) => $row['event']->toDashboardArray($row['date']),
-            self::expandRange($userId, $from->format('Y-m-d'), $to->format('Y-m-d'))
+            self::expandRange($userId, $from->format('Y-m-d'), $to->format('Y-m-d'), self::TYPE_EVENT)
         );
     }
 }

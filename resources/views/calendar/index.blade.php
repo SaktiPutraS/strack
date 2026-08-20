@@ -46,7 +46,7 @@
                         <label class="source-filter">
                             <input type="checkbox" class="form-check-input me-2" data-source="own" checked>
                             <span class="source-dot" style="background:#8B5CF6"></span>
-                            <span>Agenda &amp; Todo</span>
+                            <span>Agenda</span>
                         </label>
                         <label class="source-filter">
                             <input type="checkbox" class="form-check-input me-2" data-source="projects" checked>
@@ -243,6 +243,13 @@
                             style="display:none;">
                             <i class="bi bi-info-circle me-1"></i>
                             Perubahan berlaku untuk <strong>seluruh rangkaian</strong>, bukan satu tanggal saja.
+                        </div>
+
+                        <div class="alert alert-light border small py-2 px-3 mb-3" id="todoNotice"
+                            style="display:none;">
+                            <i class="bi bi-check2-square me-1"></i>
+                            Todo tidak ditampilkan di kotak tanggal, hanya di panel <strong>Todo</strong>
+                            sebelah kanan.
                         </div>
 
                         <div class="mb-3">
@@ -932,10 +939,12 @@
             }
 
             const seriesNotice = document.getElementById('seriesNotice');
+            const todoNotice = document.getElementById('todoNotice');
 
             function syncTypeUi() {
                 const isTodo = selectedType() === 'TODO';
                 const recurring = repeatType() !== null;
+                todoNotice.style.display = isTodo ? 'block' : 'none';
                 // Data berulang tidak punya satu status selesai: centangnya per
                 // tanggal, lewat panel todo. Jadi saklarnya disembunyikan di sini.
                 doneWrapper.style.display = (isTodo && fields.id.value && !recurring) ? 'block' : 'none';

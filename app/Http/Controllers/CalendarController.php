@@ -430,11 +430,16 @@ class CalendarController extends Controller
     }
 
     // ── Sumber event ────────────────────────────────────────────────────────
+    /**
+     * Agenda pribadi saja. TODO SENGAJA TIDAK DIMASUKKAN ke kotak tanggal:
+     * todo rutin akan membanjiri tampilan bulanan. Tempatnya di panel Todo
+     * sebelah kanan (lihat todos()).
+     */
     private function ownEvents(string $from, string $to): array
     {
         return array_map(
             fn (array $row) => $row['event']->toCalendarPayload($row['date']),
-            CalendarEvent::expandRange($this->userId(), $from, $to)
+            CalendarEvent::expandRange($this->userId(), $from, $to, CalendarEvent::TYPE_EVENT)
         );
     }
 

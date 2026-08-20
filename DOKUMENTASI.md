@@ -95,12 +95,30 @@ struk yang menunggu dibuang dan pesan diproses seperti biasa. Aksi tertunda stru
   balasan yang bukan koreksi), alur bot (konfirmasi, koreksi, ganti topik, struk kedua menimpa yang
   pertama, gambar gagal dibaca), dan webhook (foto resolusi terbesar, dokumen PNG, PDF diabaikan).
 - Lint bersih, `view:cache` sukses, `struk:coba` terdaftar, tidak ada em dash / en dash.
-- BELUM diuji dengan AI sungguhan: kunci Gemini/Claude hanya ada di .env HOSTING, jadi ketepatan membaca
-  gambar baru bisa dinilai setelah deploy (pakai `struk:coba` dengan foto struk asli).
+- Uji dengan AI sungguhan dilakukan SETELAH deploy (kunci Gemini/Claude hanya ada di .env hosting).
+  Hasilnya di bagian "Hasil di produksi" di bawah.
 - CATATAN UJI: `Http::fake()` MENUMPUK stub, bukan mengganti. Antrean respons dari blok uji sebelumnya
   ikut terpakai dan memicu error "response sequence is empty". Solusi di skrip uji: `Http::swap(new
   Illuminate\Http\Client\Factory())` sebelum memasang fake baru. Skrip uji juga perlu
   `config(['session.driver' => 'array'])` karena default project memakai tabel sessions.
+
+
+### Hasil di produksi (sama hari, sesudah deploy)
+Deploy `b0bb828` + `0dabd10` lalu `5e00c2e`. Diuji dengan FOTO STRUK ASLI user lewat
+`php artisan struk:coba ~/struk-uji.jpeg` di hosting (file uji sudah dihapus lagi).
+- BACA AI (Gemini, `gemini-flash-lite-latest`) TEPAT: 5 item terbaca semua, harga + diskon per item
+  benar, toko "Alfagift", tanggal 2026-08-20, total Rp72.600 sama persis dengan struk.
+- Nama panjang dipendekkan sesuai kebiasaan ("Aqua Air Mineral Galon (Isi Ulang) 19 L" jadi "Aqua Galon",
+  "Bebelac Susu Formula Cair Rasa Stroberi 105 ml" jadi "Bebelac").
+- KATEGORI: Tango Wafer dan Kun Susu UHT ditaruh di SIERRA (bukan ENTERTAIN). Itu MEMANG ikut data lama,
+  di riwayat Tango pernah masuk SIERRA ("Alfagift - Tango & Bebelac") maupun ENTERTAIN. Karena tidak ada
+  kategori Entertain di struk itu, vouchernya dibagi proporsional (Sembako Rp799, Sierra Rp201) sesuai
+  aturan. Kalau maunya beda, tinggal balas koreksi di Telegram.
+- TEMUAN & PERBAIKAN (`5e00c2e`): saldo Bank Octo produksi saat itu Rp28.858, dan pengecekan saldo di
+  `prepare()` membuat rekap TIDAK BISA DILIHAT SAMA SEKALI ("saldo tidak cukup"). Pengecekan dipindah ke
+  `execute()`; rekap kini tetap tampil lengkap dengan peringatan berapa kekurangannya. Menyimpan saat
+  saldo kurang tetap ditolak, sama seperti aksi pengeluaran biasa.
+- Uji lokal setelah perbaikan: **98 uji, 98 LULUS**.
 
 ---
 

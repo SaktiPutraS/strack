@@ -70,8 +70,14 @@ balas ya untuk simpan. Detail di DOKUMENTASI.md.
   menerima foto (resolusi terbesar) & dokumen image/*; `AiGateway` jadi SINGLETON (kalau tidak, penanda
   provider 🔵/🟠 hilang karena tiap kelas pegang instance sendiri).
 - TIDAK ada perubahan skema DB, tidak ada delta SQL. Duplikat struk BELUM dicegah (kolom `ref` sudah dibaca).
-- UJI: 94 uji SQLite lulus semua. Lint bersih, view:cache OK. BELUM diuji dengan AI sungguhan (kunci hanya
-  di .env hosting) - setelah deploy, uji dengan `php artisan struk:coba <foto>`.
+- UJI: 98 uji SQLite lulus semua. Lint bersih, view:cache OK.
+- SUDAH deploy (`b0bb828`, `0dabd10`, `5e00c2e`) + TERUJI DI PRODUKSI dengan foto struk asli lewat
+  `php artisan struk:coba <foto>`: 5 item terbaca semua, harga/diskon benar, total Rp72.600 sama persis.
+  Gemini menaruh Tango & Kun Susu di SIERRA (memang ikut pola data lama); kalau maunya lain, koreksi di chat.
+- PERBAIKAN dari uji produksi (`5e00c2e`): saldo TIDAK lagi dicek saat menyiapkan rekap (dulu rekap tak
+  bisa dilihat sama sekali saat saldo tipis). Rekap tetap tampil + peringatan kekurangannya; penolakan
+  terjadi saat menyimpan. Saldo Bank Octo produksi saat uji: Rp28.858.
+- PENDING: user mencoba kirim foto struk langsung dari Telegram (termasuk alur koreksi kategori).
 
 ### 2026-08-20 (Domain diingatkan H-30 + bersih-bersih em dash kode lama)
 Lanjutan pengingat Telegram, hari yang sama. Detail di DOKUMENTASI.md.

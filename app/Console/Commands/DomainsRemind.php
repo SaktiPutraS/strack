@@ -69,7 +69,7 @@ class DomainsRemind extends Command
                 $ket = "{$sisa} hari lagi";
             }
 
-            $lines[] = "- {$d->name} — {$ket} ({$tgl})";
+            $lines[] = "- {$d->name}: {$ket} ({$tgl})";
         }
 
         return implode("\n", $lines);

@@ -49,23 +49,6 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
-### 2026-08-21 (Sinkron folder kerja lokal dengan daftar proyek strack)
-Permintaan user: `D:\Project Saktify` harus berisi pekerjaan yang masih jalan saja; yang sudah tutup
-di-RAR ke `E:\Backup Joki`; proyek jalan yang belum punya folder dikabari. Detail di DOKUMENTASI.md.
-- KEPUTUSAN user: wajib punya folder = PROGRESS+WAITING+LEAD; folder asli DIHAPUS setelah arsip diverifikasi;
-  jalan biasa = laporan saja, `-Arsipkan` untuk eksekusi dengan konfirmasi per folder; strack TIDAK menyimpan
-  path apa pun (peta disimpan lokal di `D:\Project Saktify\_peta-folder-proyek.json`).
-- File baru: `app/Console/Commands/ProyekDaftar.php` (`php artisan proyek:daftar --json`, read-only) dan
-  `scripts/sinkron-folder-proyek.ps1` (dijalankan di PC, ambil data lewat `ssh saktify`).
-- PAGAR SEBELUM HAPUS: `rar a` kode 0, `rar t` lolos, dan jumlah entri `rar lb -r` >= jumlah berkas asli.
-  UKURAN FILE JANGAN dipakai sebagai patokan (arsip sah bisa 434 byte, versi pertama salah menolaknya).
-  Folder kosong tidak diarsipkan; arsip lama tidak pernah ditimpa (diberi akhiran tanggal).
-- Skor cocok: kata nama klien bobot 3, kata judul bobot 2, proyek aktif +0.5, ambang 2. Bobot judul sempat 1
-  dengan ambang 3 dan `Project_Starvvo` (nama folder tanpa nama klien) jadi tidak ketemu.
-- Temuan: `Project_SMG_Item_Gantung` = proyek #222 PT Sinai Maju Gemilang.
-- SUDAH deploy (`0f1eb86`) dan diuji: laporan pada data asli benar, pengarsipan diuji di folder percobaan.
-- PENDING user: jalankan `./scripts/sinkron-folder-proyek.ps1` sekali untuk memetakan 12 folder.
-
 ### 2026-08-21 (Bukti transfer Telegram jadi transfer bank otomatis)
 Permintaan user. Kirim foto bukti transfer ke bot, nominalnya dicocokkan dengan total pembayaran yang
 belum ditransfer ke Bank Octo. Detail di DOKUMENTASI.md.

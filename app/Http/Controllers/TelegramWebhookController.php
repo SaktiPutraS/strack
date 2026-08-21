@@ -13,7 +13,7 @@ use Throwable;
 /**
  * Endpoint webhook Telegram. Alur:
  *   verifikasi secret -> whitelist chat_id -> (voice note ditranskrip dulu,
- *   foto struk dibaca AI) -> proses pesan -> balas ke Telegram.
+ *   gambar dibaca AI: bukti transfer atau struk) -> proses pesan -> balas ke Telegram.
  * Selalu balas 200 agar Telegram tidak retry.
  */
 class TelegramWebhookController extends Controller
@@ -51,13 +51,13 @@ class TelegramWebhookController extends Controller
             return response('ok');
         }
 
-        // 2b. Foto (struk belanja) -> dibaca AI, dirinci per kategori, lalu konfirmasi.
+        // 2b. Gambar -> dipilah dulu (bukti transfer / struk belanja), lalu konfirmasi.
         if ($photo) {
             $this->telegram->sendChatAction($chatId, 'typing');
 
             try {
                 $binary = $this->telegram->downloadFile($photo['file_id']);
-                $answer = $this->orchestrator->handleReceipt(
+                $answer = $this->orchestrator->handleImage(
                     $chatId,
                     $binary,
                     $photo['mime'],
@@ -65,8 +65,8 @@ class TelegramWebhookController extends Controller
                 );
                 $this->telegram->sendMessage($chatId, $answer);
             } catch (Throwable $e) {
-                Log::error('Telegram struk gagal diproses', ['error' => $e->getMessage()]);
-                $this->telegram->sendMessage($chatId, 'Maaf, saya gagal membaca struk itu. Coba foto ulang lebih jelas.');
+                Log::error('Telegram gambar gagal diproses', ['error' => $e->getMessage()]);
+                $this->telegram->sendMessage($chatId, 'Maaf, saya gagal membaca gambar itu. Coba foto ulang lebih jelas.');
             }
 
             return response('ok');
@@ -106,6 +106,8 @@ class TelegramWebhookController extends Controller
                 . "MEMBACA FOTO STRUK belanja: kirim saja fotonya (boleh pakai caption).\n"
                 . "Isinya saya rinci per kategori lalu dicatat jadi beberapa pengeluaran sekaligus.\n"
                 . "Sebelum disimpan masih bisa dikoreksi, misalnya: tango masukkan ke sierra.\n\n"
+                . "MEMBACA BUKTI TRANSFER: kirim fotonya, nominalnya saya cocokkan dengan seluruh\n"
+                . "pembayaran yang belum ditransfer ke Bank Octo. Kalau pas, tinggal balas ya.\n\n"
                 . "Setiap perubahan data akan saya konfirmasi dulu (balas *ya* untuk simpan).\n\n"
                 . "Penanda di awal balasan: 🔵 = dijawab Gemini (gratis), 🟠 = dijawab Claude (cadangan)."
             );

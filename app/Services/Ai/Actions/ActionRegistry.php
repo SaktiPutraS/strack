@@ -23,6 +23,7 @@ class ActionRegistry
             new CatatTransferBankAction(),
             new CatatSierraBerakAction(),
             new CatatStrukAction($ai),
+            new CatatTransferBuktiAction(),
         ] as $action) {
             $this->actions[$action->name()] = $action;
         }

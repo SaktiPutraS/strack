@@ -28,6 +28,7 @@ class BotOrchestrator
         private TextToSqlService $textToSql,
         private ActionRegistry $registry,
         private ReceiptParser $receipts,
+        private TransferProofParser $proofs,
     ) {}
 
     public function handle(int|string $chatId, string $text): string
@@ -115,15 +116,64 @@ class BotOrchestrator
     }
 
     /**
-     * Foto struk belanja: baca lewat AI, kelompokkan per kategori, lalu minta
-     * konfirmasi seperti aksi tulis lain. Struk baru menggantikan yang tertunda.
+     * Gambar yang dikirim ke bot: dipilah dulu jadi BUKTI TRANSFER atau STRUK
+     * belanja, lalu diteruskan ke alur masing-masing. Gambar yang tidak jelas
+     * jenisnya tetap dicoba dibaca sebagai struk (perilaku lama).
      */
-    public function handleReceipt(int|string $chatId, string $binary, string $mime, string $caption = ''): string
+    public function handleImage(int|string $chatId, string $binary, string $mime, string $caption = ''): string
     {
         $this->ai->resetProviderTracking();
 
+        Cache::forget('tg_pending:' . $chatId);
+
+        try {
+            $proof = $this->proofs->parse($binary, $mime, $caption);
+        } catch (RuntimeException $e) {
+            $label = trim($caption) !== '' ? "[gambar] {$caption}" : '[gambar]';
+
+            return $this->finish($chatId, $label, $e->getMessage());
+        }
+
+        if ($proof['jenis'] === TransferProofParser::KIND_TRANSFER) {
+            return $this->handleTransferProof($chatId, $proof, $caption);
+        }
+
+        return $this->handleReceipt($chatId, $binary, $mime, $caption);
+    }
+
+    /**
+     * Bukti transfer: nominalnya dicocokkan dengan seluruh pembayaran yang
+     * belum ditransfer. Pas -> minta konfirmasi; tidak pas -> tolak + laporkan
+     * selisihnya (pencocokan sebagian dilakukan manual lewat aplikasi).
+     */
+    private function handleTransferProof(int|string $chatId, array $proof, string $caption): string
+    {
         $pendingKey = 'tg_pending:' . $chatId;
-        Cache::forget($pendingKey);
+        $label = trim($caption) !== '' ? "[bukti transfer] {$caption}" : '[bukti transfer]';
+
+        $action = $this->registry->find('catat_transfer_bukti');
+        if (! $action) {
+            return 'Maaf, pembacaan bukti transfer belum tersedia.';
+        }
+
+        try {
+            $prepared = $action->prepare($proof);
+        } catch (RuntimeException $e) {
+            return $this->finish($chatId, $label, $e->getMessage());
+        }
+
+        $this->putPending($pendingKey, $action, $prepared);
+
+        return $this->finish($chatId, $label, $action->preview($prepared));
+    }
+
+    /**
+     * Foto struk belanja: baca lewat AI, kelompokkan per kategori, lalu minta
+     * konfirmasi seperti aksi tulis lain. Struk baru menggantikan yang tertunda.
+     */
+    private function handleReceipt(int|string $chatId, string $binary, string $mime, string $caption = ''): string
+    {
+        $pendingKey = 'tg_pending:' . $chatId;
 
         $action = $this->registry->find('catat_struk');
         if (! $action) {

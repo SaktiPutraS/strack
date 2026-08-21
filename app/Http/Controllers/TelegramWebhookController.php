@@ -6,6 +6,7 @@ use App\Services\Ai\BotOrchestrator;
 use App\Services\Ai\TranscriptionService;
 use App\Services\Telegram\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -18,6 +19,10 @@ use Throwable;
  */
 class TelegramWebhookController extends Controller
 {
+    /** Id pesan rekap yang menunggu konfirmasi, per chat (untuk reaksi emoji). */
+    private const CONFIRM_MSG_KEY = 'tg_confirm_msg:';
+    private const CONFIRM_MSG_TTL = 20;
+
     public function __construct(
         private TelegramService $telegram,
         private BotOrchestrator $orchestrator,
@@ -32,6 +37,11 @@ class TelegramWebhookController extends Controller
             abort(403);
         }
 
+        // 1b. Reaksi emoji di pesan bot (mis. jempol) = jawaban konfirmasi.
+        if ($reaction = $request->input('message_reaction')) {
+            return $this->handleReaction($reaction);
+        }
+
         $message = $request->input('message') ?? $request->input('edited_message');
         $chatId = data_get($message, 'chat.id');
         $text = trim((string) data_get($message, 'text', ''));
@@ -44,8 +54,7 @@ class TelegramWebhookController extends Controller
         }
 
         // 2. Whitelist chat_id (data keuangan sensitif).
-        $allowed = config('services.telegram.allowed_chat_ids', []);
-        if (! empty($allowed) && ! in_array((string) $chatId, $allowed, true)) {
+        if (! $this->allowed($chatId)) {
             Log::warning('Telegram chat_id tidak diizinkan', ['chat_id' => $chatId]);
             $this->telegram->sendMessage($chatId, 'Maaf, Anda tidak memiliki akses ke bot ini.');
             return response('ok');
@@ -63,7 +72,7 @@ class TelegramWebhookController extends Controller
                     $photo['mime'],
                     (string) data_get($message, 'caption', '')
                 );
-                $this->telegram->sendMessage($chatId, $answer);
+                $this->reply($chatId, $answer);
             } catch (Throwable $e) {
                 Log::error('Telegram gambar gagal diproses', ['error' => $e->getMessage()]);
                 $this->telegram->sendMessage($chatId, 'Maaf, saya gagal membaca gambar itu. Coba foto ulang lebih jelas.');
@@ -108,7 +117,9 @@ class TelegramWebhookController extends Controller
                 . "Sebelum disimpan masih bisa dikoreksi, misalnya: tango masukkan ke sierra.\n\n"
                 . "MEMBACA BUKTI TRANSFER: kirim fotonya, nominalnya saya cocokkan dengan seluruh\n"
                 . "pembayaran yang belum ditransfer ke Bank Octo. Kalau pas, tinggal balas ya.\n\n"
-                . "Setiap perubahan data akan saya konfirmasi dulu (balas *ya* untuk simpan).\n\n"
+                . "Setiap perubahan data akan saya konfirmasi dulu. Untuk menyetujui, balas ya / oke /\n"
+                . "lakukan / simpan, atau cukup beri REAKSI 👍 pada pesan rekapnya. Untuk batal:\n"
+                . "tidak / jangan / batal, atau reaksi 👎.\n\n"
                 . "Penanda di awal balasan: 🔵 = dijawab Gemini (gratis), 🟠 = dijawab Claude (cadangan)."
             );
             return response('ok');
@@ -123,7 +134,7 @@ class TelegramWebhookController extends Controller
             if ($isVoice) {
                 $answer = "🎤 \"{$text}\"\n\n{$answer}";
             }
-            $this->telegram->sendMessage($chatId, $answer);
+            $this->reply($chatId, $answer);
         } catch (RuntimeException $e) {
             if ($e->getMessage() === '__TIDAK_BISA__') {
                 $this->telegram->sendMessage($chatId, 'Maaf, itu belum bisa saya proses dari data yang ada.');
@@ -137,6 +148,73 @@ class TelegramWebhookController extends Controller
         }
 
         return response('ok');
+    }
+
+    /**
+     * Kirim balasan, lalu INGAT id pesannya bila ada aksi yang menunggu
+     * konfirmasi. Id itu dipakai untuk mengenali reaksi emoji pada rekap.
+     */
+    private function reply(int|string $chatId, string $answer): void
+    {
+        $messageId = $this->telegram->sendMessage($chatId, $answer);
+
+        if ($messageId && $this->orchestrator->hasPending($chatId)) {
+            Cache::put(self::CONFIRM_MSG_KEY . $chatId, $messageId, now()->addMinutes(self::CONFIRM_MSG_TTL));
+        }
+    }
+
+    /**
+     * Reaksi emoji pada pesan bot. Hanya reaksi pada REKAP KONFIRMASI terakhir
+     * yang dianggap jawaban; reaksi di pesan lain diabaikan diam-diam.
+     */
+    private function handleReaction(array $reaction)
+    {
+        $chatId = data_get($reaction, 'chat.id');
+        $messageId = data_get($reaction, 'message_id');
+
+        if (! $chatId || ! $this->allowed($chatId)) {
+            return response('ok');
+        }
+
+        $key = self::CONFIRM_MSG_KEY . $chatId;
+
+        if (! $messageId || (int) Cache::get($key) !== (int) $messageId) {
+            return response('ok');
+        }
+
+        $emojis = collect(data_get($reaction, 'new_reaction', []))
+            ->pluck('emoji')
+            ->filter()
+            ->all();
+
+        $setuju = $this->orchestrator->reactionVerdict($emojis);
+
+        if ($setuju === null) {
+            return response('ok');
+        }
+
+        Cache::forget($key);
+
+        try {
+            $answer = $this->orchestrator->resolvePending($chatId, $setuju, $setuju ? '[reaksi 👍]' : '[reaksi 👎]');
+
+            if ($answer !== null) {
+                $this->telegram->sendMessage($chatId, $answer);
+            }
+        } catch (Throwable $e) {
+            Log::error('Telegram reaksi gagal diproses', ['error' => $e->getMessage()]);
+            $this->telegram->sendMessage($chatId, 'Maaf, terjadi kendala saat memproses reaksi itu.');
+        }
+
+        return response('ok');
+    }
+
+    /** Whitelist chat_id (data keuangan sensitif). */
+    private function allowed(int|string $chatId): bool
+    {
+        $allowed = config('services.telegram.allowed_chat_ids', []);
+
+        return empty($allowed) || in_array((string) $chatId, $allowed, true);
     }
 
     /**

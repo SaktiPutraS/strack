@@ -15,9 +15,36 @@ use RuntimeException;
  */
 class BotOrchestrator
 {
-    /** Kata konfirmasi/pembatalan (dicek sebagai teks utuh). */
-    private const AFFIRM = ['ya', 'iya', 'y', 'ok', 'oke', 'okay', 'yes', 'betul', 'benar', 'lanjut', 'simpan', 'gas', 'boleh', 'setuju', 'yoi'];
-    private const DENY = ['tidak', 'ga', 'gak', 'engga', 'enggak', 'nggak', 'batal', 'jangan', 'no', 'n', 'cancel', 'stop'];
+    /**
+     * Kata konfirmasi/pembatalan. Balasan boleh beberapa kata ("oke lakukan",
+     * "ya simpan aja") selama SEMUA katanya ada di daftar ini atau di FILLER.
+     * Daftarnya dibuat longgar karena balasan lewat voice note sering tidak
+     * persis satu kata.
+     */
+    private const AFFIRM = [
+        'ya', 'iya', 'y', 'ok', 'oke', 'okay', 'okey', 'yes', 'yoi', 'yup', 'yep', 'sip', 'siap',
+        'betul', 'bener', 'benar', 'lanjut', 'lanjutkan', 'simpan', 'save', 'catat', 'catatkan',
+        'gas', 'gaskeun', 'boleh', 'setuju', 'acc', 'lakukan', 'kerjakan', 'jalankan', 'proses',
+        'eksekusi', 'konfirm', 'konfirmasi', 'silakan', 'silahkan', 'mantap', 'sudah', 'udah',
+    ];
+
+    private const DENY = [
+        'tidak', 'ga', 'gak', 'ngga', 'engga', 'enggak', 'nggak', 'ndak', 'kagak', 'no', 'n',
+        'batal', 'batalkan', 'jangan', 'cancel', 'stop', 'hentikan', 'gausah', 'gajadi',
+    ];
+
+    /** Kata pengisi yang boleh menyertai jawaban tanpa mengubah artinya. */
+    private const FILLER = [
+        'aja', 'saja', 'deh', 'dong', 'dulu', 'lah', 'sih', 'nya', 'itu', 'ini', 'usah', 'jadi',
+        'tolong', 'coba', 'langsung', 'sekali', 'banget', 'pak', 'bang', 'bro', 'mas',
+    ];
+
+    /** Balasan lebih panjang dari ini dianggap perintah baru, bukan jawaban ya/tidak. */
+    private const MAX_CONFIRM_WORDS = 4;
+
+    /** Reaksi emoji di pesan bot yang dianggap jawaban (lihat reactionVerdict). */
+    private const AFFIRM_EMOJI = ['👍', '👌', '✅', '✔', '☑', '🆗', '💯', '🤝', '🔥', '❤', '🎉'];
+    private const DENY_EMOJI = ['👎', '❌', '🚫', '⛔', '🙅'];
 
     /** Riwayat percakapan singkat sebagai konteks (mis. rujukan "tadi/tersebut"). */
     private const MAX_HISTORY = 6;
@@ -42,12 +69,14 @@ class BotOrchestrator
 
         // 1. Ada aksi menunggu konfirmasi?
         if ($pending) {
-            if (in_array($normalized, self::AFFIRM, true)) {
+            $jawaban = $this->verdict($normalized);
+
+            if ($jawaban === true) {
                 Cache::forget($pendingKey);
                 return $this->finish($chatId, $text, $this->runPending($pending));
             }
 
-            if (in_array($normalized, self::DENY, true)) {
+            if ($jawaban === false) {
                 Cache::forget($pendingKey);
                 return $this->finish($chatId, $text, 'Baik, dibatalkan.');
             }
@@ -245,9 +274,108 @@ class BotOrchestrator
         }
     }
 
+    /**
+     * Apakah balasan ini jawaban ya (true), tidak (false), atau bukan keduanya
+     * (null). Semua kata harus berupa kata jawaban atau kata pengisi; begitu
+     * ada kata lain, balasannya diperlakukan sebagai perintah/koreksi baru.
+     */
+    private function verdict(string $normalized): ?bool
+    {
+        if ($normalized === '') {
+            return null;
+        }
+
+        $kata = preg_split('/\s+/', $normalized, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (count($kata) > self::MAX_CONFIRM_WORDS) {
+            return null;
+        }
+
+        $adaYa = false;
+        $adaTidak = false;
+
+        foreach ($kata as $k) {
+            if (in_array($k, self::DENY, true)) {
+                $adaTidak = true;
+            } elseif (in_array($k, self::AFFIRM, true)) {
+                $adaYa = true;
+            } elseif (! in_array($k, self::FILLER, true)) {
+                return null;
+            }
+        }
+
+        // "ya jangan" / "oke batal" tetap dibaca sebagai pembatalan.
+        if ($adaTidak) {
+            return false;
+        }
+
+        return $adaYa ? true : null;
+    }
+
+    /**
+     * Jawaban lewat REAKSI emoji di pesan bot (mis. jempol). Kembalikan null
+     * bila reaksinya tidak berarti ya maupun tidak.
+     *
+     * @param  array<int, string>  $emojis
+     */
+    public function reactionVerdict(array $emojis): ?bool
+    {
+        $bersih = [];
+        foreach ($emojis as $e) {
+            // Buang penanda gaya emoji (variation selector & warna kulit).
+            $bersih[] = preg_replace('/[\x{FE0E}\x{FE0F}\x{1F3FB}-\x{1F3FF}]/u', '', (string) $e);
+        }
+
+        $adaYa = ! empty(array_intersect($bersih, self::AFFIRM_EMOJI));
+        $adaTidak = ! empty(array_intersect($bersih, self::DENY_EMOJI));
+
+        if ($adaTidak) {
+            return false;
+        }
+
+        return $adaYa ? true : null;
+    }
+
+    /**
+     * Jalankan/batalkan aksi yang menunggu konfirmasi tanpa lewat teks
+     * (dipakai oleh reaksi emoji). Kembalikan null bila tidak ada yang tunggu.
+     */
+    public function resolvePending(int|string $chatId, bool $setuju, string $label): ?string
+    {
+        $this->ai->resetProviderTracking();
+
+        $pendingKey = 'tg_pending:' . $chatId;
+        $pending = Cache::get($pendingKey);
+
+        if (! $pending) {
+            return null;
+        }
+
+        Cache::forget($pendingKey);
+
+        return $this->finish(
+            $chatId,
+            $label,
+            $setuju ? $this->runPending($pending) : 'Baik, dibatalkan.'
+        );
+    }
+
+    /** Apakah ada aksi yang sedang menunggu konfirmasi untuk chat ini. */
+    public function hasPending(int|string $chatId): bool
+    {
+        return Cache::has('tg_pending:' . $chatId);
+    }
+
+    /**
+     * Rapikan teks untuk pengecekan jawaban: huruf kecil, tanda baca jadi spasi,
+     * dan huruf berulang dipendekkan ("iyaaa" jadi "iya", "okeee" jadi "oke").
+     */
     private function normalize(string $text): string
     {
-        return trim(preg_replace('/[^a-z0-9\s]/', '', mb_strtolower($text)));
+        $text = preg_replace('/[^a-z0-9\s]/', ' ', mb_strtolower($text));
+        $text = preg_replace('/([a-z])\1{2,}/', '$1', (string) $text);
+
+        return trim(preg_replace('/\s+/', ' ', (string) $text));
     }
 
     private function tanyaDataTool(): array

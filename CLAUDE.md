@@ -65,6 +65,15 @@ belum ditransfer ke Bank Octo. Detail di DOKUMENTASI.md.
   nomor referensi bukti, `notes` = "Via bukti transfer di bot Telegram".
 - KOLOM "arah" (MASUK/KELUAR) SEMPAT ADA lalu DIBUANG: bukti asli user "TRF TO OCTO PAY" dibaca Gemini
   sebagai KELUAR padahal uang masuk. Jangan dihidupkan lagi tanpa cara baca yang lebih andal.
+- LANJUTAN (sama hari): KONFIRMASI dibuat longgar + REAKSI JEMPOL. Kata setuju/batal diperbanyak
+  (lakukan, konfirm, sip, acc, eksekusi, dst) dan balasan boleh sampai 4 kata selama semua katanya ada di
+  daftar AFFIRM/DENY/FILLER ("oke lakukan", "tidak usah"); ada kata asing = dianggap koreksi/perintah baru;
+  kalau tercampur, yang menolak menang. `normalize()` memendekkan huruf berulang ("iyaaa"->"iya").
+  Reaksi emoji di pesan rekap = jawaban (👍👌✅🔥❤ setuju, 👎❌🚫 batal), HANYA berlaku pada pesan rekap
+  terakhir (message_id disimpan di cache `tg_confirm_msg:{chat}` 20 menit).
+  AWAS: update `message_reaction` hanya dikirim Telegram bila `allowed_updates` menyebutnya, jadi
+  `php artisan telegram:set-webhook <url>` WAJIB dijalankan ulang setiap kali daftar itu berubah.
+  UJI: 85 uji lulus + 34 uji bukti transfer diulang, lulus.
 - UJI: 34 uji SQLite lulus semua. AWAS: migrasi lengkap gagal di SQLite (migrasi lama meng-alter
   `budget_items` sebelum tabelnya dibuat), skrip uji membuat tabelnya sendiri lewat Schema.
 - Baca gambar bukti ASLI user lewat Gemini: semua benar (Rp415.000, 2026-08-21, ref 760967985900, OCTO).

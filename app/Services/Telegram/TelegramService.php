@@ -41,8 +41,14 @@ class TelegramService
         return $binary->body();
     }
 
-    public function sendMessage(int|string $chatId, string $text): void
+    /**
+     * Kirim balasan. Kembalikan message_id pesan TERAKHIR yang berhasil dikirim
+     * (dipakai untuk mengenali reaksi emoji pada rekap konfirmasi).
+     */
+    public function sendMessage(int|string $chatId, string $text): ?int
     {
+        $messageId = null;
+
         // Telegram batasi 4096 karakter per pesan.
         foreach (str_split($text, 4000) as $chunk) {
             $response = Http::timeout(15)->post($this->apiUrl('sendMessage'), [
@@ -55,8 +61,14 @@ class TelegramService
                     'chat_id' => $chatId,
                     'error'   => $response->body(),
                 ]);
+
+                continue;
             }
+
+            $messageId = $response->json('result.message_id') ?? $messageId;
         }
+
+        return $messageId;
     }
 
     public function sendChatAction(int|string $chatId, string $action = 'typing'): void

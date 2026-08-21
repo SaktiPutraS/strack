@@ -57,6 +57,30 @@ Foto ke Telegram -> `TelegramWebhookController` -> `BotOrchestrator::handleImage
   sudah tidak ada pembayaran belum-transfer yang cocok. Yang belum tertutup adalah kasus ada pembayaran
   baru dengan total kebetulan sama persis.
 
+### Konfirmasi longgar + reaksi jempol (lanjutan hari yang sama)
+Permintaan user: kata "ya" sering tidak terdengar lewat voice note, dan maunya bisa mengonfirmasi cukup
+dengan REAKSI emoji jempol pada pesan bot.
+- KATA: daftar AFFIRM/DENY diperluas (lakukan, kerjakan, konfirm, konfirmasi, sip, siap, acc, eksekusi,
+  jalankan, proses, silakan, mantap, dst). Pengecekan tidak lagi harus SATU KATA PERSIS: balasan sampai
+  4 kata diterima selama semua katanya ada di AFFIRM/DENY atau FILLER ("oke lakukan", "ya simpan aja",
+  "tidak usah"). Ada satu kata di luar daftar = dianggap perintah/koreksi baru ("ok tapi ganti tanggalnya"
+  tetap masuk alur koreksi). Kalau tercampur, yang MENOLAK menang ("ya jangan" = batal).
+- `normalize()` kini mengubah tanda baca jadi spasi dan memendekkan huruf berulang ("iyaaa" jadi "iya",
+  "okeee" jadi "oke"), berguna untuk hasil transkripsi voice note.
+- REAKSI EMOJI: Telegram mengirimnya sebagai update `message_reaction`, dan update itu HANYA dikirim bila
+  `allowed_updates` menyebutnya. `telegram:set-webhook` diperbarui, dan webhook WAJIB didaftarkan ULANG
+  setelah deploy (kalau tidak, reaksi tidak akan pernah sampai).
+- Setuju: 👍 👌 ✅ ✔ ☑ 🆗 💯 🤝 🔥 ❤ 🎉. Batal: 👎 ❌ 🚫 ⛔ 🙅. Emoji lain diabaikan diam-diam.
+  Penanda gaya emoji (variation selector U+FE0F dan warna kulit U+1F3FB-1F3FF) dibuang dulu sebelum dicocokkan.
+- PENGAMAN: reaksi hanya dihitung bila mengenai PESAN REKAP TERAKHIR. `TelegramService::sendMessage`
+  sekarang mengembalikan message_id, controller menyimpannya di cache `tg_confirm_msg:{chat}` (20 menit)
+  hanya bila memang ada aksi menunggu. Reaksi di pesan lain diabaikan.
+- File: `BotOrchestrator` (+verdict, +reactionVerdict, +resolvePending, +hasPending, FILLER,
+  MAX_CONFIRM_WORDS), `TelegramService::sendMessage` jadi `?int`, `TelegramWebhookController`
+  (+cabang message_reaction, +reply(), +allowed(), teks /help), `TelegramSetWebhook` (+allowed_updates).
+- UJI: 85 uji baru LULUS semua (44 kata setuju, 21 kata batal, 7 kalimat yang HARUS tetap netral,
+  9 reaksi emoji, 4 resolvePending/hasPending) + 34 uji bukti transfer diulang, tetap lulus.
+
 ### Verifikasi
 - Uji lokal (SQLite in-memory, MySQL lokal masih mati): **34 uji, 34 LULUS**. Cakupan: pembacaan angka
   berbagai format, pemilahan jenis gambar, JSON berantakan, nominal pas / lebih besar / lebih kecil /

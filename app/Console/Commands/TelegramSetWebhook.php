@@ -55,7 +55,9 @@ class TelegramSetWebhook extends Command
         $res = Http::post($base . 'setWebhook', array_filter([
             'url'             => $url,
             'secret_token'    => $secret ?: null,
-            'allowed_updates' => json_encode(['message', 'edited_message']),
+            // message_reaction WAJIB disebut, kalau tidak Telegram tidak pernah
+            // mengirim update reaksi (jempol di rekap = konfirmasi).
+            'allowed_updates' => json_encode(['message', 'edited_message', 'message_reaction']),
         ]))->json();
 
         $this->line(json_encode($res, JSON_PRETTY_PRINT));

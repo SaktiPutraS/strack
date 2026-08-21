@@ -4,6 +4,76 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-21 (Bukti transfer di Telegram jadi transfer bank otomatis)
+
+Permintaan user: kirim foto bukti transfer ke bot, nominalnya dicocokkan dengan total pembayaran yang
+BELUM ditransfer ke Bank Octo, kalau pas langsung dicatat sebagai transfer.
+
+KEPUTUSAN user (ditanyakan di awal):
+1. Pencocokan hanya ke TOTAL KESELURUHAN. Kalau nominal tidak sama persis, bot MENOLAK dan melaporkan
+   selisihnya. Tidak ada pencarian kombinasi sebagian (transfer cicilan dicatat manual lewat aplikasi).
+2. Tetap minta konfirmasi "ya" walau nominalnya sudah pas (konsisten dengan aksi tulis lain).
+3. Pencegahan duplikat BELUM dibuat. Bukti yang sama terkirim dua kali akan tercatat dua kali selama
+   masih ada pembayaran yang belum ditransfer.
+
+### Alur
+Foto ke Telegram -> `TelegramWebhookController` -> `BotOrchestrator::handleImage` (BARU, menggantikan
+`handleReceipt` sebagai pintu masuk gambar) -> `TransferProofParser` memilah jenis gambar:
+- TRANSFER -> `CatatTransferBuktiAction` (cocokkan + rekap + konfirmasi) -> beberapa `BankTransfer`
+  dibuat sekaligus dalam satu transaksi + `BankBalance::updateBalance()`.
+- STRUK atau tidak jelas -> alur struk belanja LAMA, tidak berubah sama sekali.
+
+### File baru
+- `app/Services/Ai/TransferProofParser.php`: satu panggilan AI vision yang sekaligus MEMILAH jenis gambar
+  (TRANSFER / STRUK / LAIN) dan MEMBACA isi bukti transfer (nominal, tanggal, ref, bank, keterangan).
+  Digabung supaya jalur bukti transfer cukup 1 panggilan AI; jalur struk jadi 2 panggilan (pemilah +
+  pembaca struk). `int()` tahan format "IDR 415,000.00", "Rp 1.250.000,00", dan "415.000".
+  Balasan AI yang tidak berbentuk JSON sengaja dianggap STRUK supaya perilaku lama tidak berubah.
+- `app/Services/Ai/Actions/CatatTransferBuktiAction.php`: aksi tersembunyi (tidak ditawarkan ke AI
+  sebagai tool). `prepare()` mengambil semua `payments` dengan `is_transferred = false`, menjumlahkannya,
+  lalu MEMBANDINGKAN di kode (bukan di AI). Tidak sama = lempar RuntimeException berisi nominal bukti,
+  total belum transfer, selisih, dan rincian per pembayaran (maksimal 12 baris). Sama = rekap +
+  konfirmasi. `execute()` MENGECEK ULANG totalnya karena data bisa berubah selagi menunggu konfirmasi.
+- `app/Console/Commands/TransferCoba.php`: `php artisan transfer:coba <file> [--simpan] [--catatan=]`,
+  kembaran `struk:coba` untuk menguji baca bukti transfer tanpa Telegram.
+
+### Perubahan file lain
+- `app/Services/Ai/BotOrchestrator.php`: `handleReceipt()` jadi PRIVATE, pintu masuk gambar sekarang
+  `handleImage()`. Tambah `handleTransferProof()`. Reset penanda provider + buang aksi tertunda
+  dipindah ke `handleImage`.
+- `app/Services/Ai/Actions/ActionRegistry.php`: daftarkan `CatatTransferBuktiAction`.
+- `app/Http/Controllers/TelegramWebhookController.php`: panggil `handleImage`, pesan error jadi
+  "gambar" (bukan "struk"), teks /help ditambah bagian bukti transfer.
+
+### Catatan penting
+- TIDAK ada perubahan skema DB, tidak ada delta SQL. Kolom `bank_transfers.reference_number` yang sudah
+  ada dipakai untuk menyimpan nomor referensi dari bukti (mis. 760967985900), `notes` diisi
+  "Via bukti transfer di bot Telegram".
+- Kolom "arah" (MASUK/KELUAR) SEMPAT dibuat lalu DIBUANG: pada bukti asli user ("TRF TO OCTO PAY")
+  Gemini membacanya KELUAR, padahal uangnya masuk. Peringatan arah jadi salah alarm, sedangkan
+  pencocokan nominal sudah cukup sebagai pagar. Jangan dihidupkan lagi tanpa cara baca yang lebih andal.
+- Aksi tertunda bukti transfer berlaku 20 menit, sama seperti struk.
+- Duplikat: kalau bukti yang sama dikirim dua kali BERTURUT-TURUT, yang kedua otomatis ditolak karena
+  sudah tidak ada pembayaran belum-transfer yang cocok. Yang belum tertutup adalah kasus ada pembayaran
+  baru dengan total kebetulan sama persis.
+
+### Verifikasi
+- Uji lokal (SQLite in-memory, MySQL lokal masih mati): **34 uji, 34 LULUS**. Cakupan: pembacaan angka
+  berbagai format, pemilahan jenis gambar, JSON berantakan, nominal pas / lebih besar / lebih kecil /
+  selisih Rp1, tidak ada pembayaran belum transfer, nominal tak terbaca, pemotongan rincian panjang,
+  isi rekap, penyimpanan (BankTransfer per pembayaran + saldo naik), simpan dua kali, data berubah saat
+  menunggu konfirmasi, dan alur bot (rekap lalu "ya", "tidak", struk tetap ke alur struk, gambar tak
+  dikenal, gambar baru membuang aksi tertunda, caption ikut terkirim, perintah teks transfer lama).
+- CATATAN UJI: migrasi lengkap TIDAK bisa dipakai di SQLite (ada migrasi lama yang meng-alter
+  `budget_items` sebelum tabelnya dibuat). Skrip uji membuat sendiri tabel yang dipakai lewat `Schema`.
+  Sama seperti sesi struk: `Http::fake()` menumpuk antrean, jadi `Http::swap(new Factory())` dulu.
+- Lint bersih, `view:cache` sukses, `transfer:coba` terdaftar, tidak ada em dash / en dash.
+- UJI BACA DENGAN GAMBAR ASLI user (bukti OCTO Rp415.000) lewat Gemini: SEMUA benar - nominal 415000,
+  tanggal 2026-08-21, ref 760967985900, bank OCTO, keterangan "SAKTI PUTRA S", jenis TRANSFER.
+- BELUM diuji lewat Telegram sungguhan dan BELUM deploy.
+
+---
+
 ## Sesi 2026-08-20 (Foto struk di Telegram jadi pengeluaran otomatis)
 
 Permintaan user: belanja lewat aplikasi Alfagift merepotkan dicatat karena harus dirinci, dikelompokkan

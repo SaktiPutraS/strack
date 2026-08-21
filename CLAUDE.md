@@ -49,6 +49,27 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-21 (Bukti transfer Telegram jadi transfer bank otomatis)
+Permintaan user. Kirim foto bukti transfer ke bot, nominalnya dicocokkan dengan total pembayaran yang
+belum ditransfer ke Bank Octo. Detail di DOKUMENTASI.md.
+- KEPUTUSAN user: (1) cocokkan hanya ke TOTAL KESELURUHAN, tidak pas = TOLAK + laporkan selisih (tidak
+  ada pencarian kombinasi sebagian); (2) tetap minta konfirmasi "ya" walau nominal sudah pas;
+  (3) pencegahan duplikat BELUM dibuat.
+- File baru: `TransferProofParser` (satu panggilan AI: memilah TRANSFER/STRUK/LAIN sekaligus membaca
+  nominal+tanggal+ref+bank+keterangan), `Actions/CatatTransferBuktiAction` (aksi tersembunyi, semua
+  perbandingan uang di kode), command `transfer:coba` (kembaran `struk:coba`).
+- Diubah: `BotOrchestrator::handleReceipt` jadi PRIVATE, pintu masuk gambar sekarang `handleImage()`
+  (+`handleTransferProof`); ActionRegistry mendaftarkan aksi baru; webhook memanggil handleImage +
+  teks /help ditambah. Alur struk belanja TIDAK berubah.
+- TIDAK ada perubahan skema DB, tidak ada delta SQL. `bank_transfers.reference_number` dipakai untuk
+  nomor referensi bukti, `notes` = "Via bukti transfer di bot Telegram".
+- KOLOM "arah" (MASUK/KELUAR) SEMPAT ADA lalu DIBUANG: bukti asli user "TRF TO OCTO PAY" dibaca Gemini
+  sebagai KELUAR padahal uang masuk. Jangan dihidupkan lagi tanpa cara baca yang lebih andal.
+- UJI: 34 uji SQLite lulus semua. AWAS: migrasi lengkap gagal di SQLite (migrasi lama meng-alter
+  `budget_items` sebelum tabelnya dibuat), skrip uji membuat tabelnya sendiri lewat Schema.
+- Baca gambar bukti ASLI user lewat Gemini: semua benar (Rp415.000, 2026-08-21, ref 760967985900, OCTO).
+- BELUM di-commit, BELUM deploy, BELUM diuji lewat Telegram sungguhan.
+
 ### 2026-08-20 (Foto struk Telegram jadi pengeluaran otomatis)
 Permintaan user (belanja Alfagift malas dicatat manual). Kirim foto struk ke bot, bot merekap per kategori,
 balas ya untuk simpan. Detail di DOKUMENTASI.md.

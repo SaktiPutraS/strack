@@ -75,7 +75,8 @@ function KataCocok($a, $b) {
 }
 
 # Skor kemiripan folder dengan sebuah proyek. Nama klien diberi bobot lebih
-# besar karena itu penanda paling kuat di nama folder.
+# besar karena itu penanda paling kuat di nama folder, tapi judul tetap harus
+# cukup berbobot: ada folder yang namanya HANYA judul (mis. Project_Starvvo).
 function Skor($kataFolder, $proyek) {
     $kataKlien = Kata $proyek.klien
     $kataJudul = Kata $proyek.judul
@@ -83,7 +84,7 @@ function Skor($kataFolder, $proyek) {
     $nilai = 0
     foreach ($kf in $kataFolder) {
         foreach ($kk in $kataKlien) { if (KataCocok $kf $kk) { $nilai += 3; break } }
-        foreach ($kj in $kataJudul) { if (KataCocok $kf $kj) { $nilai += 1; break } }
+        foreach ($kj in $kataJudul) { if (KataCocok $kf $kj) { $nilai += 2; break } }
     }
 
     # Proyek yang masih jalan sedikit diunggulkan bila skornya seri.
@@ -184,7 +185,7 @@ foreach ($f in $folders) {
     $kandidat = @()
     foreach ($p in $proyek) {
         $nilai = Skor $kataFolder $p
-        if ($nilai -ge 3) { $kandidat += [PSCustomObject]@{ Skor = $nilai; Proyek = $p } }
+        if ($nilai -ge 2) { $kandidat += [PSCustomObject]@{ Skor = $nilai; Proyek = $p } }
     }
     $kandidat = @($kandidat | Sort-Object -Property Skor -Descending | Select-Object -First 5)
 
@@ -264,10 +265,11 @@ foreach ($nama in $peta.Keys) {
         continue
     }
 
-    $idTerpakai[$id] = $true
+    # Foldernya harus BENAR-BENAR ada. Entri lama yang sudah diarsipkan tidak
+    # boleh dihitung punya folder, supaya proyek yang dibuka lagi tetap ditagih.
+    if (-not (Test-Path (Join-Path $ProjectDir $nama))) { continue }
 
-    $adaFolder = Test-Path (Join-Path $ProjectDir $nama)
-    if (-not $adaFolder) { continue }
+    $idTerpakai[$id] = $true
 
     $p = $proyekById[$id]
     if ($StatusSelesai -contains $p.status) {
@@ -349,6 +351,15 @@ foreach ($s in $siapArsip) {
     Write-Host ""
     Info ("{0}  ->  {1}" -f $s.Nama, (BarisProyek $s.Proyek))
 
+    $jumlahBerkas = @(Get-ChildItem -Path $sumber -Recurse -File -Force).Count
+    if ($jumlahBerkas -eq 0) {
+        Awas "  Folder ini kosong, tidak diarsipkan. Hapus sendiri kalau memang tidak terpakai."
+        $dilewati++
+        continue
+    }
+
+    Info ("  {0} berkas di dalamnya." -f $jumlahBerkas)
+
     if (-not $TanpaTanya) {
         $ya = (Read-Host "  Arsipkan dan hapus folder aslinya? (y/t)").Trim().ToLower()
         if ($ya -ne 'y' -and $ya -ne 'ya') {
@@ -384,11 +395,6 @@ foreach ($s in $siapArsip) {
     }
 
     $ukuran = (Get-Item $target).Length
-    if ($ukuran -lt 1024) {
-        Salah "  Arsip mencurigakan (hanya $ukuran byte). Folder asli TIDAK disentuh."
-        $dilewati++
-        continue
-    }
 
     Info "  Menguji isi arsip ..."
     & $RarExe t -idq -- $target
@@ -398,8 +404,24 @@ foreach ($s in $siapArsip) {
         continue
     }
 
+    # Pagar terpenting sebelum menghapus: jumlah berkas di dalam arsip tidak
+    # boleh kurang dari jumlah berkas di folder aslinya. Ukuran file sengaja
+    # TIDAK dipakai sebagai patokan, arsip yang sah pun bisa kecil.
+    $isiArsip = @(& $RarExe lb -r -- $target | Where-Object { $_.Trim() -ne "" })
+    if ($isiArsip.Count -lt $jumlahBerkas) {
+        Salah ("  Isi arsip cuma {0} entri, folder aslinya {1} berkas. Folder asli TIDAK disentuh." -f $isiArsip.Count, $jumlahBerkas)
+        $dilewati++
+        continue
+    }
+
     Remove-Item -Path $sumber -Recurse -Force
-    Baik ("  Selesai. {0} MB, folder asli dihapus." -f [math]::Round($ukuran / 1MB, 1))
+    if ($ukuran -ge 1MB) {
+        $besar = "{0} MB" -f [math]::Round($ukuran / 1MB, 1)
+    } else {
+        $besar = "{0} KB" -f [math]::Round($ukuran / 1KB, 1)
+    }
+
+    Baik ("  Selesai. {0}, {1} entri terarsip, folder asli dihapus." -f $besar, $isiArsip.Count)
 
     $peta[$s.Nama] = [PSCustomObject]@{
         project_id = $s.Proyek.id

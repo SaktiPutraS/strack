@@ -49,6 +49,20 @@ Client, Project, BankTransfer, CashWithdrawal, Payment, Dashboard, FinancialRepo
 
 ## Riwayat Sesi
 
+### 2026-08-21 (Sinkron folder kerja lokal: DIBUAT LALU DIBATALKAN user)
+User minta `D:\Project Saktify` diselaraskan dengan status proyek strack (yang selesai di-RAR ke
+`E:\Backup Joki`, yang masih jalan tapi belum ada foldernya dikabari). Sudah dibangun, diuji, dan deploy
+(`0f1eb86`, `6d88302`), lalu USER MEMBATALKANNYA: pengaturan folder mau dikerjakan MANUAL saja.
+- Dibatalkan lewat `git revert` di `ab08047` (riwayat tidak dihapus). Yang hilang: command `proyek:daftar`
+  + `scripts/sinkron-folder-proyek.ps1` + catatan dokumentasinya. Kodenya masih bisa dihidupkan lagi dari
+  commit `0f1eb86` dan `6d88302` kalau suatu saat diminta.
+- JANGAN tawarkan ulang otomatisasi folder kerja kecuali user yang memulai.
+- Fakta yang tetap berguna: folder kerja user berpola `Project_<Klien>_<Judul>` di `D:\Project Saktify`,
+  arsip lama berpola `Project_X.rar` di `E:\Backup Joki` (103 arsip), WinRAR ada di
+  `C:\Program Files\WinRAR\Rar.exe`. `Project_SMG_Item_Gantung` = proyek #222 PT Sinai Maju Gemilang.
+- TIDAK ADA sisa apa pun di PC user: folder kerja & folder backup tidak berubah, file peta tidak pernah
+  tertulis, folder uji sudah dibersihkan.
+
 ### 2026-08-21 (Bukti transfer Telegram jadi transfer bank otomatis)
 Permintaan user. Kirim foto bukti transfer ke bot, nominalnya dicocokkan dengan total pembayaran yang
 belum ditransfer ke Bank Octo. Detail di DOKUMENTASI.md.
@@ -77,7 +91,11 @@ belum ditransfer ke Bank Octo. Detail di DOKUMENTASI.md.
 - UJI: 34 uji SQLite lulus semua. AWAS: migrasi lengkap gagal di SQLite (migrasi lama meng-alter
   `budget_items` sebelum tabelnya dibuat), skrip uji membuat tabelnya sendiri lewat Schema.
 - Baca gambar bukti ASLI user lewat Gemini: semua benar (Rp415.000, 2026-08-21, ref 760967985900, OCTO).
-- BELUM di-commit, BELUM deploy, BELUM diuji lewat Telegram sungguhan.
+- SUDAH commit + deploy (`060da51`, `8c61ce0`) dan TERUJI DI PRODUKSI lewat `php artisan transfer:coba`
+  dengan foto bukti asli user: nominal Rp415.000, tanggal, ref 760967985900, bank OCTO, nama pengirim,
+  semuanya benar. Kebetulan pas: saat itu produksi punya 2 pembayaran belum transfer dengan total persis
+  Rp415.000 (Lisa Cust Rp15.000 + Rendi Fuji Rp400.000). File uji di hosting sudah dihapus.
+- PENDING: user mencoba kirim bukti transfer langsung dari Telegram (belum dilakukan sampai sesi berakhir).
 
 ### 2026-08-20 (Foto struk Telegram jadi pengeluaran otomatis)
 Permintaan user (belanja Alfagift malas dicatat manual). Kirim foto struk ke bot, bot merekap per kategori,

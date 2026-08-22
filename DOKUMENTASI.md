@@ -4,6 +4,35 @@ Log pekerjaan per sesi. Sesi terbaru di atas.
 
 ---
 
+## Sesi 2026-08-21 (Sinkron folder kerja lokal: dibangun lalu DIBATALKAN user)
+
+Permintaan awal user: pastikan `D:\Project Saktify` hanya berisi pekerjaan yang masih jalan; folder yang
+proyeknya sudah tutup di-RAR ke `E:\Backup Joki`; proyek jalan yang belum punya folder dikabari.
+
+Fitur SUDAH selesai dibangun, diuji, dan deploy (`0f1eb86` + `6d88302`), lalu USER MEMBATALKANNYA dengan
+alasan pengaturan folder mau dikerjakan MANUAL saja. Dibatalkan lewat `git revert` (`ab08047`), bukan
+menghapus riwayat, jadi kodenya masih utuh di dua commit itu kalau suatu saat mau dihidupkan lagi.
+
+Yang dihapus kembali: `app/Console/Commands/ProyekDaftar.php` (command `proyek:daftar --json`),
+`scripts/sinkron-folder-proyek.ps1`, dan catatan dokumentasinya. Sudah diverifikasi hilang di hosting
+(`proyek:daftar` tidak terdaftar lagi, isi `scripts/` kembali cuma `deploy.ps1`).
+
+TIDAK ADA sisa di PC user: `D:\Project Saktify` dan `E:\Backup Joki` tidak berubah sama sekali, file peta
+`_peta-folder-proyek.json` tidak pernah tertulis (skrip dijalankan dengan `-TanpaTanya`), dan seluruh folder
+percobaan di scratchpad sudah dibersihkan.
+
+Fakta hasil penelusuran yang tetap berguna kalau topik ini muncul lagi:
+- Folder kerja berpola `Project_<Klien>_<Judul>`, tiap folder berisi `CLAUDE.md`, `DOKUMENTASI.md`, dan
+  `.bat` pelanjut sesi Claude Code yang menunjuk path absolutnya. Ada juga `Saktify_Assistant` (bukan proyek).
+- `E:\Backup Joki` sudah berisi 103 arsip berpola `Project_X.rar` di akarnya, isi arsip memuat folder induk.
+  WinRAR ada di `C:\Program Files\WinRAR\Rar.exe`.
+- `Project_SMG_Item_Gantung` = proyek #222 PT Sinai Maju Gemilang (SMG itu singkatan nama PT-nya).
+- strack di hosting TIDAK BISA melihat drive lokal, jadi pekerjaan seperti ini memang harus dari sisi PC.
+
+JANGAN tawarkan ulang otomatisasi folder kerja kecuali user sendiri yang memulai.
+
+---
+
 ## Sesi 2026-08-21 (Bukti transfer di Telegram jadi transfer bank otomatis)
 
 Permintaan user: kirim foto bukti transfer ke bot, nominalnya dicocokkan dengan total pembayaran yang
@@ -94,7 +123,13 @@ dengan REAKSI emoji jempol pada pesan bot.
 - Lint bersih, `view:cache` sukses, `transfer:coba` terdaftar, tidak ada em dash / en dash.
 - UJI BACA DENGAN GAMBAR ASLI user (bukti OCTO Rp415.000) lewat Gemini: SEMUA benar - nominal 415000,
   tanggal 2026-08-21, ref 760967985900, bank OCTO, keterangan "SAKTI PUTRA S", jenis TRANSFER.
-- BELUM diuji lewat Telegram sungguhan dan BELUM deploy.
+- SUDAH commit + deploy (`060da51` kode, `8c61ce0` dokumentasi).
+- UJI DI PRODUKSI dengan foto bukti transfer ASLI user lewat `php artisan transfer:coba ~/bukti-uji.jpeg`
+  (file uji sudah dihapus lagi): dibaca Gemini, jenis TRANSFER, nominal 415000, tanggal 2026-08-21,
+  ref 760967985900, bank OCTO, keterangan "SAKTI PUTRA S". Semua benar.
+  Rekapnya cocok dengan 2 pembayaran belum transfer di produksi (Lisa Cust - Revisi Website Rp15.000 dan
+  Rendi Fuji - Revisi Tesis Rp400.000, total persis Rp415.000).
+- PENDING: user mengirim bukti transfer langsung lewat Telegram (belum dilakukan sampai sesi berakhir).
 
 ---
 
